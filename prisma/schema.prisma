@@ -1,0 +1,147 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id             String   @id @default(uuid())
+  name           String
+  email          String   @unique
+  password       String
+  role           String   // "SUPER_ADMIN", "OWNER", "PETUGAS", "DOKTER"
+  phone          String?
+  approvalStatus String   @default("APPROVED") // "PENDING", "APPROVED", "REJECTED"
+  farmId         String?  // null = Super Admin (akses semua farm)
+  farm           Farm?    @relation(fields: [farmId], references: [id])
+  deletedAt      DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([approvalStatus])
+}
+
+model Farm {
+  id          String   @id @default(uuid())
+  nama        String
+  alamat      String?
+  lat         Float?
+  lng         Float?
+  geojson     String?  // JSON polygon kandang (GeoJSON string)
+  deskripsi   String?
+  sertifikatUrl String? // foto sertifikat farm (opsional)
+  status      String   @default("AKTIF") // "AKTIF", "NONAKTIF", "DELETED"
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+
+  users       User[]
+  hewan       Hewan[]
+  transferMasuk  TransferHewan[] @relation("FarmTujuan")
+  transferKeluar TransferHewan[] @relation("FarmAsal")
+}
+
+model Hewan {
+  id           String   @id @default(uuid())
+  tag          String
+  nama         String?
+  kelamin      String   // "JANTAN", "BETINA"
+  tanggalLahir DateTime
+  berat        Float?
+  kategori     String   // "INDUKAN", "PEJANTAN", "ANAKAN", "DARA", "JANTAN_MUDA"
+  status       String   @default("AKTIF") // "AKTIF", "MATI", "TERJUAL"
+  fotoUrl      String?
+  farmId       String
+  farm         Farm     @relation(fields: [farmId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Silsilah (self-referencing)
+  bapakId      String?
+  bapak        Hewan?   @relation("HewanBapak", fields: [bapakId], references: [id])
+  indukId      String?
+  induk        Hewan?   @relation("HewanInduk", fields: [indukId], references: [id])
+  anakSebagaiBapak   Hewan[]  @relation("HewanBapak")
+  anakSebagaiInduk   Hewan[]  @relation("HewanInduk")
+
+  rekamMedis          RekamMedis[]
+  reproduksiInduk     Reproduksi[] @relation("Induk")
+  reproduksiPejantan  Reproduksi[] @relation("Pejantan")
+  transferHistory     TransferHewan[]
+  beratHistory        BeratBadan[]
+
+  // Tag unik hanya dalam satu farm yang sama
+  @@unique([tag, farmId])
+}
+
+model RekamMedis {
+  id            String    @id @default(uuid())
+  hewanId       String
+  hewan         Hewan     @relation(fields: [hewanId], references: [id])
+  tanggal       DateTime
+  kategori      String    @default("LAINNYA") // "VAKSINASI", "PENGOBATAN", "PEMERIKSAAN", "PERAWATAN_LUKA", "VITAMIN", "LAINNYA"
+  diagnosis     String
+  obat          String?
+  dokter        String?
+  notes         String?
+  fotoUrl       String?
+  status        String    @default("SEMBUH") // "SEMBUH", "RAWAT", "PANTAU"
+  tanggalLanjut DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Reproduksi {
+  id                String   @id @default(uuid())
+  indukId           String
+  induk             Hewan    @relation("Induk", fields: [indukId], references: [id])
+  pejantanId        String
+  pejantan          Hewan    @relation("Pejantan", fields: [pejantanId], references: [id])
+  tanggalKawin      DateTime
+  estimasiLahir     DateTime
+  status            String   @default("HAMIL") // "HAMIL", "LAHIR", "GAGAL"
+  anakTag           String?
+  inbreedingWarning Boolean  @default(false) // audit trail: true jika override peringatan kawin sedarah
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model TransferHewan {
+  id          String   @id @default(uuid())
+  hewanId     String
+  hewan       Hewan    @relation(fields: [hewanId], references: [id])
+  fromFarmId  String
+  fromFarm    Farm     @relation("FarmAsal", fields: [fromFarmId], references: [id])
+  toFarmId    String
+  toFarm      Farm     @relation("FarmTujuan", fields: [toFarmId], references: [id])
+  tanggal     DateTime @default(now())
+  alasan      String?
+  createdAt   DateTime @default(now())
+}
+
+model BeratBadan {
+  id        String   @id @default(uuid())
+  hewanId   String
+  hewan     Hewan    @relation(fields: [hewanId], references: [id])
+  tanggal   DateTime
+  berat     Float
+  catatan   String?
+  createdAt DateTime @default(now())
+}
+
+model Notifikasi {
+  id        String   @id @default(uuid())
+  title     String
+  message   String
+  tanggal   DateTime
+  isRead    Boolean  @default(false)
+  type      String   // "VAKSIN", "LAHIR", "BERAT", "CUSTOM"
+  farmId    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
