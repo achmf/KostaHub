@@ -7,121 +7,219 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum Role {
+  SUPER_ADMIN
+  OWNER
+  PETUGAS
+  DOKTER
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum FarmStatus {
+  AKTIF
+  NONAKTIF
+  DELETED
+}
+
+enum Kelamin {
+  JANTAN
+  BETINA
+}
+
+enum KategoriHewan {
+  INDUKAN
+  PEJANTAN
+  ANAKAN
+  DARA
+  JANTAN_MUDA
+}
+
+enum StatusHewan {
+  AKTIF
+  MATI
+  TERJUAL
+}
+
+enum KategoriMedis {
+  VAKSINASI
+  PENGOBATAN
+  PENGOBATAN_INFEKSI
+  PENGOBATAN_PARASIT
+  PEMERIKSAAN
+  PEMERIKSAAN_RUTIN
+  PERAWATAN_LUKA
+  VITAMIN
+  PARTUS
+  POTONG_KUKU
+  LAINNYA
+}
+
+enum StatusMedis {
+  SEMBUH
+  RAWAT
+  PANTAU
+}
+
+enum StatusReproduksi {
+  HAMIL
+  LAHIR
+  GAGAL
+}
+
+enum TipeNotifikasi {
+  VAKSIN
+  LAHIR
+  BERAT
+  CUSTOM
+}
+
 model User {
-  id             String   @id @default(uuid())
-  name           String
-  email          String   @unique
-  password       String
-  role           String   // "SUPER_ADMIN", "OWNER", "PETUGAS", "DOKTER"
-  phone          String?
-  approvalStatus String   @default("APPROVED") // "PENDING", "APPROVED", "REJECTED"
-  farmId         String?  // null = Super Admin (akses semua farm)
-  farm           Farm?    @relation(fields: [farmId], references: [id])
-  deletedAt      DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id              String         @id @default(uuid())
+  name            String
+  email           String         @unique
+  password        String
+  role            Role
+  phone           String?
+  approvalStatus  ApprovalStatus @default(APPROVED)
+  rejectionReason String?        // alasan penolakan dari admin
+  deletedAt       DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  farms                UserFarm[]   // semua role bisa punya banyak farm
+  rekamMedisDitangani  RekamMedis[] @relation("DokterPemeriksa")
 
   @@index([approvalStatus])
 }
 
 model Farm {
-  id          String   @id @default(uuid())
-  nama        String
-  alamat      String?
-  lat         Float?
-  lng         Float?
-  geojson     String?  // JSON polygon kandang (GeoJSON string)
-  deskripsi   String?
-  sertifikatUrl String? // foto sertifikat farm (opsional)
-  status      String   @default("AKTIF") // "AKTIF", "NONAKTIF", "DELETED"
-  deletedAt   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String     @id @default(uuid())
+  nama            String
+  alamat          String?
+  lat             Float?
+  lng             Float?
+  geojson         String? // JSON polygon kandang (GeoJSON string)
+  deskripsi       String?
+  sertifikatUrl   String? // foto sertifikat farm (opsional)
+  status          FarmStatus @default(NONAKTIF) // NONAKTIF sampai diapprove admin
+  rejectionReason String?    // alasan penolakan dari Super Admin
+  deletedAt       DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
-  @@index([status])
-
-  users       User[]
-  hewan       Hewan[]
+  members        UserFarm[]      // semua user yang terhubung ke farm ini
+  hewan          Hewan[]
   transferMasuk  TransferHewan[] @relation("FarmTujuan")
   transferKeluar TransferHewan[] @relation("FarmAsal")
+  notifikasi     Notifikasi[]
+
+  @@index([status])
+}
+
+// Junction table: relasi many-to-many User ↔ Farm (untuk semua role)
+model UserFarm {
+  userId     String
+  farmId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  farm       Farm     @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  assignedAt DateTime @default(now())
+
+  @@id([userId, farmId])
 }
 
 model Hewan {
-  id           String   @id @default(uuid())
+  id           String        @id @default(uuid())
   tag          String
   nama         String?
-  kelamin      String   // "JANTAN", "BETINA"
+  kelamin      Kelamin
   tanggalLahir DateTime
   berat        Float?
-  kategori     String   // "INDUKAN", "PEJANTAN", "ANAKAN", "DARA", "JANTAN_MUDA"
-  status       String   @default("AKTIF") // "AKTIF", "MATI", "TERJUAL"
+  kategori     KategoriHewan
+  status       StatusHewan   @default(AKTIF)
   fotoUrl      String?
   farmId       String
-  farm         Farm     @relation(fields: [farmId], references: [id])
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  farm         Farm          @relation(fields: [farmId], references: [id])
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   // Silsilah (self-referencing)
-  bapakId      String?
-  bapak        Hewan?   @relation("HewanBapak", fields: [bapakId], references: [id])
-  indukId      String?
-  induk        Hewan?   @relation("HewanInduk", fields: [indukId], references: [id])
-  anakSebagaiBapak   Hewan[]  @relation("HewanBapak")
-  anakSebagaiInduk   Hewan[]  @relation("HewanInduk")
+  bapakId          String?
+  bapak            Hewan?  @relation("HewanBapak", fields: [bapakId], references: [id])
+  indukId          String?
+  induk            Hewan?  @relation("HewanInduk", fields: [indukId], references: [id])
+  anakSebagaiBapak Hewan[] @relation("HewanBapak")
+  anakSebagaiInduk Hewan[] @relation("HewanInduk")
 
-  rekamMedis          RekamMedis[]
-  reproduksiInduk     Reproduksi[] @relation("Induk")
-  reproduksiPejantan  Reproduksi[] @relation("Pejantan")
-  transferHistory     TransferHewan[]
-  beratHistory        BeratBadan[]
+  rekamMedis         RekamMedis[]
+  reproduksiInduk    Reproduksi[]    @relation("Induk")
+  reproduksiPejantan Reproduksi[]    @relation("Pejantan")
+  reproduksiAnak     Reproduksi[]    @relation("AnakReproduksi")
+  transferHistory    TransferHewan[]
+  beratHistory       BeratBadan[]
 
   // Tag unik hanya dalam satu farm yang sama
   @@unique([tag, farmId])
+  @@index([tanggalLahir])
 }
 
 model RekamMedis {
-  id            String    @id @default(uuid())
+  id            String        @id @default(uuid())
   hewanId       String
-  hewan         Hewan     @relation(fields: [hewanId], references: [id])
+  hewan         Hewan         @relation(fields: [hewanId], references: [id])
   tanggal       DateTime
-  kategori      String    @default("LAINNYA") // "VAKSINASI", "PENGOBATAN", "PEMERIKSAAN", "PERAWATAN_LUKA", "VITAMIN", "LAINNYA"
+  kategori      KategoriMedis @default(LAINNYA)
   diagnosis     String
   obat          String?
-  dokter        String?
+  dokterId      String? // Untuk dokter internal (user sistem)
+  dokter        User?         @relation("DokterPemeriksa", fields: [dokterId], references: [id])
+  namaDokter    String? // Untuk dokter eksternal (tidak punya akun)
   notes         String?
   fotoUrl       String?
-  status        String    @default("SEMBUH") // "SEMBUH", "RAWAT", "PANTAU"
+  status        StatusMedis   @default(SEMBUH)
   tanggalLanjut DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([tanggal])
 }
 
 model Reproduksi {
-  id                String   @id @default(uuid())
+  id                String           @id @default(uuid())
   indukId           String
-  induk             Hewan    @relation("Induk", fields: [indukId], references: [id])
+  induk             Hewan            @relation("Induk", fields: [indukId], references: [id])
   pejantanId        String
-  pejantan          Hewan    @relation("Pejantan", fields: [pejantanId], references: [id])
+  pejantan          Hewan            @relation("Pejantan", fields: [pejantanId], references: [id])
   tanggalKawin      DateTime
   estimasiLahir     DateTime
-  status            String   @default("HAMIL") // "HAMIL", "LAHIR", "GAGAL"
-  anakTag           String?
-  inbreedingWarning Boolean  @default(false) // audit trail: true jika override peringatan kawin sedarah
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  status            StatusReproduksi @default(HAMIL)
+  anakTag           String? // Referensi text
+  anakId            String? // Relasi jika anak diregistrasi di sistem
+  anak              Hewan?           @relation("AnakReproduksi", fields: [anakId], references: [id])
+  inbreedingWarning Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([tanggalKawin])
 }
 
 model TransferHewan {
-  id          String   @id @default(uuid())
-  hewanId     String
-  hewan       Hewan    @relation(fields: [hewanId], references: [id])
-  fromFarmId  String
-  fromFarm    Farm     @relation("FarmAsal", fields: [fromFarmId], references: [id])
-  toFarmId    String
-  toFarm      Farm     @relation("FarmTujuan", fields: [toFarmId], references: [id])
-  tanggal     DateTime @default(now())
-  alasan      String?
-  createdAt   DateTime @default(now())
+  id         String   @id @default(uuid())
+  hewanId    String
+  hewan      Hewan    @relation(fields: [hewanId], references: [id])
+  fromFarmId String
+  fromFarm   Farm     @relation("FarmAsal", fields: [fromFarmId], references: [id])
+  toFarmId   String
+  toFarm     Farm     @relation("FarmTujuan", fields: [toFarmId], references: [id])
+  tanggal    DateTime @default(now())
+  alasan     String?
+  createdAt  DateTime @default(now())
+
+  @@index([tanggal])
 }
 
 model BeratBadan {
@@ -132,16 +230,22 @@ model BeratBadan {
   berat     Float
   catatan   String?
   createdAt DateTime @default(now())
+
+  @@index([tanggal])
 }
 
 model Notifikasi {
-  id        String   @id @default(uuid())
+  id        String         @id @default(uuid())
   title     String
   message   String
   tanggal   DateTime
-  isRead    Boolean  @default(false)
-  type      String   // "VAKSIN", "LAHIR", "BERAT", "CUSTOM"
+  isRead    Boolean        @default(false)
+  type      TipeNotifikasi
   farmId    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  farm      Farm?          @relation(fields: [farmId], references: [id])
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([tanggal])
+  @@index([isRead])
 }

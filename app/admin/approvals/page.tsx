@@ -1,12 +1,46 @@
 import { prisma } from '@/lib/prisma'
 import ApprovalList from '@/components/Admin/ApprovalList'
 import { CheckCircle2 } from 'lucide-react'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 export default async function ApprovalsPage() {
-  const pendingUsers = await prisma.user.findMany({
-    where: { approvalStatus: 'PENDING' },
-    include: { farm: true },
+  // Cari semua farm yang masih NONAKTIF (menunggu approval)
+  const pendingFarms = await prisma.farm.findMany({
+    where: { status: 'NONAKTIF', deletedAt: null, rejectionReason: null },
+    include: {
+      members: {
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, phone: true, createdAt: true },
+          },
+        },
+        where: { user: { role: 'OWNER', deletedAt: null } },
+        take: 1,
+      },
+    },
     orderBy: { createdAt: 'desc' },
+  })
+
+  // Reshape ke format yang ApprovalList harapkan
+  const pendingItems = pendingFarms.map((farm) => {
+    const ownerMember = farm.members[0]
+    return {
+      // "user" disini adalah identitas owner yang akan ditampilkan di card
+      id: farm.id, // ← pakai farmId bukan userId (untuk approve/reject farmId)
+      name: ownerMember?.user?.name ?? '(Owner tidak diketahui)',
+      email: ownerMember?.user?.email ?? '',
+      phone: ownerMember?.user?.phone ?? null,
+      createdAt: farm.createdAt,
+      farm: {
+        id: farm.id,
+        nama: farm.nama,
+        alamat: farm.alamat ?? null,
+        lat: farm.lat ?? null,
+        lng: farm.lng ?? null,
+        deskripsi: farm.deskripsi ?? null,
+        sertifikatUrl: farm.sertifikatUrl ?? null,
+      },
+    }
   })
 
   return (
@@ -31,31 +65,26 @@ export default async function ApprovalsPage() {
             letterSpacing: '-0.025em',
           }}
         >
-          Persetujuan Pendaftaran
+          Persetujuan Pendaftaran Farm
         </h1>
         <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, color: 'rgba(13,20,15,0.6)', marginTop: 4 }}>
-          Review dan verifikasi pendaftaran owner farm baru.
+          Review dan verifikasi farm baru yang menunggu aktivasi.
         </p>
       </div>
 
-      {pendingUsers.length === 0 ? (
+      {pendingItems.length === 0 ? (
         <div
-          className="flex flex-col items-center justify-center py-20 rounded-2xl"
-          style={{
-            background: '#fff',
-            border: '1px solid rgba(13,20,15,0.08)',
-          }}
+          className="rounded-2xl"
+          style={{ background: '#fff', border: '1px solid rgba(13,20,15,0.08)' }}
         >
-          <div className="flex items-center justify-center mb-3" style={{ color: '#3F5B3A' }}>
-            <CheckCircle2 size={48} strokeWidth={1.5} />
-          </div>
-          <div style={{ fontFamily: "'Fraunces',serif", fontSize: 18 }}>Tidak ada pendaftaran baru</div>
-          <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.5)', marginTop: 4 }}>
-            Semua pendaftaran sudah diproses.
-          </div>
+          <EmptyState
+            icon={CheckCircle2}
+            title="Tidak ada farm yang menunggu"
+            description="Semua pendaftaran farm sudah diproses."
+          />
         </div>
       ) : (
-        <ApprovalList users={pendingUsers} />
+        <ApprovalList users={pendingItems} />
       )}
     </div>
   )

@@ -11,7 +11,7 @@ export default async function FarmPage() {
   const farms = await prisma.farm.findMany({
     orderBy: { createdAt: 'desc' },
     include: {
-      _count: { select: { hewan: true, users: true } }
+      _count: { select: { hewan: true, members: true } }
     }
   })
 

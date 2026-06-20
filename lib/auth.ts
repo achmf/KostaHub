@@ -9,7 +9,7 @@ export type SessionPayload = {
   name: string
   email: string
   role: string
-  farmId: string | null
+  activeFarmId: string | null // farm yang sedang aktif dipilih user
 }
 
 export async function encrypt(payload: SessionPayload) {

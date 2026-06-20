@@ -15,15 +15,28 @@ const palette = {
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
   if (!session) redirect('/login')
+  if (session.role === 'SUPER_ADMIN') redirect('/admin')
+
+  // Jika Owner/Staff belum memilih farm → redirect ke farm picker
+  if (!session.activeFarmId) {
+    redirect('/farms')
+  }
 
   let farmName: string | undefined
   let allFarms: { id: string; nama: string }[] = []
 
+  // Ambil nama farm yang sedang aktif
+  if (session.activeFarmId) {
+    const farm = await prisma.farm.findUnique({
+      where: { id: session.activeFarmId },
+      select: { nama: true },
+    })
+    farmName = farm?.nama
+  }
+
+  // Super Admin bisa lihat semua farm (tidak akan masuk ke sini, tapi untuk safety)
   if (session.role === 'SUPER_ADMIN') {
     allFarms = await prisma.farm.findMany({ select: { id: true, nama: true } })
-  } else if (session.farmId) {
-    const farm = await prisma.farm.findUnique({ where: { id: session.farmId }, select: { nama: true } })
-    farmName = farm?.nama
   }
 
   return (
@@ -33,6 +46,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         name={session.name}
         email={session.email ?? ''}
         farmName={farmName}
+        userId={session.id}
       />
 
       {/* Main area */}
@@ -52,18 +66,34 @@ export default async function DashboardLayout({ children }: { children: React.Re
               <GoatMark className="w-6 h-6" />
               <span style={{ fontFamily: "'Fraunces',serif", fontWeight: 600 }}>KostaHub</span>
             </div>
-            {/* Desktop breadcrumb */}
-            <span
-              className="hidden lg:block"
-              style={{
-                fontFamily: "'JetBrains Mono',monospace",
-                fontSize: 11,
-                letterSpacing: '0.15em',
-                color: 'rgba(13,20,15,0.5)',
-              }}
-            >
-              KOSTAHUB
-            </span>
+            {/* Desktop farm name */}
+            <div className="hidden lg:flex items-center gap-2">
+              <span
+                style={{
+                  fontFamily: "'JetBrains Mono',monospace",
+                  fontSize: 11,
+                  letterSpacing: '0.15em',
+                  color: 'rgba(13,20,15,0.5)',
+                }}
+              >
+                KOSTAHUB
+              </span>
+              {farmName && (
+                <>
+                  <span style={{ color: 'rgba(13,20,15,0.3)', fontSize: 12 }}>/</span>
+                  <span
+                    style={{
+                      fontFamily: "'Inter',sans-serif",
+                      fontSize: 12,
+                      fontWeight: 500,
+                      color: '#C7873E',
+                    }}
+                  >
+                    {farmName}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-2 md:gap-3">
@@ -83,7 +113,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
               />
             </div>
 
-            {/* Farm selector — super admin only */}
+            {/* Farm selector — super admin only (fallback, karena SUPER_ADMIN diredirect ke /admin) */}
             {session.role === 'SUPER_ADMIN' && <FarmSelector farms={allFarms} />}
 
             {/* User chip */}

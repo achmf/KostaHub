@@ -71,6 +71,26 @@
   box-sizing: border-box;
 }
 
+/* ─── Interactive Elements — Global Cursor Fix ───────────── */
+/* Browser default for <button> is cursor:default — always override */
+button,
+[role="button"],
+a,
+label[for],
+select,
+[type="submit"],
+[type="button"],
+[type="reset"] {
+  cursor: pointer;
+}
+
+button:disabled,
+[type="submit"]:disabled,
+[type="button"]:disabled,
+[type="reset"]:disabled {
+  cursor: not-allowed;
+}
+
 html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
@@ -175,4 +195,45 @@ body {
   html {
     @apply font-sans;
   }
+}
+
+/* ─── Leaflet Popup — KostaHub Design ──────────── */
+.leaflet-popup-content-wrapper {
+  border-radius: 16px !important;
+  border: 1px solid rgba(13,20,15,0.10) !important;
+  box-shadow: 0 8px 32px rgba(13,20,15,0.12) !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.leaflet-popup-content {
+  margin: 16px !important;
+  width: auto !important;
+}
+
+.leaflet-popup-tip-container {
+  display: none !important;
+}
+
+.leaflet-popup-close-button {
+  top: 10px !important;
+  right: 10px !important;
+  color: rgba(13,20,15,0.4) !important;
+  font-size: 18px !important;
+  width: 24px !important;
+  height: 24px !important;
+  line-height: 24px !important;
+  text-align: center !important;
+}
+
+.leaflet-popup-close-button:hover {
+  color: rgba(13,20,15,0.8) !important;
+}
+
+/* ─── Leaflet Attribution ────────────────────── */
+.leaflet-control-attribution {
+  font-size: 10px !important;
+  background: rgba(242,237,224,0.85) !important;
+  backdrop-filter: blur(4px) !important;
+  border-radius: 8px 0 0 0 !important;
 }

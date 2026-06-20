@@ -7,7 +7,7 @@ export default async function TambahHewanPage() {
   const session = await getSession()
   if (!session) redirect('/login')
 
-  const farmFilter = session.role === 'SUPER_ADMIN' ? {} : { farmId: session.farmId as string }
+  const farmFilter = session.role === 'SUPER_ADMIN' ? {} : { farmId: session.activeFarmId as string }
 
   const [farms, semuaHewan] = await Promise.all([
     session.role === 'SUPER_ADMIN'
@@ -24,7 +24,7 @@ export default async function TambahHewanPage() {
     <TambahHewanForm
       isSuperAdmin={session.role === 'SUPER_ADMIN'}
       farms={farms}
-      defaultFarmId={session.farmId as string | null}
+      defaultFarmId={session.activeFarmId as string | null}
       semuaHewan={semuaHewan}
     />
   )

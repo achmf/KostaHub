@@ -233,7 +233,7 @@ export function HewanClient({
                 >
                   <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: `1px solid ${palette.border}` }}>
                     <h3 style={{ fontFamily: "'Fraunces',serif", fontSize: 20, color: palette.ink }}>Filter Hewan</h3>
-                    <button onClick={() => setIsFilterOpen(false)} className="p-2 rounded-full hover:bg-[rgba(13,20,15,0.05)]">
+                    <button onClick={() => setIsFilterOpen(false)} className="cursor-pointer p-2 rounded-full hover:bg-[rgba(13,20,15,0.05)]">
                       <X size={16} />
                     </button>
                   </div>
@@ -247,7 +247,7 @@ export function HewanClient({
                           <button
                             key={c}
                             onClick={() => setKat(c)}
-                            className="px-4 py-2 rounded-full border transition-colors"
+                            className="cursor-pointer px-4 py-2 rounded-full border transition-colors"
                             style={{
                               fontFamily: "'Inter',sans-serif", fontSize: 12,
                               background: kat === c ? palette.ink : 'transparent',
@@ -269,7 +269,7 @@ export function HewanClient({
                           <button
                             key={s}
                             onClick={() => setStatusFilter(s)}
-                            className="px-4 py-2 rounded-full border transition-colors"
+                            className="cursor-pointer px-4 py-2 rounded-full border transition-colors"
                             style={{
                               fontFamily: "'Inter',sans-serif", fontSize: 12,
                               background: statusFilter === s ? palette.ink : 'transparent',
@@ -291,7 +291,7 @@ export function HewanClient({
                           <button
                             key={k}
                             onClick={() => setKelaminFilter(k)}
-                            className="px-4 py-2 rounded-full border transition-colors"
+                            className="cursor-pointer px-4 py-2 rounded-full border transition-colors"
                             style={{
                               fontFamily: "'Inter',sans-serif", fontSize: 12,
                               background: kelaminFilter === k ? palette.ink : 'transparent',
@@ -312,7 +312,7 @@ export function HewanClient({
                         <div className="flex flex-wrap gap-2">
                           <button
                             onClick={() => setFarmFilter('ALL')}
-                            className="px-4 py-2 rounded-full border transition-colors"
+                            className="cursor-pointer px-4 py-2 rounded-full border transition-colors"
                             style={{
                               fontFamily: "'Inter',sans-serif", fontSize: 12,
                               background: farmFilter === 'ALL' ? palette.ink : 'transparent',
@@ -326,7 +326,7 @@ export function HewanClient({
                             <button
                               key={f.id}
                               onClick={() => setFarmFilter(f.id)}
-                              className="px-4 py-2 rounded-full border transition-colors"
+                              className="cursor-pointer px-4 py-2 rounded-full border transition-colors"
                               style={{
                                 fontFamily: "'Inter',sans-serif", fontSize: 12,
                                 background: farmFilter === f.id ? palette.ink : 'transparent',

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { KostaCard, KostaSectionLabel, Badge, KostaDialog, KostaButton } from '@/components/KostaUI'
 import { Activity, Calendar, User, Pill, FileText, ImageIcon } from 'lucide-react'
+import { EmptyState } from '@/components/ui/EmptyState'
 import Image from 'next/image'
 
 const palette = {
@@ -20,7 +21,7 @@ interface RekamMedis {
   tanggal: Date
   diagnosis: string
   obat: string | null
-  dokter: string | null
+  namaDokter: string | null
   notes: string | null
   fotoUrl: string | null
   status: string
@@ -30,7 +31,17 @@ interface RekamMedis {
 export function RekamMedisHistory({ records }: { records: RekamMedis[] }) {
   const [selectedRecord, setSelectedRecord] = useState<RekamMedis | null>(null)
 
-  if (records.length === 0) return null
+  if (records.length === 0) {
+    return (
+      <KostaCard className="p-6">
+        <EmptyState
+          icon={Activity}
+          title="Belum ada riwayat medis"
+          description="Tambahkan catatan medis pertama untuk hewan ini."
+        />
+      </KostaCard>
+    )
+  }
 
   return (
     <>
@@ -54,7 +65,7 @@ export function RekamMedisHistory({ records }: { records: RekamMedis[] }) {
                 <div className="opacity-55 mt-0.5 flex items-center gap-2 flex-wrap" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>
                   <span>{new Date(m.tanggal).toLocaleDateString('id-ID')}</span>
                   <span>·</span>
-                  <span>{m.dokter ?? 'Tanpa dokter'}</span>
+                  <span>{m.namaDokter ?? 'Tanpa dokter'}</span>
                 </div>
               </div>
               <div className="flex flex-col items-end gap-1.5 shrink-0">
@@ -102,7 +113,7 @@ export function RekamMedisHistory({ records }: { records: RekamMedis[] }) {
                   <User size={12} /> DOKTER
                 </div>
                 <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14 }}>
-                  {selectedRecord.dokter || 'Tidak ditentukan'}
+                  {selectedRecord.namaDokter || 'Tidak ditentukan'}
                 </div>
               </div>
               <div className="p-4 rounded-xl" style={{ background: 'rgba(13,20,15,0.03)' }}>

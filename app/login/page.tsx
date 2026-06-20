@@ -1,6 +1,7 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { login } from '@/actions/auth'
 import { motion } from 'framer-motion'
 import { ArrowUpRight } from 'lucide-react'
@@ -16,9 +17,15 @@ const palette = {
 }
 
 export default function LoginPage() {
-  const [state, formAction, isPending] = useActionState(async (prevState: unknown, formData: FormData) => {
-    return await login(formData)
-  }, null)
+  const router = useRouter()
+  const [state, formAction, isPending] = useActionState(login, null)
+
+  // Handle server-side redirect signal (PENDING/REJECTED accounts)
+  useEffect(() => {
+    if (state && 'redirectTo' in state && state.redirectTo) {
+      router.push(state.redirectTo as string)
+    }
+  }, [state, router])
 
   return (
     <div
@@ -215,7 +222,7 @@ export default function LoginPage() {
                 cursor: isPending ? 'not-allowed' : 'pointer',
               }}
             >
-              {isPending ? 'Memproses…' : 'Masuk ke Dasbor'}
+              {isPending ? 'Memproses…' : 'Masuk'}
               {!isPending && (
                 <span
                   className="w-7 h-7 rounded-full flex items-center justify-center transition-transform group-hover:rotate-45"

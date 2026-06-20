@@ -16,7 +16,7 @@ interface Farm {
   deskripsi: string | null
   status: string
   createdAt: Date
-  _count: { hewan: number; users: number }
+  _count: { hewan: number; members: number }
 }
 
 export default function FarmPageClient({ farms: initialFarms }: { farms: Farm[] }) {
@@ -144,7 +144,7 @@ export default function FarmPageClient({ farms: initialFarms }: { farms: Farm[] 
                       color: accent ? palette.ochreSoft : palette.ochre,
                     }}
                   >
-                    {farm._count.users}
+                    {farm._count.members}
                   </div>
                   <div className="opacity-60" style={{ fontFamily: "'Inter',sans-serif", fontSize: 11 }}>Pengguna</div>
                 </div>
@@ -189,7 +189,7 @@ export default function FarmPageClient({ farms: initialFarms }: { farms: Farm[] 
                     className="flex items-center gap-1 opacity-60"
                     style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5 }}
                   >
-                    <Users size={11} /> {farm._count.users} pengguna
+                    <Users size={11} /> {farm._count.members} pengguna
                   </span>
                 </div>
                 <motion.div

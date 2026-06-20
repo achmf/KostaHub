@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Kelamin, KategoriHewan, StatusHewan } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
@@ -6,7 +6,8 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('🌱 Memulai proses seeding database...')
 
-  // Hapus data lama untuk mencegah duplikasi (Optional, tapi disarankan untuk dummy data fresh)
+  // Hapus data lama untuk mencegah duplikasi
+  await prisma.userFarm.deleteMany()
   await prisma.rekamMedis.deleteMany()
   await prisma.beratBadan.deleteMany()
   await prisma.hewan.deleteMany()
@@ -15,18 +16,17 @@ async function main() {
 
   const defaultPassword = await bcrypt.hash('password123', 10)
 
-  // 1. Create Super Admin
+  // 1. Create Super Admin (tanpa farm)
   await prisma.user.create({
     data: {
       name: 'Super Admin KostaHub',
       email: 'admin@kostahub.com',
       password: defaultPassword,
       role: 'SUPER_ADMIN',
-      farmId: null,
     }
   })
 
-  // 2. Create 5 Farms & 5 Owners
+  // 2. Create 5 Farms & 5 Owners (via UserFarm junction)
   const farmsData = [
     { nama: 'Farm Alpha', alamat: 'Jl. Pegunungan No. 1, Lembang', lat: -6.8175, lng: 107.6191 },
     { nama: 'Farm Beta', alamat: 'Jl. Raya Ciwidey No. 42, Bandung', lat: -7.0833, lng: 107.4500 },
@@ -51,14 +51,19 @@ async function main() {
     })
 
     // Create Owner for this Farm
-    await prisma.user.create({
+    const owner = await prisma.user.create({
       data: {
         name: `Owner Farm ${farmIdx}`,
         email: `owner${farmIdx}@kostahub.com`,
         password: defaultPassword,
         role: 'OWNER',
-        farmId: farm.id,
+        approvalStatus: 'APPROVED',
       }
+    })
+
+    // Hubungkan Owner ke Farm via UserFarm
+    await prisma.userFarm.create({
+      data: { userId: owner.id, farmId: farm.id }
     })
 
     // Create varied Hewan for this Farm
@@ -81,11 +86,11 @@ async function main() {
         data: {
           tag: `KST-${farmIdx}00${j + 1}`,
           nama: variasi.nama,
-          kelamin: variasi.kelamin,
+          kelamin: variasi.kelamin as Kelamin,
           tanggalLahir: tanggalLahir,
           berat: variasi.berat,
-          kategori: variasi.kategori,
-          status: variasi.status,
+          kategori: variasi.kategori as KategoriHewan,
+          status: variasi.status as StatusHewan,
           fotoUrl: variasi.fotoUrl,
           farmId: farm.id,
         }
@@ -108,7 +113,7 @@ async function main() {
             tanggal: new Date(),
             diagnosis: 'Sehat, pemberian vitamin rutin',
             obat: 'Vitamin B Kompleks',
-            dokter: 'Drh. Setiawan',
+            namaDokter: 'Drh. Setiawan',
             notes: 'Kondisi sangat prima',
           }
         })
@@ -125,7 +130,6 @@ async function main() {
       const g2M = await prisma.hewan.create({ data: { tag: 'KST-1-G2M', nama: 'Kakek Surya', kelamin: 'JANTAN', tanggalLahir: new Date('2020-08-20'), berat: 65, kategori: 'PEJANTAN', farmId: farm.id, bapakId: g1M.id, indukId: g1F.id } })
       const g2F = await prisma.hewan.create({ data: { tag: 'KST-1-G2F', nama: 'Nenek Bulan', kelamin: 'BETINA', tanggalLahir: new Date('2020-09-05'), berat: 42, kategori: 'INDUKAN', farmId: farm.id, bapakId: g1M.id, indukId: g1F.id } })
 
-      // Outcross (Kambing dari luar)
       const g2M_Out = await prisma.hewan.create({ data: { tag: 'KST-1-G2MO', nama: 'Pejantan Pendatang', kelamin: 'JANTAN', tanggalLahir: new Date('2020-01-01'), berat: 68, kategori: 'PEJANTAN', farmId: farm.id } })
 
       const g3M = await prisma.hewan.create({ data: { tag: 'KST-1-G3M', nama: 'Bapak Bintang', kelamin: 'JANTAN', tanggalLahir: new Date('2022-03-12'), berat: 55, kategori: 'PEJANTAN', farmId: farm.id, bapakId: g2M_Out.id, indukId: g2F.id } })

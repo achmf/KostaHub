@@ -5,6 +5,14 @@ import { useActionState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { KostaButton, KostaSectionLabel } from '@/components/KostaUI'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { DatePickerField } from '@/components/ui/DatePickerField'
 
 const palette = {
   cream: '#F2EDE0',
@@ -34,6 +42,8 @@ const labelStyle: React.CSSProperties = {
   display: 'block',
   marginBottom: 8,
 }
+
+const triggerCls = 'h-11 w-full rounded-xl bg-white/60 border-border/60 hover:bg-white focus:bg-white transition-all shadow-sm'
 
 interface Props {
   isSuperAdmin: boolean
@@ -89,12 +99,16 @@ export default function TambahHewanForm({ isSuperAdmin, farms, semuaHewan = [] }
           {isSuperAdmin && (
             <div>
               <label style={labelStyle}>FARM *</label>
-              <select name="farmId" required style={inputStyle}>
-                <option value="">— Pilih Farm —</option>
-                {farms.map((f) => (
-                  <option key={f.id} value={f.id}>{f.nama}</option>
-                ))}
-              </select>
+              <Select name="farmId" required>
+                <SelectTrigger className={triggerCls}>
+                  <SelectValue placeholder="— Pilih Farm —" />
+                </SelectTrigger>
+                <SelectContent>
+                  {farms.map((f) => (
+                    <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
 
@@ -112,34 +126,48 @@ export default function TambahHewanForm({ isSuperAdmin, farms, semuaHewan = [] }
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label style={labelStyle}>JENIS KELAMIN *</label>
-              <select required name="kelamin" style={inputStyle}>
-                <option value="JANTAN">♂ Jantan</option>
-                <option value="BETINA">♀ Betina</option>
-              </select>
+              <Select name="kelamin" required>
+                <SelectTrigger className={triggerCls}>
+                  <SelectValue placeholder="— Pilih Kelamin —" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="JANTAN">♂ Jantan</SelectItem>
+                  <SelectItem value="BETINA">♀ Betina</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label style={labelStyle}>KATEGORI *</label>
-              <select required name="kategori" style={inputStyle}>
-                <option value="ANAKAN">Anakan</option>
-                <option value="DARA">Dara</option>
-                <option value="JANTAN_MUDA">Jantan Muda</option>
-                <option value="INDUKAN">Indukan</option>
-                <option value="PEJANTAN">Pejantan</option>
-              </select>
+              <Select name="kategori" required>
+                <SelectTrigger className={triggerCls}>
+                  <SelectValue placeholder="— Pilih Kategori —" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ANAKAN">Anakan</SelectItem>
+                  <SelectItem value="DARA">Dara</SelectItem>
+                  <SelectItem value="JANTAN_MUDA">Jantan Muda</SelectItem>
+                  <SelectItem value="INDUKAN">Indukan</SelectItem>
+                  <SelectItem value="PEJANTAN">Pejantan</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label style={labelStyle}>TANGGAL LAHIR *</label>
-              <input required name="tanggalLahir" type="date" style={inputStyle} />
+              <DatePickerField
+                name="tanggalLahir"
+                required
+                disableFuture
+                placeholder="Pilih tanggal lahir"
+              />
             </div>
             <div>
               <label style={labelStyle}>BERAT BADAN (KG)</label>
               <input name="berat" type="number" step="0.1" min="0" placeholder="0.0" style={inputStyle} />
             </div>
           </div>
-
 
           {/* ASAL USUL / Silsilah */}
           {semuaHewan.length > 0 && (
@@ -153,25 +181,33 @@ export default function TambahHewanForm({ isSuperAdmin, farms, semuaHewan = [] }
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label style={labelStyle}>JANTAN ♂</label>
-                  <select name="bapakId" style={inputStyle}>
-                    <option value="">— Tidak diketahui —</option>
-                    {semuaHewan.filter((h) => h.kelamin === 'JANTAN').map((h) => (
-                      <option key={h.id} value={h.id}>
-                        {h.tag}{h.nama ? ` — ${h.nama}` : ''}
-                      </option>
-                    ))}
-                  </select>
+                  <Select name="bapakId">
+                    <SelectTrigger className={triggerCls}>
+                      <SelectValue placeholder="— Tidak diketahui —" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {semuaHewan.filter((h) => h.kelamin === 'JANTAN').map((h) => (
+                        <SelectItem key={h.id} value={h.id}>
+                          {h.tag}{h.nama ? ` — ${h.nama}` : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <label style={labelStyle}>INDUK ♀</label>
-                  <select name="indukId" style={inputStyle}>
-                    <option value="">— Tidak diketahui —</option>
-                    {semuaHewan.filter((h) => h.kelamin === 'BETINA').map((h) => (
-                      <option key={h.id} value={h.id}>
-                        {h.tag}{h.nama ? ` — ${h.nama}` : ''}
-                      </option>
-                    ))}
-                  </select>
+                  <Select name="indukId">
+                    <SelectTrigger className={triggerCls}>
+                      <SelectValue placeholder="— Tidak diketahui —" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {semuaHewan.filter((h) => h.kelamin === 'BETINA').map((h) => (
+                        <SelectItem key={h.id} value={h.id}>
+                          {h.tag}{h.nama ? ` — ${h.nama}` : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: 'rgba(13,20,15,0.45)', marginTop: -8 }}>

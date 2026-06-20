@@ -4,6 +4,7 @@ import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { KostaPageHeader, KostaCard, Badge, KostaButton, KostaSectionLabel } from '@/components/KostaUI'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 const palette = {
   moss: '#3F5B3A',
@@ -28,7 +29,7 @@ export default async function ReproduksiPage(props: {
   const session = await getSession()
   if (!session) redirect('/login')
 
-  let farmId = session.farmId as string | null
+  let farmId = session.activeFarmId as string | null
   if (session.role === 'SUPER_ADMIN' && searchParams.farmId) {
     farmId = searchParams.farmId
   }
@@ -114,12 +115,11 @@ export default async function ReproduksiPage(props: {
           <div>STATUS</div>
         </div>
         {reproduksiList.length === 0 && (
-          <div
-            className="py-16 text-center"
-            style={{ fontFamily: "'Fraunces',serif", fontSize: 22, fontStyle: 'italic', color: palette.moss }}
-          >
-            Belum ada data reproduksi.
-          </div>
+          <EmptyState
+            icon={Heart}
+            title="Belum ada data reproduksi"
+            description="Catat perkawinan untuk mulai melacak kehamilan dan kelahiran."
+          />
         )}
         {reproduksiList.map((r) => {
           const days = Math.ceil(

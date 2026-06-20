@@ -31,7 +31,7 @@ export default async function RekamMedisHewanPage(props: { params: Promise<{ id:
   })
 
   if (!hewan) notFound()
-  if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.farmId) redirect('/medis')
+  if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.activeFarmId) redirect('/medis')
 
   return (
     <div className="max-w-4xl mx-auto">

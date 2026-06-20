@@ -13,7 +13,7 @@ export async function tambahRekamMedis(formData: FormData) {
 
   const hewan = await prisma.hewan.findUnique({ where: { id: hewanId } })
   if (!hewan) return { error: 'Hewan tidak ditemukan' }
-  if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.farmId) {
+  if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.activeFarmId) {
     return { error: 'Akses ditolak' }
   }
   const tanggal = new Date(formData.get('tanggal') as string)
@@ -32,11 +32,11 @@ export async function tambahRekamMedis(formData: FormData) {
     data: {
       hewanId,
       tanggal,
-      kategori,
+      kategori: kategori as import('@prisma/client').KategoriMedis,
       diagnosis,
       obat,
       notes: notes || null,
-      dokter: dokter || null
+      namaDokter: dokter || null,
     }
   })
 

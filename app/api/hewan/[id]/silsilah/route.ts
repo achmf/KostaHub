@@ -15,7 +15,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!hewan) return NextResponse.json({ error: 'Hewan tidak ditemukan' }, { status: 404 })
 
     // Farm access control
-    if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.farmId) {
+    if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.activeFarmId) {
       return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 })
     }
 

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { Scale, Plus, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 import { KostaPageHeader, KostaCard, KostaButton, KostaSectionLabel, Badge, palette } from '@/components/KostaUI'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { LineChart, Line, ResponsiveContainer, Tooltip, XAxis } from 'recharts'
 
 type HewanBerat = {
@@ -153,9 +154,11 @@ export default function BeratPageClient({ hewanList }: { hewanList: HewanBerat[]
           <div className="text-right">AKSI</div>
         </div>
         {hewanList.length === 0 && (
-          <div className="py-16 text-center" style={{ fontFamily: "'Fraunces',serif", fontSize: 22, fontStyle: 'italic', color: palette.moss }}>
-            Belum ada hewan aktif.
-          </div>
+          <EmptyState
+            icon={Scale}
+            title="Belum ada hewan aktif"
+            description="Tambahkan hewan terlebih dahulu untuk mulai monitoring berat badan."
+          />
         )}
         {hewanList.slice(0, 20).map((h, i) => (
           <motion.div
