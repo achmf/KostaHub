@@ -168,7 +168,7 @@ export function KostaButton({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-full inline-flex items-center gap-2 transition-transform active:scale-[0.97] hover:-translate-y-px disabled:opacity-50 disabled:cursor-not-allowed ${sz} ${className}`}
+      className={`rounded-full inline-flex items-center gap-2 transition-transform active:scale-[0.97] hover:-translate-y-px cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${sz} ${className}`}
       style={{ fontFamily: "'Inter',sans-serif", ...styles[variant] }}
     >
       {children}
@@ -266,7 +266,7 @@ export function KostaDialog({
           <h2 style={{ fontFamily: "'Fraunces',serif", fontSize: 20, color: palette.ink }}>{title}</h2>
           <button 
             onClick={onClose} 
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="cursor-pointer text-gray-400 hover:text-gray-600 transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
           </button>

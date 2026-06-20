@@ -4,6 +4,8 @@ import { useState, useTransition } from 'react'
 import { createStaff, deleteStaff } from '@/actions/staff'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Trash2, User, Mail, Lock, Phone, X, Users } from 'lucide-react'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const palette = {
   cream: '#F2EDE0',
@@ -154,15 +156,15 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
                   <label className="flex items-center gap-1.5 mb-2" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, letterSpacing: '0.15em', color: 'rgba(13,20,15,0.55)' }}>
                     ROLE <span style={{ color: '#B5443B' }}>*</span>
                   </label>
-                  <select
-                    name="role"
-                    required
-                    className="w-full px-4 py-3 rounded-xl"
-                    style={{ background: 'rgba(13,20,15,0.03)', border: `1px solid ${palette.border}`, fontFamily: "'Inter',sans-serif", fontSize: 14, color: palette.ink, outline: 'none' }}
-                  >
-                    <option value="PETUGAS">Petugas</option>
-                    <option value="DOKTER">Dokter</option>
-                  </select>
+                  <Select name="role" required defaultValue="PETUGAS">
+                    <SelectTrigger className="h-11 w-full rounded-xl bg-white/60 border-border/60 hover:bg-white transition-all shadow-sm">
+                      <SelectValue placeholder="— Pilih Role —" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PETUGAS">Petugas</SelectItem>
+                      <SelectItem value="DOKTER">Dokter</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -199,16 +201,14 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
       {/* Staff list */}
       {staff.length === 0 ? (
         <div
-          className="flex flex-col items-center justify-center py-16 rounded-2xl"
+          className="rounded-2xl"
           style={{ background: '#fff', border: `1px solid ${palette.border}` }}
         >
-          <div className="flex justify-center mb-3" style={{ color: palette.ink, opacity: 0.3 }}>
-            <Users size={48} strokeWidth={1.5} />
-          </div>
-          <div style={{ fontFamily: "'Fraunces',serif", fontSize: 17 }}>Belum ada staff</div>
-          <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.5)', marginTop: 4 }}>
-            Tambahkan petugas atau dokter untuk membantu mengelola farm.
-          </div>
+          <EmptyState
+            icon={Users}
+            title="Belum ada staff"
+            description="Tambahkan petugas atau dokter untuk membantu mengelola farm."
+          />
         </div>
       ) : (
         <div className="space-y-3">

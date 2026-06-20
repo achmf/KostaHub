@@ -15,7 +15,7 @@ export async function addBeratBadan(formData: FormData) {
 
   const hewan = await prisma.hewan.findUnique({ where: { id: hewanId } })
   if (!hewan) return { error: 'Hewan tidak ditemukan' }
-  if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.farmId) {
+  if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.activeFarmId) {
     return { error: 'Akses ditolak' }
   }
 
@@ -45,7 +45,7 @@ export async function getBeratHistory(hewanId: string) {
 
   const hewan = await prisma.hewan.findUnique({ where: { id: hewanId } })
   if (!hewan) throw new Error('Hewan tidak ditemukan')
-  if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.farmId) {
+  if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.activeFarmId) {
     throw new Error('Akses ditolak')
   }
 

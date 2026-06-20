@@ -8,7 +8,7 @@ export default async function BeratPage(props: { searchParams: Promise<{ [key: s
   const session = await getSession()
   if (!session) redirect('/login')
 
-  let farmId = session.farmId as string | null
+  let farmId = session.activeFarmId as string | null
   if (session.role === 'SUPER_ADMIN' && searchParams.farmId) {
     farmId = searchParams.farmId
   }

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { type Kelamin, type KategoriHewan, type StatusHewan } from '@prisma/client'
 
 export async function tambahHewan(formData: FormData) {
   const session = await getSession()
@@ -18,10 +19,10 @@ export async function tambahHewan(formData: FormData) {
   const bapakId = (formData.get('bapakId') as string) || null
   const indukId = (formData.get('indukId') as string) || null
 
-  // Super admin must select farm; others use their farmId
+  // Super admin must select farm; others use their activeFarmId
   const farmId = session.role === 'SUPER_ADMIN'
     ? (formData.get('farmId') as string)
-    : (session.farmId as string)
+    : (session.activeFarmId as string)
 
   if (!farmId) return { error: 'Farm harus dipilih' }
 
@@ -33,8 +34,8 @@ export async function tambahHewan(formData: FormData) {
     data: {
       tag,
       nama: nama || null,
-      kelamin,
-      kategori,
+      kelamin: kelamin as Kelamin,
+      kategori: kategori as KategoriHewan,
       berat: isNaN(berat) ? null : berat,
       tanggalLahir,
       farmId,
@@ -52,7 +53,7 @@ export async function transferHewan(hewanId: string, toFarmId: string, alasan?: 
 
   const hewan = await prisma.hewan.findUnique({ where: { id: hewanId } })
   if (!hewan) return { error: 'Hewan tidak ditemukan' }
-  if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.farmId) {
+  if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.activeFarmId) {
     return { error: 'Akses ditolak' }
   }
   if (hewan.farmId === toFarmId) return { error: 'Hewan sudah berada di farm tersebut' }
@@ -103,7 +104,7 @@ export async function editHewan(hewanId: string, formData: FormData) {
   const existing = await prisma.hewan.findUnique({ where: { id: hewanId } })
   if (!existing) return { error: 'Hewan tidak ditemukan' }
   
-  if (session.role !== 'SUPER_ADMIN' && existing.farmId !== session.farmId) {
+  if (session.role !== 'SUPER_ADMIN' && existing.farmId !== session.activeFarmId) {
     return { error: 'Akses ditolak' }
   }
 
@@ -120,9 +121,9 @@ export async function editHewan(hewanId: string, formData: FormData) {
     data: {
       tag,
       nama: nama || null,
-      kelamin,
-      kategori,
-      status,
+      kelamin: kelamin as Kelamin,
+      kategori: kategori as KategoriHewan,
+      status: status as StatusHewan,
       tanggalLahir,
       bapakId: bapakId || null,
       indukId: indukId || null,
@@ -139,7 +140,7 @@ export async function updateFotoHewan(hewanId: string, fotoUrl: string) {
   const existing = await prisma.hewan.findUnique({ where: { id: hewanId } })
   if (!existing) return { error: 'Hewan tidak ditemukan' }
   
-  if (session.role !== 'SUPER_ADMIN' && existing.farmId !== session.farmId) {
+  if (session.role !== 'SUPER_ADMIN' && existing.farmId !== session.activeFarmId) {
     return { error: 'Akses ditolak' }
   }
 

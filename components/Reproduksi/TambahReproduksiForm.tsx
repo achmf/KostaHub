@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { ArrowLeft, AlertTriangle, ShieldAlert, CheckCircle2 } from 'lucide-react'
 import { useActionState, useState, useCallback, useRef } from 'react'
 import { KostaButton, KostaSectionLabel } from '@/components/KostaUI'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { DatePickerField } from '@/components/ui/DatePickerField'
 
 const palette = {
   cream: '#F2EDE0',
@@ -122,38 +124,50 @@ export function TambahReproduksiForm({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label style={labelStyle}>INDUK BETINA ♀ *</label>
-              <select
+              <Select
                 required
                 name="indukId"
-                style={inputStyle}
-                onChange={(e) => handleSelectionChange('induk', e.target.value)}
+                onValueChange={(val: string | null, _evt) => handleSelectionChange('induk', val ?? '')}
               >
-                <option value="">— Pilih Indukan —</option>
-                {indukan.map((h) => (
-                  <option key={h.id} value={h.id}>{h.tag}{h.nama ? ` — ${h.nama}` : ''}</option>
-                ))}
-              </select>
+                <SelectTrigger className="h-11 w-full rounded-xl bg-white/60 border-border/60 hover:bg-white focus:bg-white transition-all shadow-sm">
+                  <SelectValue placeholder="— Pilih Indukan —" />
+                </SelectTrigger>
+                <SelectContent>
+                  {indukan.map((h) => (
+                    <SelectItem key={h.id} value={h.id}>{h.tag}{h.nama ? ` — ${h.nama}` : ''}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label style={labelStyle}>PEJANTAN ♂ *</label>
-              <select
+              <Select
                 required
                 name="pejantanId"
-                style={inputStyle}
-                onChange={(e) => handleSelectionChange('pejantan', e.target.value)}
+                onValueChange={(val: string | null, _evt) => handleSelectionChange('pejantan', val ?? '')}
               >
-                <option value="">— Pilih Pejantan —</option>
-                {pejantan.map((h) => (
-                  <option key={h.id} value={h.id}>{h.tag}{h.nama ? ` — ${h.nama}` : ''}</option>
-                ))}
-              </select>
+                <SelectTrigger className="h-11 w-full rounded-xl bg-white/60 border-border/60 hover:bg-white focus:bg-white transition-all shadow-sm">
+                  <SelectValue placeholder="— Pilih Pejantan —" />
+                </SelectTrigger>
+                <SelectContent>
+                  {pejantan.map((h) => (
+                    <SelectItem key={h.id} value={h.id}>{h.tag}{h.nama ? ` — ${h.nama}` : ''}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           {/* Tanggal kawin */}
           <div>
             <label style={labelStyle}>TANGGAL KAWIN *</label>
-            <input required name="tanggalKawin" type="date" defaultValue={new Date().toISOString().split('T')[0]} style={inputStyle} />
+            <DatePickerField
+              name="tanggalKawin"
+              required
+              defaultValue={new Date().toISOString().split('T')[0]}
+              disableFuture
+              placeholder="Pilih tanggal kawin"
+            />
             <p className="mt-1 opacity-60" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>
               Estimasi lahir = tanggal kawin + 150 hari.
             </p>

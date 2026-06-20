@@ -20,7 +20,7 @@ export async function tambahReproduksi(formData: FormData): Promise<TambahReprod
 
   const induk = await prisma.hewan.findUnique({ where: { id: indukId } })
   if (!induk) return { error: 'Induk tidak ditemukan' }
-  if (session.role !== 'SUPER_ADMIN' && induk.farmId !== session.farmId) {
+  if (session.role !== 'SUPER_ADMIN' && induk.farmId !== session.activeFarmId) {
     return { error: 'Akses ditolak' }
   }
   const pejantanId = formData.get('pejantanId') as string

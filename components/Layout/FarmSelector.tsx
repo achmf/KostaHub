@@ -1,7 +1,13 @@
 'use client'
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { ChevronDown } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 interface FarmSelectorProps {
   farms: { id: string; nama: string }[]
@@ -13,49 +19,43 @@ export default function FarmSelector({ farms }: FarmSelectorProps) {
   const searchParams = useSearchParams()
   const currentFarm = searchParams.get('farmId') || 'all'
 
-  const handleValueChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value
+  const handleValueChange = (value: string | null) => {
+    const val = value ?? 'all'
     const params = new URLSearchParams(searchParams.toString())
-    if (value === 'all') {
+    if (val === 'all') {
       params.delete('farmId')
     } else {
-      params.set('farmId', value)
+      params.set('farmId', val)
     }
     router.push(`${pathname}?${params.toString()}`)
   }
 
   return (
-    <div className="relative flex items-center">
-      <span
-        className="absolute left-3 w-1.5 h-1.5 rounded-full pointer-events-none"
-        style={{ background: '#C7873E' }}
-      />
-      <select
-        value={currentFarm}
-        onChange={handleValueChange}
-        className="h-9 pl-7 pr-8 appearance-none rounded-full border"
+    <Select value={currentFarm} onValueChange={handleValueChange}>
+      <SelectTrigger
+        size="sm"
+        className="h-9 pl-6 rounded-full border-border/40 bg-white hover:bg-white shadow-none min-w-[130px]"
         style={{
-          borderColor: 'rgba(13,20,15,0.12)',
-          background: '#fff',
           fontFamily: "'Inter',sans-serif",
           fontSize: 13,
           color: '#0D140F',
-          outline: 'none',
-          cursor: 'pointer',
         }}
       >
-        <option value="all">Semua Farm</option>
+        {/* Ochre dot indicator */}
+        <span
+          className="absolute left-2.5 w-1.5 h-1.5 rounded-full pointer-events-none shrink-0"
+          style={{ background: '#C7873E' }}
+        />
+        <SelectValue placeholder="Semua Farm" />
+      </SelectTrigger>
+      <SelectContent align="end">
+        <SelectItem value="all">Semua Farm</SelectItem>
         {farms.map((farm) => (
-          <option key={farm.id} value={farm.id}>
+          <SelectItem key={farm.id} value={farm.id}>
             {farm.nama}
-          </option>
+          </SelectItem>
         ))}
-      </select>
-      <ChevronDown
-        size={14}
-        className="absolute right-2.5 pointer-events-none"
-        style={{ opacity: 0.5, color: '#0D140F' }}
-      />
-    </div>
+      </SelectContent>
+    </Select>
   )
 }

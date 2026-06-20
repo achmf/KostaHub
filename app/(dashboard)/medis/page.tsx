@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { Plus, Pill, Stethoscope } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -23,7 +23,7 @@ export default async function MedisPage(props: {
   const session = await getSession()
   if (!session) redirect('/login')
 
-  let farmId = session.farmId as string | null
+  let farmId = session.activeFarmId as string | null
   if (session.role === 'SUPER_ADMIN' && searchParams.farmId) {
     farmId = searchParams.farmId
   }
@@ -45,7 +45,7 @@ export default async function MedisPage(props: {
     m.diagnosis.toLowerCase().includes('vaksin')
   ).length
   const uniqueDiagnoses = new Set(medisList.map((m) => m.diagnosis)).size
-  const uniqueDoctors = new Set(medisList.map((m) => m.dokter).filter(Boolean)).size
+  const uniqueDoctors = new Set(medisList.map((m) => m.namaDokter).filter(Boolean)).size
 
   return (
     <div>
@@ -64,10 +64,10 @@ export default async function MedisPage(props: {
       {/* Stat cards */}
       <div className="grid grid-cols-12 gap-4 mb-6">
         {[
-          { l: 'Catatan bulan ini', v: medisList.length, icon: <Stethoscope size={14} />, tone: palette.moss },
-          { l: 'Vaksinasi PMK', v: vaccinCount, icon: <Pill size={14} />, tone: palette.ochre },
-          { l: 'Tindakan unik', v: uniqueDiagnoses, icon: <Stethoscope size={14} />, tone: palette.ink },
-          { l: 'Dokter terlibat', v: uniqueDoctors, icon: <Stethoscope size={14} />, tone: palette.emerald },
+          { l: 'Catatan bulan ini', v: medisList.length, tone: palette.moss },
+          { l: 'Vaksinasi PMK', v: vaccinCount, tone: palette.ochre },
+          { l: 'Tindakan unik', v: uniqueDiagnoses, tone: palette.ink },
+          { l: 'Dokter terlibat', v: uniqueDoctors, tone: palette.emerald },
         ].map((s, i) => (
           <div
             key={s.l}
@@ -76,7 +76,6 @@ export default async function MedisPage(props: {
           >
             <div className="flex items-center justify-between">
               <KostaSectionLabel>{s.l}</KostaSectionLabel>
-              <span style={{ color: s.tone }}>{s.icon}</span>
             </div>
             <div
               className="mt-2"

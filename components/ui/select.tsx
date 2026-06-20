@@ -83,8 +83,8 @@ function SelectContent({
         <SelectPrimitive.Popup
           data-slot="select-content"
           className={cn(
-            // Base layout
-            "relative isolate z-50 overflow-hidden",
+            // Base layout — DO NOT use overflow-hidden here; it clips the scrollable List
+            "relative isolate z-50 flex flex-col",
             "max-h-[min(var(--available-height,320px),320px)] w-[var(--anchor-width)] min-w-[180px]",
             "rounded-xl border border-border/60 bg-white shadow-xl",
             "text-sm text-foreground",
@@ -99,7 +99,7 @@ function SelectContent({
           {...props}
         >
           <SelectScrollUpButton />
-          <SelectPrimitive.List className="p-1.5 overflow-y-auto">{children}</SelectPrimitive.List>
+          <SelectPrimitive.List className="flex-1 overflow-y-auto overscroll-contain p-1.5 min-h-0">{children}</SelectPrimitive.List>
           <SelectScrollDownButton />
         </SelectPrimitive.Popup>
       </SelectPrimitive.Positioner>

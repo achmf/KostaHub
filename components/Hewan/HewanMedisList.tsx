@@ -1,7 +1,8 @@
 'use client'
 
 import { Badge } from '@/components/KostaUI'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Stethoscope } from 'lucide-react'
+import { EmptyState } from '@/components/ui/EmptyState'
 import Link from 'next/link'
 
 interface RekamMedis {
@@ -9,7 +10,7 @@ interface RekamMedis {
   tanggal: Date
   diagnosis: string
   obat: string | null
-  dokter: string | null
+  namaDokter: string | null
   notes: string | null
   status: string
   tanggalLanjut: Date | null
@@ -36,12 +37,11 @@ const palette = {
 export function HewanMedisList({ hewans }: { hewans: HewanMedis[] }) {
   if (hewans.length === 0) {
     return (
-      <div
-        className="py-16 text-center"
-        style={{ fontFamily: "'Fraunces',serif", fontSize: 22, fontStyle: 'italic', color: palette.moss }}
-      >
-        Belum ada data hewan yang terdaftar.
-      </div>
+      <EmptyState
+        icon={Stethoscope}
+        title="Belum ada data hewan"
+        description="Tambahkan hewan terlebih dahulu untuk mulai mencatat rekam medis."
+      />
     )
   }
 

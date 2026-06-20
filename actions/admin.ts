@@ -13,56 +13,76 @@ async function requireSuperAdmin() {
   return session
 }
 
-export async function approveRegistration(userId: string) {
+// ── Approve Farm ──────────────────────────────────────────────────────────────
+export async function approveRegistration(farmId: string) {
   await requireSuperAdmin()
 
-  const user = await prisma.user.findUnique({ where: { id: userId } })
-  if (!user || user.approvalStatus !== 'PENDING') {
-    return { error: 'User tidak ditemukan atau sudah diproses' }
+  const farm = await prisma.farm.findUnique({
+    where: { id: farmId },
+    include: {
+      members: {
+        include: { user: { select: { id: true, name: true, email: true } } },
+        where: { user: { role: 'OWNER' } },
+        take: 1,
+      },
+    },
+  })
+
+  if (!farm || farm.status !== 'NONAKTIF') {
+    return { error: 'Farm tidak ditemukan atau sudah diproses' }
   }
 
-  await prisma.$transaction([
-    prisma.user.update({
-      where: { id: userId },
-      data: { approvalStatus: 'APPROVED' },
-    }),
-    prisma.farm.update({
-      where: { id: user.farmId! },
-      data: { status: 'AKTIF' },
-    }),
-  ])
+  await prisma.farm.update({
+    where: { id: farmId },
+    data: { status: 'AKTIF', rejectionReason: null },
+  })
 
-  await sendApprovalEmail(user.email, user.name)
+  // Kirim notifikasi ke owner
+  const owner = farm.members[0]?.user
+  if (owner) {
+    await sendApprovalEmail(owner.email, owner.name)
+  }
 
   revalidatePath('/admin/approvals')
   return { success: true }
 }
 
-export async function rejectRegistration(userId: string) {
+// ── Reject Farm ───────────────────────────────────────────────────────────────
+export async function rejectRegistration(farmId: string, reason?: string) {
   await requireSuperAdmin()
 
-  const user = await prisma.user.findUnique({ where: { id: userId } })
-  if (!user || user.approvalStatus !== 'PENDING') {
-    return { error: 'User tidak ditemukan atau sudah diproses' }
+  const farm = await prisma.farm.findUnique({
+    where: { id: farmId },
+    include: {
+      members: {
+        include: { user: { select: { id: true, name: true, email: true } } },
+        where: { user: { role: 'OWNER' } },
+        take: 1,
+      },
+    },
+  })
+
+  if (!farm || farm.status !== 'NONAKTIF') {
+    return { error: 'Farm tidak ditemukan atau sudah diproses' }
   }
 
-  await prisma.$transaction([
-    prisma.user.update({
-      where: { id: userId },
-      data: { approvalStatus: 'REJECTED', deletedAt: new Date() },
-    }),
-    prisma.farm.update({
-      where: { id: user.farmId! },
-      data: { status: 'DELETED', deletedAt: new Date() },
-    }),
-  ])
+  await prisma.farm.update({
+    where: { id: farmId },
+    data: { rejectionReason: reason ?? null },
+    // status tetap NONAKTIF — owner bisa reapply
+  })
 
-  await sendRejectionEmail(user.email, user.name)
+  // Kirim notifikasi ke owner
+  const owner = farm.members[0]?.user
+  if (owner) {
+    await sendRejectionEmail(owner.email, owner.name, reason)
+  }
 
   revalidatePath('/admin/approvals')
   return { success: true }
 }
 
+// ── Delete User ───────────────────────────────────────────────────────────────
 export async function deleteUser(userId: string) {
   await requireSuperAdmin()
 

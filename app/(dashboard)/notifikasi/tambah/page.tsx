@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { useActionState } from 'react'
 import { KostaButton, KostaSectionLabel } from '@/components/KostaUI'
+import { DatePickerField } from '@/components/ui/DatePickerField'
 
 const palette = { cream: '#F2EDE0', forest: '#1B2A1F', ink: '#0D140F', border: 'rgba(13,20,15,0.10)' }
 const inputStyle: React.CSSProperties = {
@@ -50,7 +51,12 @@ export default function TambahNotifPage() {
 
           <div>
             <label style={labelStyle}>TANGGAL *</label>
-            <input required name="tanggal" type="date" defaultValue={new Date().toISOString().split('T')[0]} style={inputStyle} />
+            <DatePickerField
+              name="tanggal"
+              required
+              defaultValue={new Date().toISOString().split('T')[0]}
+              placeholder="Pilih tanggal reminder"
+            />
           </div>
 
           <div>

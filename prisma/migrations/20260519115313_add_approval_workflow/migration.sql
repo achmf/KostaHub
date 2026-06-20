@@ -1,13 +1,44 @@
+-- CreateEnum
+CREATE TYPE "Role" AS ENUM ('SUPER_ADMIN', 'OWNER', 'PETUGAS', 'DOKTER');
+
+-- CreateEnum
+CREATE TYPE "ApprovalStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+
+-- CreateEnum
+CREATE TYPE "FarmStatus" AS ENUM ('AKTIF', 'NONAKTIF', 'DELETED');
+
+-- CreateEnum
+CREATE TYPE "Kelamin" AS ENUM ('JANTAN', 'BETINA');
+
+-- CreateEnum
+CREATE TYPE "KategoriHewan" AS ENUM ('INDUKAN', 'PEJANTAN', 'ANAKAN', 'DARA', 'JANTAN_MUDA');
+
+-- CreateEnum
+CREATE TYPE "StatusHewan" AS ENUM ('AKTIF', 'MATI', 'TERJUAL');
+
+-- CreateEnum
+CREATE TYPE "KategoriMedis" AS ENUM ('VAKSINASI', 'PENGOBATAN', 'PENGOBATAN_INFEKSI', 'PENGOBATAN_PARASIT', 'PEMERIKSAAN', 'PEMERIKSAAN_RUTIN', 'PERAWATAN_LUKA', 'VITAMIN', 'PARTUS', 'POTONG_KUKU', 'LAINNYA');
+
+-- CreateEnum
+CREATE TYPE "StatusMedis" AS ENUM ('SEMBUH', 'RAWAT', 'PANTAU');
+
+-- CreateEnum
+CREATE TYPE "StatusReproduksi" AS ENUM ('HAMIL', 'LAHIR', 'GAGAL');
+
+-- CreateEnum
+CREATE TYPE "TipeNotifikasi" AS ENUM ('VAKSIN', 'LAHIR', 'BERAT', 'CUSTOM');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
-    "role" TEXT NOT NULL,
+    "role" "Role" NOT NULL,
     "phone" TEXT,
-    "approvalStatus" TEXT NOT NULL DEFAULT 'APPROVED',
-    "farmId" TEXT,
+    "approvalStatus" "ApprovalStatus" NOT NULL DEFAULT 'APPROVED',
+    "rejectionReason" TEXT,
+    "deletedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -24,7 +55,8 @@ CREATE TABLE "Farm" (
     "geojson" TEXT,
     "deskripsi" TEXT,
     "sertifikatUrl" TEXT,
-    "status" TEXT NOT NULL DEFAULT 'AKTIF',
+    "status" "FarmStatus" NOT NULL DEFAULT 'AKTIF',
+    "deletedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -32,16 +64,24 @@ CREATE TABLE "Farm" (
 );
 
 -- CreateTable
+CREATE TABLE "UserFarm" (
+    "userId" TEXT NOT NULL,
+    "farmId" TEXT NOT NULL,
+    "assignedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "UserFarm_pkey" PRIMARY KEY ("userId","farmId")
+);
+
+-- CreateTable
 CREATE TABLE "Hewan" (
     "id" TEXT NOT NULL,
     "tag" TEXT NOT NULL,
     "nama" TEXT,
-    "kelamin" TEXT NOT NULL,
-    "ras" TEXT NOT NULL DEFAULT 'Kosta',
+    "kelamin" "Kelamin" NOT NULL,
     "tanggalLahir" TIMESTAMP(3) NOT NULL,
     "berat" DOUBLE PRECISION,
-    "kategori" TEXT NOT NULL,
-    "status" TEXT NOT NULL DEFAULT 'AKTIF',
+    "kategori" "KategoriHewan" NOT NULL,
+    "status" "StatusHewan" NOT NULL DEFAULT 'AKTIF',
     "fotoUrl" TEXT,
     "farmId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -57,12 +97,14 @@ CREATE TABLE "RekamMedis" (
     "id" TEXT NOT NULL,
     "hewanId" TEXT NOT NULL,
     "tanggal" TIMESTAMP(3) NOT NULL,
+    "kategori" "KategoriMedis" NOT NULL DEFAULT 'LAINNYA',
     "diagnosis" TEXT NOT NULL,
     "obat" TEXT,
-    "dokter" TEXT,
+    "dokterId" TEXT,
+    "namaDokter" TEXT,
     "notes" TEXT,
     "fotoUrl" TEXT,
-    "status" TEXT NOT NULL DEFAULT 'SEMBUH',
+    "status" "StatusMedis" NOT NULL DEFAULT 'SEMBUH',
     "tanggalLanjut" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -77,8 +119,9 @@ CREATE TABLE "Reproduksi" (
     "pejantanId" TEXT NOT NULL,
     "tanggalKawin" TIMESTAMP(3) NOT NULL,
     "estimasiLahir" TIMESTAMP(3) NOT NULL,
-    "status" TEXT NOT NULL DEFAULT 'HAMIL',
+    "status" "StatusReproduksi" NOT NULL DEFAULT 'HAMIL',
     "anakTag" TEXT,
+    "anakId" TEXT,
     "inbreedingWarning" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -118,7 +161,7 @@ CREATE TABLE "Notifikasi" (
     "message" TEXT NOT NULL,
     "tanggal" TIMESTAMP(3) NOT NULL,
     "isRead" BOOLEAN NOT NULL DEFAULT false,
-    "type" TEXT NOT NULL,
+    "type" "TipeNotifikasi" NOT NULL,
     "farmId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -130,10 +173,40 @@ CREATE TABLE "Notifikasi" (
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Hewan_tag_key" ON "Hewan"("tag");
+CREATE INDEX "User_approvalStatus_idx" ON "User"("approvalStatus");
+
+-- CreateIndex
+CREATE INDEX "Farm_status_idx" ON "Farm"("status");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Hewan_tag_farmId_key" ON "Hewan"("tag", "farmId");
+
+-- CreateIndex
+CREATE INDEX "Hewan_tanggalLahir_idx" ON "Hewan"("tanggalLahir");
+
+-- CreateIndex
+CREATE INDEX "RekamMedis_tanggal_idx" ON "RekamMedis"("tanggal");
+
+-- CreateIndex
+CREATE INDEX "Reproduksi_tanggalKawin_idx" ON "Reproduksi"("tanggalKawin");
+
+-- CreateIndex
+CREATE INDEX "TransferHewan_tanggal_idx" ON "TransferHewan"("tanggal");
+
+-- CreateIndex
+CREATE INDEX "BeratBadan_tanggal_idx" ON "BeratBadan"("tanggal");
+
+-- CreateIndex
+CREATE INDEX "Notifikasi_tanggal_idx" ON "Notifikasi"("tanggal");
+
+-- CreateIndex
+CREATE INDEX "Notifikasi_isRead_idx" ON "Notifikasi"("isRead");
 
 -- AddForeignKey
-ALTER TABLE "User" ADD CONSTRAINT "User_farmId_fkey" FOREIGN KEY ("farmId") REFERENCES "Farm"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "UserFarm" ADD CONSTRAINT "UserFarm_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserFarm" ADD CONSTRAINT "UserFarm_farmId_fkey" FOREIGN KEY ("farmId") REFERENCES "Farm"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Hewan" ADD CONSTRAINT "Hewan_farmId_fkey" FOREIGN KEY ("farmId") REFERENCES "Farm"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -148,10 +221,16 @@ ALTER TABLE "Hewan" ADD CONSTRAINT "Hewan_indukId_fkey" FOREIGN KEY ("indukId") 
 ALTER TABLE "RekamMedis" ADD CONSTRAINT "RekamMedis_hewanId_fkey" FOREIGN KEY ("hewanId") REFERENCES "Hewan"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "RekamMedis" ADD CONSTRAINT "RekamMedis_dokterId_fkey" FOREIGN KEY ("dokterId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Reproduksi" ADD CONSTRAINT "Reproduksi_indukId_fkey" FOREIGN KEY ("indukId") REFERENCES "Hewan"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Reproduksi" ADD CONSTRAINT "Reproduksi_pejantanId_fkey" FOREIGN KEY ("pejantanId") REFERENCES "Hewan"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Reproduksi" ADD CONSTRAINT "Reproduksi_anakId_fkey" FOREIGN KEY ("anakId") REFERENCES "Hewan"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "TransferHewan" ADD CONSTRAINT "TransferHewan_hewanId_fkey" FOREIGN KEY ("hewanId") REFERENCES "Hewan"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -164,3 +243,6 @@ ALTER TABLE "TransferHewan" ADD CONSTRAINT "TransferHewan_toFarmId_fkey" FOREIGN
 
 -- AddForeignKey
 ALTER TABLE "BeratBadan" ADD CONSTRAINT "BeratBadan_hewanId_fkey" FOREIGN KEY ("hewanId") REFERENCES "Hewan"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Notifikasi" ADD CONSTRAINT "Notifikasi_farmId_fkey" FOREIGN KEY ("farmId") REFERENCES "Farm"("id") ON DELETE SET NULL ON UPDATE CASCADE;

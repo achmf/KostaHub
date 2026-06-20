@@ -7,17 +7,19 @@ export default async function StaffPage() {
   const session = await getSession()
   if (!session) redirect('/login')
   if (session.role !== 'OWNER' && session.role !== 'SUPER_ADMIN') redirect('/')
-  if (!session.farmId && session.role === 'OWNER') redirect('/')
+  if (!session.activeFarmId && session.role === 'OWNER') redirect('/')
 
-  const farmId = session.farmId!
-  const staff = await prisma.user.findMany({
-    where: {
-      farmId,
-      role: { in: ['PETUGAS', 'DOKTER'] },
-      approvalStatus: 'APPROVED',
+  const farmId = session.activeFarmId!
+  const userFarmMembers = await prisma.userFarm.findMany({
+    where: { farmId },
+    include: {
+      user: true,
     },
-    orderBy: { createdAt: 'desc' },
   })
+  const staff = userFarmMembers
+    .map((uf) => uf.user)
+    .filter((u) => ['PETUGAS', 'DOKTER'].includes(u.role) && u.approvalStatus === 'APPROVED' && !u.deletedAt)
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 
   const farm = await prisma.farm.findUnique({
     where: { id: farmId },

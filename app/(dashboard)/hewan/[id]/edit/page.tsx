@@ -8,7 +8,7 @@ export default async function EditHewanPage(props: { params: Promise<{ id: strin
   const session = await getSession()
   if (!session) redirect('/login')
 
-  const farmFilter = session.role === 'SUPER_ADMIN' ? {} : { farmId: session.farmId as string }
+  const farmFilter = session.role === 'SUPER_ADMIN' ? {} : { farmId: session.activeFarmId as string }
 
   const [hewan, semuaHewan] = await Promise.all([
     prisma.hewan.findUnique({ where: { id: params.id } }),
@@ -21,7 +21,7 @@ export default async function EditHewanPage(props: { params: Promise<{ id: strin
 
   if (!hewan) return notFound()
 
-  if (session.role === 'FARM_OWNER' && hewan.farmId !== session.farmId) {
+  if (session.role === 'FARM_OWNER' && hewan.farmId !== session.activeFarmId) {
     redirect('/hewan')
   }
 

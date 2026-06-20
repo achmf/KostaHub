@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { useActionState } from 'react'
 import { KostaButton, KostaSectionLabel } from '@/components/KostaUI'
+import { DatePickerField } from '@/components/ui/DatePickerField'
 
 const palette = { cream: '#F2EDE0', forest: '#1B2A1F', ink: '#0D140F', border: 'rgba(13,20,15,0.10)' }
 const inputStyle: React.CSSProperties = {
@@ -64,7 +65,13 @@ export function TambahBeratForm({ hewanList, defaultHewanId }: { hewanList: Hewa
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label style={labelStyle}>TANGGAL TIMBANG *</label>
-              <input required name="tanggal" type="date" defaultValue={new Date().toISOString().split('T')[0]} style={inputStyle} />
+              <DatePickerField
+                name="tanggal"
+                required
+                defaultValue={new Date().toISOString().split('T')[0]}
+                disableFuture
+                placeholder="Pilih tanggal timbang"
+              />
             </div>
             <div>
               <label style={labelStyle}>BERAT (KG) *</label>

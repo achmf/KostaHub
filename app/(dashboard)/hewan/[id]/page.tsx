@@ -44,7 +44,7 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
   })
 
   if (!hewan) notFound()
-  if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.farmId) redirect('/hewan')
+  if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.activeFarmId) redirect('/hewan')
 
   const [umurBulan, silsilahTree] = await Promise.all([
     Promise.resolve(Math.max(0, Math.floor(
@@ -66,7 +66,7 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
         </Link>
         <Link href={`/hewan/${hewan.id}/edit`}>
           <button
-            className="flex items-center gap-2 px-4 py-2 rounded-full"
+            className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded-full transition-opacity hover:opacity-90"
             style={{
               background: palette.ink,
               color: palette.cream,

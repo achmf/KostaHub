@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
-import { Button } from './Button'
+import { Button } from './button'
 
 interface ModalProps {
   open: boolean
