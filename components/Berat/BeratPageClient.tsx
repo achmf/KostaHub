@@ -79,13 +79,17 @@ export default function BeratPageClient({ hewanList }: { hewanList: HewanBerat[]
                   style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: palette.ink, opacity: 0.6 }}
                 />
                 <Tooltip
+                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                  itemStyle={{ color: '#ffffff' }}
+                  labelStyle={{ color: '#ffffff' }}
                   contentStyle={{
-                    background: palette.ink,
-                    color: palette.cream,
+                    backgroundColor: '#0D140F',
+                    color: '#ffffff',
                     border: 'none',
                     borderRadius: 8,
                     fontFamily: "'Inter',sans-serif",
                     fontSize: 12,
+                    opacity: 1,
                   }}
                 />
                 <Line
