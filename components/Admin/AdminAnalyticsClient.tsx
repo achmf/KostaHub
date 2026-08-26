@@ -156,7 +156,10 @@ export default function AdminAnalyticsClient({
                 <XAxis dataKey="nama" tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, fill: 'rgba(13,20,15,0.5)' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
                 <Tooltip
-                  contentStyle={{ fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}` }}
+                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                  itemStyle={{ color: '#ffffff' }}
+                  labelStyle={{ color: '#ffffff' }}
+                  contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}` }}
                   labelFormatter={(label) => {
                     const item = hewanPerFarm.find((f) => f.nama === String(label))
                     return item?.namaPanjang || String(label)
@@ -241,7 +244,10 @@ export default function AdminAnalyticsClient({
                   <XAxis dataKey="nama" tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, fill: 'rgba(13,20,15,0.5)' }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
                   <Tooltip
-                    contentStyle={{ fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}` }}
+                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                    itemStyle={{ color: '#ffffff' }}
+                    labelStyle={{ color: '#ffffff' }}
+                    contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}` }}
                     labelFormatter={(label) => reproduksiPerFarm.find((f) => f.nama === String(label))?.namaPanjang || String(label)}
                   />
                   <Legend wrapperStyle={{ fontFamily: "'Inter',sans-serif", fontSize: 11 }} />
@@ -276,7 +282,12 @@ export default function AdminAnalyticsClient({
                         <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip contentStyle={{ fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}` }} />
+                    <Tooltip
+                      cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                      itemStyle={{ color: '#ffffff' }}
+                      labelStyle={{ color: '#ffffff' }}
+                      contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}` }}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="flex-1 space-y-2">
@@ -362,7 +373,10 @@ export default function AdminAnalyticsClient({
                   tickLine={false}
                 />
                 <Tooltip
-                  contentStyle={{ fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}` }}
+                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                  itemStyle={{ color: '#ffffff' }}
+                  labelStyle={{ color: '#ffffff' }}
+                  contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}` }}
                   formatter={(val) => [`${val} kasus`, 'Frekuensi']}
                 />
                 <Bar dataKey="count" name="Kasus" fill={palette.ochre} radius={[0, 4, 4, 0]}>

@@ -321,8 +321,10 @@ export default function AdminDashboardClient({
                 <XAxis dataKey="label" tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
                 <Tooltip
-                  contentStyle={{ fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}`, background: '#fff' }}
-                  labelStyle={{ fontWeight: 600, color: palette.ink }}
+                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                  itemStyle={{ color: '#ffffff' }}
+                  labelStyle={{ color: '#ffffff' }}
+                  contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}`, opacity: 1 }}
                 />
                 <Legend wrapperStyle={{ fontFamily: "'Inter',sans-serif", fontSize: 11 }} />
                 <Area type="monotone" dataKey="masuk" name="Masuk" stroke={palette.ochre} strokeWidth={2} fill="url(#gradMasuk)" />
@@ -490,8 +492,11 @@ export default function AdminDashboardClient({
                 <XAxis dataKey="nama" tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
                 <Tooltip
+                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                  itemStyle={{ color: '#ffffff' }}
+                  labelStyle={{ color: '#ffffff' }}
                   formatter={(val, name) => [val, name === 'hewan' ? 'Hewan' : 'User']}
-                  contentStyle={{ fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}` }}
+                  contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}`, opacity: 1 }}
                   labelFormatter={(label) => {
                     const item = farmComparison.find((f) => f.nama === String(label))
                     return item?.namaPanjang || String(label)
@@ -529,7 +534,10 @@ export default function AdminDashboardClient({
                       ))}
                     </Pie>
                     <Tooltip
-                      contentStyle={{ fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}` }}
+                      cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                      itemStyle={{ color: '#ffffff' }}
+                      labelStyle={{ color: '#ffffff' }}
+                      contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}`, opacity: 1 }}
                     />
                   </PieChart>
                 </ResponsiveContainer>

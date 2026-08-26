@@ -541,13 +541,17 @@ export default function DashboardClient({
                     width={30}
                   />
                   <Tooltip
+                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                    itemStyle={{ color: '#ffffff' }}
+                    labelStyle={{ color: '#ffffff' }}
                     contentStyle={{
-                      background: palette.ink,
-                      color: palette.cream,
+                      backgroundColor: '#0D140F',
+                      color: '#ffffff',
                       border: 'none',
                       borderRadius: 8,
                       fontFamily: "'Inter',sans-serif",
                       fontSize: 12,
+                      opacity: 1,
                     }}
                   />
                   <Area
@@ -613,13 +617,17 @@ export default function DashboardClient({
                     ))}
                   </Pie>
                   <Tooltip
+                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                    itemStyle={{ color: '#ffffff' }}
+                    labelStyle={{ color: '#ffffff' }}
                     contentStyle={{
-                      background: palette.ink,
-                      color: palette.cream,
+                      backgroundColor: '#0D140F',
+                      color: '#ffffff',
                       border: 'none',
                       borderRadius: 8,
                       fontFamily: "'Inter',sans-serif",
                       fontSize: 12,
+                      opacity: 1,
                     }}
                   />
                 </PieChart>
@@ -817,13 +825,17 @@ export default function DashboardClient({
                   />
                   <XAxis type="number" hide />
                   <Tooltip
+                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                    itemStyle={{ color: '#ffffff' }}
+                    labelStyle={{ color: '#ffffff' }}
                     contentStyle={{
-                      background: palette.ink,
-                      color: palette.cream,
+                      backgroundColor: '#0D140F',
+                      color: '#ffffff',
                       border: 'none',
                       borderRadius: 8,
                       fontFamily: "'Inter',sans-serif",
                       fontSize: 12,
+                      opacity: 1,
                     }}
                     formatter={(v: unknown) => [`${v as number} ekor`, 'Jumlah']}
                   />
@@ -880,13 +892,17 @@ export default function DashboardClient({
                     unit=" kg"
                   />
                   <Tooltip
+                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                    itemStyle={{ color: '#ffffff' }}
+                    labelStyle={{ color: '#ffffff' }}
                     contentStyle={{
-                      background: palette.ink,
-                      color: palette.cream,
+                      backgroundColor: '#0D140F',
+                      color: '#ffffff',
                       border: 'none',
                       borderRadius: 8,
                       fontFamily: "'Inter',sans-serif",
                       fontSize: 12,
+                      opacity: 1,
                     }}
                     formatter={(v) => [`${v as number} kg`, 'Rata-rata Berat']}
                   />
