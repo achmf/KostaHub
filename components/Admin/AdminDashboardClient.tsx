@@ -33,6 +33,8 @@ import {
   Timer,
 } from 'lucide-react'
 import Link from 'next/link'
+import PaginationControl from './PaginationControl'
+import { usePagination } from '@/hooks/usePagination'
 
 const palette = {
   cream: '#F2EDE0',
@@ -89,8 +91,8 @@ interface AdminDashboardClientProps {
   kategoriData: { name: string; value: number }[]
   topDiagnosa: { name: string; count: number }[]
   farmAlerts: { id: string; nama: string; reason: string }[]
-  inactiveFarms?: { id: string; nama: string; reason: string }[]
-  highMortalityFarms?: { id: string; nama: string; mortalityRate: number }[]
+  inactiveFarms: { id: string; nama: string; reason: string }[]
+  highMortalityFarms: { id: string; nama: string; mortalityRate: number }[]
   recentPending: { id: string; name: string; email: string; createdAt: string }[]
 }
 
@@ -156,6 +158,7 @@ export default function AdminDashboardClient({
   highMortalityFarms = [],
   recentPending,
 }: AdminDashboardClientProps) {
+  const inactiveP = usePagination(inactiveFarms, 6)
   const kpiCards = [
     {
       label: 'Total Farm',
@@ -446,7 +449,7 @@ export default function AdminDashboardClient({
               <Timer size={16} style={{ color: palette.ochre, opacity: 0.7 }} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-              {inactiveFarms.slice(0, 6).map((f) => (
+              {inactiveP.paged.map((f) => (
                 <Link
                   key={f.id}
                   href={`/admin/farms/${f.id}`}
@@ -466,6 +469,14 @@ export default function AdminDashboardClient({
                 </Link>
               ))}
             </div>
+            <PaginationControl
+              page={inactiveP.page}
+              totalPages={inactiveP.totalPages}
+              onPrev={inactiveP.onPrev}
+              onNext={inactiveP.onNext}
+              totalItems={inactiveFarms.length}
+              perPage={6}
+            />
           </Card>
         </motion.div>
       )}

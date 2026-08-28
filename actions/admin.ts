@@ -97,3 +97,31 @@ export async function deleteUser(userId: string) {
   revalidatePath('/admin/users')
   return { success: true }
 }
+
+// ── Create User (by Admin) ─────────────────────────────────────────────────────
+export async function createUserByAdmin(formData: FormData): Promise<{ success?: boolean; error?: string }> {
+  await requireSuperAdmin()
+
+  const name  = formData.get('name')  as string
+  const email = formData.get('email') as string
+  const phone = formData.get('phone') as string | null
+  const role  = formData.get('role')  as string
+  const password = formData.get('password') as string
+
+  if (!name || !email || !password || !role) {
+    return { error: 'Semua field wajib diisi' }
+  }
+
+  const existing = await prisma.user.findUnique({ where: { email } })
+  if (existing) return { error: 'Email sudah terdaftar' }
+
+  const bcrypt = await import('bcryptjs')
+  const hashed = await bcrypt.hash(password, 12)
+
+  await prisma.user.create({
+    data: { name, email, phone: phone || null, role: role as any, password: hashed },
+  })
+
+  revalidatePath('/admin/users')
+  return { success: true }
+}

@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import PaginationControl from '@/components/Admin/PaginationControl'
+import { usePagination } from '@/hooks/usePagination'
 import {
   FileSpreadsheet, Download, Stethoscope, Calendar, Shield, Search,
   CircleAlert, PawPrint, ArrowUpDown, ArrowUp, ArrowDown,
@@ -322,6 +324,10 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
     ).slice(0, 50)
   }, [mutasi, search])
 
+  const masukP = usePagination(filteredMasuk, 20)
+  const keluarP = usePagination(filteredKeluar, 20)
+  const mutasiP = usePagination(filteredMutasi, 20)
+
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
       {/* Section toggle */}
@@ -372,7 +378,7 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
         {activeSection === 'masuk' && (
           <>
             <TableHeader cols={['TAG', 'NAMA', 'KATEGORI', 'KELAMIN', 'BERAT AWAL', 'TGL DAFTAR', 'FARM']} grid="0.8fr 1fr 0.9fr 0.7fr 0.7fr 0.8fr 0.8fr" />
-            {filteredMasuk.length === 0 ? <NoResults /> : filteredMasuk.map((h: any, i: number) => (
+            {filteredMasuk.length === 0 ? <NoResults /> : masukP.paged.map((h: any, i: number) => (
               <TableRow key={h.id} i={i} grid="0.8fr 1fr 0.9fr 0.7fr 0.7fr 0.8fr 0.8fr" cells={[
                 <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{h.tag}</span>,
                 <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{h.nama || <span style={{ opacity: 0.4 }}>—</span>}</span>,
@@ -385,12 +391,15 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
             ))}
           </>
         )}
-
-        {/* Keluar table */}
+        {activeSection === 'masuk' && filteredMasuk.length > 0 && (
+          <div className="px-5 pb-4">
+            <PaginationControl page={masukP.page} totalPages={masukP.totalPages} onPrev={masukP.onPrev} onNext={masukP.onNext} totalItems={filteredMasuk.length} perPage={20} />
+          </div>
+        )}
         {activeSection === 'keluar' && (
           <>
             <TableHeader cols={['TAG', 'NAMA', 'STATUS', 'BERAT', 'TGL DAFTAR', 'KETERANGAN', 'FARM']} grid="0.8fr 1fr 0.7fr 0.6fr 0.8fr 1fr 0.8fr" />
-            {filteredKeluar.length === 0 ? <NoResults /> : filteredKeluar.map((h: any, i: number) => (
+            {filteredKeluar.length === 0 ? <NoResults /> : keluarP.paged.map((h: any, i: number) => (
               <TableRow key={h.id} i={i} grid="0.8fr 1fr 0.7fr 0.6fr 0.8fr 1fr 0.8fr" cells={[
                 <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{h.tag}</span>,
                 <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{h.nama || '—'}</span>,
@@ -408,12 +417,15 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
             ))}
           </>
         )}
-
-        {/* Mutasi table */}
+        {activeSection === 'keluar' && filteredKeluar.length > 0 && (
+          <div className="px-5 pb-4">
+            <PaginationControl page={keluarP.page} totalPages={keluarP.totalPages} onPrev={keluarP.onPrev} onNext={keluarP.onNext} totalItems={filteredKeluar.length} perPage={20} />
+          </div>
+        )}
         {activeSection === 'mutasi' && (
           <>
             <TableHeader cols={['TAG', 'NAMA', 'DARI FARM', 'KE FARM', 'TGL TRANSFER', 'ALASAN']} grid="0.7fr 0.9fr 1fr 1fr 0.8fr 1.4fr" />
-            {filteredMutasi.length === 0 ? <NoResults /> : filteredMutasi.map((t: any, i: number) => (
+            {filteredMutasi.length === 0 ? <NoResults /> : mutasiP.paged.map((t: any, i: number) => (
               <TableRow key={t.id} i={i} grid="0.7fr 0.9fr 1fr 1fr 0.8fr 1.4fr" cells={[
                 <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{t.tag}</span>,
                 <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{t.nama || '—'}</span>,
@@ -424,6 +436,11 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
               ]} />
             ))}
           </>
+        )}
+        {activeSection === 'mutasi' && filteredMutasi.length > 0 && (
+          <div className="px-5 pb-4">
+            <PaginationControl page={mutasiP.page} totalPages={mutasiP.totalPages} onPrev={mutasiP.onPrev} onNext={mutasiP.onNext} totalItems={filteredMutasi.length} perPage={20} />
+          </div>
         )}
       </KostaCard>
     </motion.div>
@@ -445,8 +462,10 @@ function LaporanMedis({ data }: { data: any[] }) {
         m.hewanNama?.toLowerCase().includes(q) || m.diagnosis?.toLowerCase().includes(q) ||
         m.obat?.toLowerCase().includes(q) || m.namaDokter?.toLowerCase().includes(q)
       return matchKat && matchSearch
-    }).slice(0, 100)
+    })
   }, [data, filterKategori, search])
+
+  const medisP = usePagination(filtered, 20)
 
   // Stats per kategori
   const stats = useMemo(() => {
@@ -510,7 +529,7 @@ function LaporanMedis({ data }: { data: any[] }) {
           cols={['TANGGAL', 'TAG', 'KATEGORI', 'DIAGNOSIS / TINDAKAN', 'OBAT / VAKSIN', 'DOKTER', 'STATUS', 'KONTROL']}
           grid="0.7fr 0.7fr 0.9fr 1.6fr 1fr 0.9fr 0.6fr 0.7fr"
         />
-        {filtered.length === 0 ? <NoResults /> : filtered.map((m: any, i: number) => (
+        {filtered.length === 0 ? <NoResults /> : medisP.paged.map((m: any, i: number) => (
           <TableRow key={m.id} i={i} grid="0.7fr 0.7fr 0.9fr 1.6fr 1fr 0.9fr 0.6fr 0.7fr" cells={[
             <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(m.tanggal)}</span>,
             <div>
@@ -541,6 +560,11 @@ function LaporanMedis({ data }: { data: any[] }) {
           ]} />
         ))}
       </KostaCard>
+      {filtered.length > 0 && (
+        <div className="px-5 pb-4">
+          <PaginationControl page={medisP.page} totalPages={medisP.totalPages} onPrev={medisP.onPrev} onNext={medisP.onNext} totalItems={filtered.length} perPage={20} />
+        </div>
+      )}
     </motion.div>
   )
 }
@@ -561,6 +585,8 @@ function LaporanBreeding({ data }: { data: any[] }) {
       return matchStatus && matchSearch
     })
   }, [data, filterStatus, search])
+
+  const breedingP = usePagination(filtered, 15)
 
   const stats = useMemo(() => ({
     HAMIL: (data ?? []).filter((r: any) => r.status === 'HAMIL').length,
@@ -611,7 +637,7 @@ function LaporanBreeding({ data }: { data: any[] }) {
 
         {/* Breeding cards */}
         <div className="divide-y" style={{ borderColor: palette.border }}>
-          {filtered.length === 0 ? <NoResults /> : filtered.map((r: any, i: number) => {
+          {filtered.length === 0 ? <NoResults /> : breedingP.paged.map((r: any, i: number) => {
             const isExpanded = expandedId === r.id
             const daysToLahir = Math.ceil((new Date(r.estimasiLahir).getTime() - Date.now()) / 86400000)
             const isOverdue = daysToLahir < 0 && r.status === 'HAMIL'
@@ -701,6 +727,9 @@ function LaporanBreeding({ data }: { data: any[] }) {
           })}
         </div>
       </KostaCard>
+      {filtered.length > 0 && (
+        <PaginationControl page={breedingP.page} totalPages={breedingP.totalPages} onPrev={breedingP.onPrev} onNext={breedingP.onNext} totalItems={filtered.length} perPage={15} />
+      )}
     </motion.div>
   )
 }
@@ -723,6 +752,8 @@ function LaporanPertumbuhan({ data }: { data: any[] }) {
         return sortDir === 'desc' ? -diff : diff
       })
   }, [data, search, sortBy, sortDir])
+
+  const pertumbuhanP = usePagination(sorted, 15)
 
   const toggleSort = (key: typeof sortBy) => {
     if (sortBy === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -802,7 +833,7 @@ function LaporanPertumbuhan({ data }: { data: any[] }) {
         </div>
 
         <div className="divide-y" style={{ borderColor: palette.border }}>
-          {sorted.length === 0 ? <NoResults /> : sorted.map((d: any, i: number) => {
+          {sorted.length === 0 ? <NoResults /> : pertumbuhanP.paged.map((d: any, i: number) => {
             const isExpanded = expandedId === d.hewan?.tag
             const trendUp = d.selisih > 0
             const trendFlat = d.selisih === 0
@@ -898,6 +929,9 @@ function LaporanPertumbuhan({ data }: { data: any[] }) {
           })}
         </div>
       </KostaCard>
+      {sorted.length > 0 && (
+        <PaginationControl page={pertumbuhanP.page} totalPages={pertumbuhanP.totalPages} onPrev={pertumbuhanP.onPrev} onNext={pertumbuhanP.onNext} totalItems={sorted.length} perPage={15} />
+      )}
     </motion.div>
   )
 }

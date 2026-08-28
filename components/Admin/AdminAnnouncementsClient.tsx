@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Megaphone, Send, Clock, CheckCircle2, AlertCircle } from 'lucide-react'
 import { sendAnnouncement } from '@/actions/admin/sendAnnouncement'
 import { useRouter } from 'next/navigation'
+import PaginationControl from './PaginationControl'
+import { usePagination } from '@/hooks/usePagination'
 
 const palette = {
   ink: '#0D140F',
@@ -40,6 +42,7 @@ export default function AdminAnnouncementsClient({ history }: { history: History
   const [title, setTitle] = useState('')
   const [message, setMessage] = useState('')
   const [toast, setToast] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
+  const { paged, page, totalPages, onPrev, onNext } = usePagination(history, 10)
 
   function showToast(text: string, type: 'success' | 'error') {
     setToast({ text, type })
@@ -200,7 +203,7 @@ export default function AdminAnnouncementsClient({ history }: { history: History
               </div>
             ) : (
               <div className="space-y-3">
-                {history.map((item, i) => (
+                {paged.map((item, i) => (
                   <motion.div
                     key={i}
                     initial={{ opacity: 0, x: 8 }}
@@ -226,6 +229,16 @@ export default function AdminAnnouncementsClient({ history }: { history: History
                   </motion.div>
                 ))}
               </div>
+            )}
+            {history.length > 10 && (
+              <PaginationControl
+                page={page}
+                totalPages={totalPages}
+                onPrev={onPrev}
+                onNext={onNext}
+                totalItems={history.length}
+                perPage={10}
+              />
             )}
           </div>
         </motion.div>

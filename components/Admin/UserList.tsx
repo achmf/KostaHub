@@ -4,6 +4,8 @@ import { useState, useTransition } from 'react'
 import { deleteUser } from '@/actions/admin'
 import { changeUserRole } from '@/actions/admin/changeUserRole'
 import { User, Mail, Phone, Building2, Trash2, ChevronDown } from 'lucide-react'
+import PaginationControl from './PaginationControl'
+import { usePagination } from '@/hooks/usePagination'
 
 const palette = {
   cream: '#F2EDE0',
@@ -34,6 +36,7 @@ export default function UserList({ users }: { users: UserItem[] }) {
   const [isPending, startTransition] = useTransition()
 
   const filtered = filter === 'ALL' ? users : users.filter((u) => u.role === filter)
+  const { paged, page, totalPages, onPrev, onNext } = usePagination(filtered, 10)
 
   function handleDelete(userId: string, userName: string) {
     if (!confirm(`Hapus user "${userName}"? Tindakan ini tidak bisa dibatalkan.`)) return
@@ -97,7 +100,7 @@ export default function UserList({ users }: { users: UserItem[] }) {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((user) => {
+            {paged.map((user) => {
               const roleInfo = ROLE_LABELS[user.role] ?? { label: user.role, bg: 'rgba(0,0,0,0.05)', color: palette.ink }
               return (
                 <tr key={user.id} className="border-t" style={{ borderColor: palette.border }}>
@@ -175,6 +178,18 @@ export default function UserList({ users }: { users: UserItem[] }) {
           </tbody>
         </table>
       </div>
+      {filtered.length > 0 && (
+        <div className="px-5 pb-5">
+          <PaginationControl
+            page={page}
+            totalPages={totalPages}
+            onPrev={onPrev}
+            onNext={onNext}
+            totalItems={filtered.length}
+            perPage={10}
+          />
+        </div>
+      )}
     </div>
   )
 }

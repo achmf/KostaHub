@@ -2,6 +2,8 @@
 
 import { motion } from 'framer-motion'
 import { Download, Trophy } from 'lucide-react'
+import { usePagination } from '@/hooks/usePagination'
+import PaginationControl from './PaginationControl'
 import {
   BarChart,
   Bar,
@@ -89,6 +91,8 @@ export default function AdminAnalyticsClient({
   topDiagnosa,
   kategoriMedisData,
 }: AdminAnalyticsClientProps) {
+  const sortedFarms = [...hewanPerFarm].sort((a, b) => b.total - a.total)
+  const { paged: pagedFarms, page, totalPages, onPrev, onNext } = usePagination(sortedFarms, 10)
   return (
     <div>
       {/* Header */}
@@ -426,14 +430,15 @@ export default function AdminAnalyticsClient({
                   </tr>
                 </thead>
                 <tbody>
-                  {[...hewanPerFarm].sort((a, b) => b.total - a.total).map((farm, rank) => {
+                  {pagedFarms.map((farm, rank) => {
+                    const rankActual = page * 10 + rank
                     const healthScore = farm.total > 0 ? Math.round((farm.total / (farm.total + farm.mati + farm.terjual)) * 100) : 100
                     const scoreColor = healthScore >= 80 ? palette.moss : healthScore >= 60 ? palette.ochre : palette.danger
-                    const medalColor = rank === 0 ? '#C7873E' : rank === 1 ? '#9B9B9B' : rank === 2 ? '#C67B3A' : 'rgba(13,20,15,0.3)'
+                    const medalColor = rankActual === 0 ? '#C7873E' : rankActual === 1 ? '#9B9B9B' : rankActual === 2 ? '#C67B3A' : 'rgba(13,20,15,0.3)'
                     return (
                       <tr key={farm.id} style={{ borderBottom: `1px solid ${palette.border}` }}>
                         <td style={{ padding: '10px 12px', fontFamily: "'Fraunces',serif", fontSize: 16, color: medalColor, fontWeight: 400 }}>
-                          {rank + 1}
+                          {rankActual + 1}
                         </td>
                         <td style={{ padding: '10px 12px', fontWeight: 500 }}>{farm.namaPanjang}</td>
                         <td style={{ padding: '10px 12px' }}>
@@ -460,6 +465,14 @@ export default function AdminAnalyticsClient({
                   })}
                 </tbody>
               </table>
+              <PaginationControl
+                page={page}
+                totalPages={totalPages}
+                onPrev={onPrev}
+                onNext={onNext}
+                totalItems={hewanPerFarm.length}
+                perPage={10}
+              />
             </div>
           )}
         </Card>
