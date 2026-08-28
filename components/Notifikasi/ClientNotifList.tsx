@@ -10,6 +10,8 @@ import Link from 'next/link'
 import { useNotifikasi } from '@/hooks/useNotifikasi'
 import { KostaPageHeader, KostaButton, Badge, palette } from '@/components/KostaUI'
 import { Toaster } from 'sonner'
+import PaginationControl from '@/components/Admin/PaginationControl'
+import { usePagination } from '@/hooks/usePagination'
 
 const ICONS: Record<string, React.FC<{ size?: number }>> = {
   VAKSIN: Syringe,
@@ -52,6 +54,9 @@ export function ClientNotifList() {
   const [pendingId, setPendingId] = useState<string | null>(null)
 
   const filtered = list.filter((n) => filter === 'ALL' || n.type === filter)
+
+  const PER_PAGE = 15
+  const { paged, page, totalPages, onPrev, onNext } = usePagination(filtered, PER_PAGE)
 
   const handleMarkRead = async (id: string) => {
     setPendingId(id)
@@ -211,7 +216,7 @@ export function ClientNotifList() {
           )}
 
           <AnimatePresence>
-            {filtered.map((n, i) => {
+            {paged.map((n, i) => {
               const Icon = ICONS[n.type] ?? Bell
               const tone = TONES[n.type] ?? TONES.CUSTOM
               const isPending = pendingId === n.id
@@ -299,6 +304,17 @@ export function ClientNotifList() {
               )
             })}
           </AnimatePresence>
+
+          {filtered.length > 0 && (
+            <PaginationControl
+              page={page}
+              totalPages={totalPages}
+              onPrev={onPrev}
+              onNext={onNext}
+              totalItems={filtered.length}
+              perPage={PER_PAGE}
+            />
+          )}
         </div>
       </div>
     </>

@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Trash2, User, Mail, Lock, Phone, X, Users } from 'lucide-react'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import PaginationControl from '@/components/Admin/PaginationControl'
+import { usePagination } from '@/hooks/usePagination'
 
 const palette = {
   cream: '#F2EDE0',
@@ -33,6 +35,8 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState('')
   const [isPending, startTransition] = useTransition()
+  const PER_PAGE = 10
+  const { paged, page, totalPages, onPrev, onNext } = usePagination(staff, PER_PAGE)
 
   async function handleCreate(formData: FormData) {
     setError('')
@@ -212,7 +216,7 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
         </div>
       ) : (
         <div className="space-y-3">
-          {staff.map((s) => {
+          {paged.map((s) => {
             const roleInfo = ROLE_LABELS[s.role] ?? { label: s.role, bg: 'rgba(0,0,0,0.05)', color: palette.ink }
             return (
               <div
@@ -255,6 +259,17 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
               </div>
             )
           })}
+
+          {staff.length > 0 && (
+            <PaginationControl
+              page={page}
+              totalPages={totalPages}
+              onPrev={onPrev}
+              onNext={onNext}
+              totalItems={staff.length}
+              perPage={PER_PAGE}
+            />
+          )}
         </div>
       )}
     </div>

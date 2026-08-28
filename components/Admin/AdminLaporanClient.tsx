@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useMemo } from 'react'
 import PaginationControl from './PaginationControl'
+import { usePagination } from '@/hooks/usePagination'
 
 const palette = {
   ink: '#0D140F',
@@ -29,16 +29,10 @@ type FarmDetail = {
   _count: { members: number; hewan: number }
 }
 
+const PER_PAGE = 10
+
 export default function AdminLaporanClient({ farmDetailList }: { farmDetailList: FarmDetail[] }) {
-  const [page, setPage] = useState(0)
-  const ITEMS_PER_PAGE = 10
-
-  const totalPages = Math.ceil(farmDetailList.length / ITEMS_PER_PAGE)
-
-  const currentFarms = useMemo(() => {
-    const start = page * ITEMS_PER_PAGE
-    return farmDetailList.slice(start, start + ITEMS_PER_PAGE)
-  }, [farmDetailList, page])
+  const { paged: currentFarms, page, totalPages, onPrev, onNext } = usePagination(farmDetailList, PER_PAGE)
 
   return (
     <div className="rounded-2xl overflow-hidden mb-6" style={{ border: `1px solid ${palette.border}`, background: '#fff' }}>
@@ -64,7 +58,7 @@ export default function AdminLaporanClient({ farmDetailList }: { farmDetailList:
           </thead>
           <tbody>
             {currentFarms.map((farm, i) => {
-              const globalIndex = page * ITEMS_PER_PAGE + i + 1
+              const globalIndex = page * PER_PAGE + i + 1
               return (
                 <tr
                   key={farm.id}
@@ -185,8 +179,10 @@ export default function AdminLaporanClient({ farmDetailList }: { farmDetailList:
           <PaginationControl 
             page={page}
             totalPages={totalPages}
-            onPrev={() => setPage(p => Math.max(0, p - 1))}
-            onNext={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+            onPrev={onPrev}
+            onNext={onNext}
+            totalItems={farmDetailList.length}
+            perPage={PER_PAGE}
           />
         </div>
       )}

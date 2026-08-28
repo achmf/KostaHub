@@ -13,17 +13,29 @@ export default function PaginationControl({
   page, 
   totalPages, 
   onPrev, 
-  onNext 
+  onNext,
+  totalItems,
+  perPage,
 }: { 
-  page: number, 
-  totalPages: number, 
-  onPrev: () => void, 
-  onNext: () => void 
+  page: number
+  totalPages: number
+  onPrev: () => void
+  onNext: () => void
+  totalItems?: number
+  perPage?: number
 }) {
   if (totalPages <= 1) return null
 
+  const start = totalItems && perPage ? page * perPage + 1 : null
+  const end = totalItems && perPage ? Math.min((page + 1) * perPage, totalItems) : null
+
   return (
     <div className="flex items-center gap-3 mt-4 justify-end">
+      {start !== null && (
+        <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'rgba(13,20,15,0.5)' }}>
+          {start}–{end} dari {totalItems}
+        </span>
+      )}
       <button 
         onClick={onPrev} 
         disabled={page === 0}

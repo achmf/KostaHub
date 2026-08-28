@@ -5,6 +5,8 @@ import { approveRegistration, rejectRegistration } from '@/actions/admin'
 import { bulkApproveFarms, bulkRejectFarms } from '@/actions/admin/bulkApproval'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check, X, User, Building2, Phone, Mail, MapPin, FileText, ExternalLink, AlertTriangle, CheckSquare, Square, CheckCheck } from 'lucide-react'
+import PaginationControl from './PaginationControl'
+import { usePagination } from '@/hooks/usePagination'
 
 const palette = {
   cream: '#F2EDE0',
@@ -275,6 +277,8 @@ export default function ApprovalList({ users }: { users: PendingUser[] }) {
   }
 
   const visibleUsers = users.filter((u) => !removedIds.has(u.id))
+  const PER_PAGE = 10
+  const { paged, page, totalPages, onPrev, onNext } = usePagination(visibleUsers, PER_PAGE)
   const allSelected = visibleUsers.length > 0 && visibleUsers.every((u) => selectedIds.has(u.id))
 
   return (
@@ -391,7 +395,7 @@ export default function ApprovalList({ users }: { users: PendingUser[] }) {
       </AnimatePresence>
 
       {/* User cards */}
-      {visibleUsers.map((rawUser) => {
+      {paged.map((rawUser) => {
         // Compute farm dari junction table (farms[0]) jika belum ada
         const user: PendingUser = {
           ...rawUser,
@@ -608,6 +612,17 @@ export default function ApprovalList({ users }: { users: PendingUser[] }) {
           </motion.div>
         )
       })}
+
+      {visibleUsers.length > 0 && (
+        <PaginationControl
+          page={page}
+          totalPages={totalPages}
+          onPrev={onPrev}
+          onNext={onNext}
+          totalItems={visibleUsers.length}
+          perPage={PER_PAGE}
+        />
+      )}
     </div>
   )
 }

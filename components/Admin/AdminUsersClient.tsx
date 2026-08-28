@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useMemo } from 'react'
 import { Users, Clock, CheckCircle2, XCircle } from 'lucide-react'
 import { EmptyState } from '@/components/ui/EmptyState'
 import PaginationControl from './PaginationControl'
+import { usePagination } from '@/hooks/usePagination'
 
 const palette = {
   ink: '#0D140F',
@@ -28,16 +28,10 @@ const approvalBadge: Record<string, { label: string; color: string; bg: string; 
   REJECTED: { label: 'Ditolak', color: palette.danger, bg: 'rgba(181,68,59,0.08)', icon: XCircle },
 }
 
-export default function AdminUsersClient({ users }: { users: any[] }) {
-  const [page, setPage] = useState(0)
-  const ITEMS_PER_PAGE = 10
+const PER_PAGE = 10
 
-  const totalPages = Math.ceil(users.length / ITEMS_PER_PAGE)
-  
-  const currentUsers = useMemo(() => {
-    const start = page * ITEMS_PER_PAGE
-    return users.slice(start, start + ITEMS_PER_PAGE)
-  }, [users, page])
+export default function AdminUsersClient({ users }: { users: any[] }) {
+  const { paged: currentUsers, page, totalPages, onPrev, onNext } = usePagination(users, PER_PAGE)
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${palette.border}`, background: '#fff' }}>
@@ -155,8 +149,10 @@ export default function AdminUsersClient({ users }: { users: any[] }) {
           <PaginationControl 
             page={page}
             totalPages={totalPages}
-            onPrev={() => setPage(p => Math.max(0, p - 1))}
-            onNext={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+            onPrev={onPrev}
+            onNext={onNext}
+            totalItems={users.length}
+            perPage={PER_PAGE}
           />
         </div>
       )}

@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useMemo } from 'react'
 import { Building2, Users, Activity, MapPin } from 'lucide-react'
 import Link from 'next/link'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { switchFarm } from '@/actions/switchFarm'
 import PaginationControl from './PaginationControl'
+import { usePagination } from '@/hooks/usePagination'
 
 const palette = {
   cream: '#F2EDE0',
@@ -29,16 +29,10 @@ interface FarmData {
   }
 }
 
-export default function AdminFarmsClient({ farms }: { farms: FarmData[] }) {
-  const [page, setPage] = useState(0)
-  const ITEMS_PER_PAGE = 12
+const PER_PAGE = 12
 
-  const totalPages = Math.ceil(farms.length / ITEMS_PER_PAGE)
-  
-  const currentFarms = useMemo(() => {
-    const start = page * ITEMS_PER_PAGE
-    return farms.slice(start, start + ITEMS_PER_PAGE)
-  }, [farms, page])
+export default function AdminFarmsClient({ farms }: { farms: FarmData[] }) {
+  const { paged: currentFarms, page, totalPages, onPrev, onNext } = usePagination(farms, PER_PAGE)
 
   if (farms.length === 0) {
     return (
@@ -141,8 +135,10 @@ export default function AdminFarmsClient({ farms }: { farms: FarmData[] }) {
       <PaginationControl 
         page={page}
         totalPages={totalPages}
-        onPrev={() => setPage(p => Math.max(0, p - 1))}
-        onNext={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+        onPrev={onPrev}
+        onNext={onNext}
+        totalItems={farms.length}
+        perPage={PER_PAGE}
       />
     </>
   )

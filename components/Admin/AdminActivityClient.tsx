@@ -13,6 +13,8 @@ import {
   Clock,
 } from 'lucide-react'
 import Link from 'next/link'
+import PaginationControl from './PaginationControl'
+import { usePagination } from '@/hooks/usePagination'
 
 const palette = {
   ink: '#0D140F',
@@ -65,6 +67,9 @@ export default function AdminActivityClient({ activities }: { activities: Activi
   const filtered = activeFilter === 'all'
     ? activities
     : activities.filter((a) => a.type === activeFilter)
+
+  const PER_PAGE = 20
+  const { paged, page, totalPages, onPrev, onNext } = usePagination(filtered, PER_PAGE)
 
   const counts = ALL_TYPES.reduce((acc, t) => {
     acc[t] = activities.filter((a) => a.type === t).length
@@ -146,7 +151,7 @@ export default function AdminActivityClient({ activities }: { activities: Activi
               </p>
             </div>
           ) : (
-            filtered.map((item, i) => {
+            paged.map((item, i) => {
               const cfg = TYPE_CONFIG[item.type]
               const Icon = cfg.icon
               return (
@@ -207,6 +212,17 @@ export default function AdminActivityClient({ activities }: { activities: Activi
           )}
         </div>
       </div>
+
+      {filtered.length > 0 && (
+        <PaginationControl
+          page={page}
+          totalPages={totalPages}
+          onPrev={onPrev}
+          onNext={onNext}
+          totalItems={filtered.length}
+          perPage={PER_PAGE}
+        />
+      )}
     </div>
   )
 }

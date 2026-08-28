@@ -7,6 +7,8 @@ import Link from 'next/link'
 import { KostaPageHeader, KostaCard, KostaButton, KostaSectionLabel, Badge, palette } from '@/components/KostaUI'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { LineChart, Line, ResponsiveContainer, Tooltip, XAxis } from 'recharts'
+import PaginationControl from '@/components/Admin/PaginationControl'
+import { usePagination } from '@/hooks/usePagination'
 
 type HewanBerat = {
   id: string
@@ -32,6 +34,8 @@ const trendData = Array.from({ length: 12 }).map((_, i) => ({
 }))
 
 export default function BeratPageClient({ hewanList }: { hewanList: HewanBerat[] }) {
+  const PER_PAGE = 15
+  const { paged, page, totalPages, onPrev, onNext } = usePagination(hewanList, PER_PAGE)
   const avg = Math.round(
     hewanList.reduce((s, h) => s + (h.berat ?? 0), 0) / Math.max(hewanList.length, 1)
   )
@@ -164,7 +168,7 @@ export default function BeratPageClient({ hewanList }: { hewanList: HewanBerat[]
             description="Tambahkan hewan terlebih dahulu untuk mulai monitoring berat badan."
           />
         )}
-        {hewanList.slice(0, 20).map((h, i) => (
+        {paged.map((h, i) => (
           <motion.div
             key={h.id}
             initial={{ opacity: 0, y: 4 }}
@@ -218,6 +222,19 @@ export default function BeratPageClient({ hewanList }: { hewanList: HewanBerat[]
             </div>
           </motion.div>
         ))}
+
+        {hewanList.length > 0 && (
+          <div className="px-5 pb-5">
+            <PaginationControl
+              page={page}
+              totalPages={totalPages}
+              onPrev={onPrev}
+              onNext={onNext}
+              totalItems={hewanList.length}
+              perPage={PER_PAGE}
+            />
+          </div>
+        )}
       </KostaCard>
     </div>
   )

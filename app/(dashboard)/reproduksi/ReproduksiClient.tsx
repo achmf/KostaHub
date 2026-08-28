@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useMemo } from 'react'
 import { Heart } from 'lucide-react'
 import { KostaCard, Badge } from '@/components/KostaUI'
 import { EmptyState } from '@/components/ui/EmptyState'
 import PaginationControl from '@/components/Admin/PaginationControl'
+import { usePagination } from '@/hooks/usePagination'
 
 const palette = {
   moss: '#3F5B3A',
@@ -22,15 +22,10 @@ function StatusBadge({ status }: { status: string }) {
   return <Badge variant="rose">Gagal</Badge>
 }
 
-export default function ReproduksiClient({ reproduksiList }: { reproduksiList: any[] }) {
-  const [page, setPage] = useState(0)
-  const ITEMS_PER_PAGE = 10
+const PER_PAGE = 10
 
-  const totalPages = Math.ceil(reproduksiList.length / ITEMS_PER_PAGE)
-  const currentItems = useMemo(() => {
-    const start = page * ITEMS_PER_PAGE
-    return reproduksiList.slice(start, start + ITEMS_PER_PAGE)
-  }, [reproduksiList, page])
+export default function ReproduksiClient({ reproduksiList }: { reproduksiList: any[] }) {
+  const { paged: currentItems, page, totalPages, onPrev, onNext } = usePagination(reproduksiList, PER_PAGE)
 
   return (
     <KostaCard className="overflow-hidden">
@@ -113,8 +108,10 @@ export default function ReproduksiClient({ reproduksiList }: { reproduksiList: a
           <PaginationControl 
             page={page}
             totalPages={totalPages}
-            onPrev={() => setPage(p => Math.max(0, p - 1))}
-            onNext={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+            onPrev={onPrev}
+            onNext={onNext}
+            totalItems={reproduksiList.length}
+            perPage={PER_PAGE}
           />
         </div>
       )}

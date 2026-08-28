@@ -7,6 +7,8 @@ import { Plus, X, Search, Filter } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { Hewan } from '@prisma/client'
+import PaginationControl from '@/components/Admin/PaginationControl'
+import { usePagination } from '@/hooks/usePagination'
 import {
   KostaPageHeader,
   KostaCard,
@@ -70,6 +72,9 @@ export function HewanClient({
       return true
     })
   }, [q, kat, statusFilter, kelaminFilter, farmFilter, hewanList])
+
+  const PER_PAGE = 15
+  const { paged, page, totalPages, onPrev, onNext } = usePagination(filtered, PER_PAGE)
 
   const activeFilterCount = (kat !== 'ALL' ? 1 : 0) + (statusFilter !== 'ALL' ? 1 : 0) + (kelaminFilter !== 'ALL' ? 1 : 0) + (farmFilter !== 'ALL' ? 1 : 0)
 
@@ -147,7 +152,7 @@ export function HewanClient({
           {filtered.length === 0 && (
             <KostaEmptyState title="Tidak ada hewan." hint="Coba ubah filter atau tambah hewan baru." />
           )}
-          {filtered.slice(0, 50).map((h, i) => (
+          {paged.map((h, i) => (
             <motion.button
               key={h.id}
               onClick={() => router.push(`/hewan/${h.id}`)}
@@ -207,6 +212,19 @@ export function HewanClient({
             </motion.button>
           ))}
         </div>
+
+        {filtered.length > 0 && (
+          <div className="px-5 pb-5">
+            <PaginationControl
+              page={page}
+              totalPages={totalPages}
+              onPrev={onPrev}
+              onNext={onNext}
+              totalItems={filtered.length}
+              perPage={PER_PAGE}
+            />
+          </div>
+        )}
       </KostaCard>
 
       {/* Filter Drawer */}
