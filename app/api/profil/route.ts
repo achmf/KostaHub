@@ -1,0 +1,40 @@
+import { NextResponse } from 'next/server'
+import { getSession } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+
+export async function GET() {
+  const session = await getSession()
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: session.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        approvalStatus: true,
+        createdAt: true,
+        farms: {
+          include: {
+            farm: {
+              select: { id: true, nama: true, status: true },
+            },
+          },
+        },
+      },
+    })
+
+    if (!user || !user) {
+      return NextResponse.json({ error: 'User tidak ditemukan' }, { status: 404 })
+    }
+
+    return NextResponse.json(user)
+  } catch {
+    return NextResponse.json({ error: 'Terjadi kesalahan server' }, { status: 500 })
+  }
+}
