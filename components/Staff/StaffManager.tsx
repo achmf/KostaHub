@@ -4,18 +4,12 @@ import { useState, useTransition } from 'react'
 import { createStaff, deleteStaff } from '@/actions/staff'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Trash2, User, Mail, Lock, Phone, X, Users } from 'lucide-react'
-import { EmptyState } from '@/components/ui/EmptyState'
+import { KostaButton, KostaEmptyState, palette } from '@/components/KostaUI'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import PaginationControl from '@/components/Admin/PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
 
-const palette = {
-  cream: '#F2EDE0',
-  ink: '#0D140F',
-  ochre: '#C7873E',
-  border: 'rgba(13,20,15,0.10)',
-  forest: '#1B2A1F',
-}
+
 
 const ROLE_LABELS: Record<string, { label: string; bg: string; color: string }> = {
   PETUGAS: { label: 'Petugas', bg: 'rgba(63,91,58,0.12)', color: '#3F5B3A' },
@@ -61,20 +55,14 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
     <div>
       {/* Add button */}
       {isOwner && (
-        <button
+        <KostaButton
           onClick={() => setShowForm(!showForm)}
-          className="cursor-pointer flex items-center gap-2 px-5 py-3 rounded-full mb-6 transition-all"
-          style={{
-            background: showForm ? 'rgba(13,20,15,0.06)' : palette.ink,
-            color: showForm ? palette.ink : palette.cream,
-            fontFamily: "'Inter',sans-serif",
-            fontSize: 13,
-            border: `1px solid ${showForm ? palette.border : palette.ink}`,
-          }}
+          className="mb-6"
+          variant={showForm ? 'outline' : 'primary'}
         >
           {showForm ? <X size={14} /> : <Plus size={14} />}
           {showForm ? 'Batal' : 'Tambah Staff'}
-        </button>
+        </KostaButton>
       )}
 
       {/* Add form */}
@@ -162,11 +150,19 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
                   </label>
                   <Select name="role" required defaultValue="PETUGAS">
                     <SelectTrigger className="h-11 w-full rounded-xl bg-white/60 border-border/60 hover:bg-white transition-all shadow-sm">
-                      <SelectValue placeholder="— Pilih Role —" />
+                      <SelectValue placeholder="— Pilih Role —">
+                        {(val: string) => {
+                          const labels: Record<string, string> = {
+                            PETUGAS: 'Petugas',
+                            DOKTER: 'Dokter'
+                          }
+                          return val ? labels[val] : '— Pilih Role —'
+                        }}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="PETUGAS">Petugas</SelectItem>
-                      <SelectItem value="DOKTER">Dokter</SelectItem>
+                      <SelectItem value="PETUGAS" label="Petugas">Petugas</SelectItem>
+                      <SelectItem value="DOKTER" label="Dokter">Dokter</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -184,19 +180,12 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
                 />
               </div>
 
-              <button
+              <KostaButton
                 type="submit"
                 disabled={isPending}
-                className="cursor-pointer px-6 py-3 rounded-full"
-                style={{
-                  background: isPending ? 'rgba(13,20,15,0.5)' : palette.ink,
-                  color: palette.cream,
-                  fontFamily: "'Inter',sans-serif",
-                  fontSize: 13,
-                }}
               >
                 {isPending ? 'Menyimpan…' : 'Simpan Staff'}
-              </button>
+              </KostaButton>
             </form>
           </motion.div>
         )}
@@ -208,10 +197,9 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
           className="rounded-2xl"
           style={{ background: '#fff', border: `1px solid ${palette.border}` }}
         >
-          <EmptyState
-            icon={Users}
+          <KostaEmptyState
             title="Belum ada staff"
-            description="Tambahkan petugas atau dokter untuk membantu mengelola farm."
+            hint="Tambahkan petugas atau dokter untuk membantu mengelola farm."
           />
         </div>
       ) : (

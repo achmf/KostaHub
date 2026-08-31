@@ -259,7 +259,7 @@ export async function GET(request: Request) {
       orderBy: { tanggal: 'desc' },
       select: {
         tanggal: true, kategori: true, diagnosis: true, obat: true,
-        namaDokter: true, notes: true, status: true, tanggalLanjut: true,
+        namaDokter: true, notes: true, tanggalLanjut: true,
         hewan: { select: { tag: true, nama: true } },
       },
     }),
@@ -410,7 +410,6 @@ export async function GET(request: Request) {
     { w: 30, label: 'Diagnosis'    },
     { w: 22, label: 'Obat / Vaksin'},
     { w: 18, label: 'Dokter'       },
-    { w: 12, label: 'Status'       },
     { w: 14, label: 'Kontrol Lanjut'},
   ]
   cols2.forEach((c, i) => { ws2.getColumn(i + 1).width = c.w })
@@ -453,15 +452,7 @@ export async function GET(request: Request) {
     sc(ws2.getRow(rn).getCell(7), m.obat ?? '—', { font: { name: 'Calibri', size: 10, color: { argb: C.muted } }, fill: rf, align: L, border: thinBorder() })
     sc(ws2.getRow(rn).getCell(8), m.namaDokter ?? '—', { font: { name: 'Calibri', size: 10, color: { argb: C.muted } }, fill: rf, align: L, border: thinBorder() })
 
-    const ms = statusFont(m.status)
-    const statusCell = ws2.getRow(rn).getCell(9)
-    statusCell.value     = m.status
-    statusCell.font      = { name: 'Calibri', size: 9, bold: true, color: { argb: ms.argb } }
-    statusCell.fill      = solid(ms.fill)
-    statusCell.alignment = CTR
-    statusCell.border    = thinBorder()
-
-    sc(ws2.getRow(rn).getCell(10), m.tanggalLanjut ? formatDate(m.tanggalLanjut) : '—', {
+    sc(ws2.getRow(rn).getCell(9), m.tanggalLanjut ? formatDate(m.tanggalLanjut) : '—', {
       font: { name: 'Calibri', size: 9, color: { argb: m.tanggalLanjut ? C.amber : C.muted } }, fill: rf, align: CTR, border: thinBorder(),
     })
   })
@@ -484,7 +475,7 @@ export async function GET(request: Request) {
     { w: 18, label: 'Nama Pejantan' },
     { w: 14, label: 'Est. Lahir'    },
     { w: 12, label: 'Status'        },
-    { w: 14, label: 'Inbreeding'    },
+    { w: 14, label: 'Kawin Sedarah' },
     { w: 14, label: 'Tag Anak'      },
     { w: 10, label: 'Kelamin Anak'  },
     { w: 10, label: 'Berat Anak'    },

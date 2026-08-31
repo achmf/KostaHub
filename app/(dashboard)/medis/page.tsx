@@ -3,18 +3,10 @@ import { Plus } from 'lucide-react'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { KostaPageHeader, KostaCard, KostaButton, KostaSectionLabel } from '@/components/KostaUI'
+import { KostaPageHeader, KostaCard, KostaButton, KostaSectionLabel, palette } from '@/components/KostaUI'
 import { HewanMedisList } from '@/components/Hewan/HewanMedisList'
 
-const palette = {
-  cream: '#F2EDE0',
-  forest: '#1B2A1F',
-  moss: '#3F5B3A',
-  ochre: '#C7873E',
-  ink: '#0D140F',
-  border: 'rgba(13,20,15,0.10)',
-  emerald: '#3F7A4E',
-}
+
 
 export default async function MedisPage(props: {
   searchParams: Promise<{ [key: string]: string | undefined }>
@@ -96,7 +88,7 @@ export default async function MedisPage(props: {
       {/* Table */}
       <KostaCard className="overflow-hidden">
         <div
-          className="px-5 py-3 grid grid-cols-[1.5fr_1fr_2fr_1fr_auto] gap-4"
+          className="px-5 py-3 grid grid-cols-[1.5fr_1fr_2fr_auto] gap-4"
           style={{
             background: 'rgba(13,20,15,0.03)',
             borderBottom: `1px solid ${palette.border}`,
@@ -109,7 +101,7 @@ export default async function MedisPage(props: {
           <div>HEWAN</div>
           <div>JUMLAH CATATAN</div>
           <div>DIAGNOSIS TERAKHIR</div>
-          <div>STATUS TERAKHIR</div>
+
           <div className="w-4"></div>
         </div>
         <HewanMedisList hewans={hewans} />

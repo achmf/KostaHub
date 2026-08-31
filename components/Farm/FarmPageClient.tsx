@@ -6,6 +6,8 @@ import { Plus, MapPin, Users, MoreHorizontal, X } from 'lucide-react'
 import { createFarm, deleteFarm } from '@/actions/farm'
 import { KostaPageHeader, KostaCard, KostaButton, Badge, KostaSectionLabel, palette } from '@/components/KostaUI'
 import { GoatMark } from '@/components/GoatMark'
+import PaginationControl from '@/components/Admin/PaginationControl'
+import { usePagination } from '@/hooks/usePagination'
 
 interface Farm {
   id: string
@@ -25,6 +27,9 @@ export default function FarmPageClient({ farms: initialFarms }: { farms: Farm[] 
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+
+  const PER_PAGE = 12
+  const { paged: currentFarms, page, totalPages, onPrev, onNext } = usePagination(farms, PER_PAGE)
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -73,7 +78,7 @@ export default function FarmPageClient({ farms: initialFarms }: { farms: Farm[] 
       )}
 
       <div className="grid grid-cols-12 gap-4">
-        {farms.map((farm, i) => {
+        {currentFarms.map((farm, i) => {
           const accent = i === 0 || i === 3
           return (
             <motion.div
@@ -204,6 +209,19 @@ export default function FarmPageClient({ farms: initialFarms }: { farms: Farm[] 
           )
         })}
       </div>
+
+      {farms.length > 0 && (
+        <div className="mt-6">
+          <PaginationControl
+            page={page}
+            totalPages={totalPages}
+            onPrev={onPrev}
+            onNext={onNext}
+            totalItems={farms.length}
+            perPage={PER_PAGE}
+          />
+        </div>
+      )}
 
       {/* Add Farm Modal */}
       {showModal && (

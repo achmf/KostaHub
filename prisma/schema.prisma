@@ -59,11 +59,6 @@ enum KategoriMedis {
   LAINNYA
 }
 
-enum StatusMedis {
-  SEMBUH
-  RAWAT
-  PANTAU
-}
 
 enum StatusReproduksi {
   HAMIL
@@ -72,6 +67,7 @@ enum StatusReproduksi {
 }
 
 enum TipeNotifikasi {
+  MEDIS
   VAKSIN
   LAHIR
   BERAT
@@ -180,10 +176,10 @@ model RekamMedis {
   namaDokter    String? // Untuk dokter eksternal (tidak punya akun)
   notes         String?
   fotoUrl       String?
-  status        StatusMedis   @default(SEMBUH)
-  tanggalLanjut DateTime?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  tanggalLanjut   DateTime?
+  butuhNotifikasi Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
   @@index([tanggal])
 }

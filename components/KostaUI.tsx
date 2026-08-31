@@ -1,7 +1,8 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { ReactNode, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ReactNode, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 const palette = {
   cream: '#F2EDE0',
@@ -32,24 +33,24 @@ export function Badge({
 }) {
   const mapLight: Record<string, { bg: string; fg: string }> = {
     default: { bg: 'rgba(13,20,15,0.06)', fg: palette.ink },
-    emerald: { bg: 'rgba(63,122,78,0.14)', fg: palette.emerald },
-    amber: { bg: 'rgba(217,162,60,0.18)', fg: '#7E5A18' },
-    rose: { bg: 'rgba(181,68,59,0.14)', fg: palette.rose },
-    ochre: { bg: 'rgba(199,135,62,0.18)', fg: '#7A4F1E' },
-    moss: { bg: 'rgba(63,91,58,0.14)', fg: palette.moss },
+    emerald: { bg: 'rgba(63,122,78,0.15)', fg: '#285133' },
+    amber: { bg: 'rgba(217,162,60,0.2)', fg: '#5E4211' },
+    rose: { bg: 'rgba(181,68,59,0.15)', fg: '#7A2C26' },
+    ochre: { bg: 'rgba(199,135,62,0.2)', fg: '#634017' },
+    moss: { bg: 'rgba(63,91,58,0.15)', fg: '#2C4029' },
     ink: { bg: palette.ink, fg: palette.cream },
-    cream: { bg: 'rgba(242,237,224,0.15)', fg: palette.cream },
+    cream: { bg: 'rgba(13,20,15,0.06)', fg: palette.ink }, // Fixed: Use dark text for cream on light surface
   }
 
   const mapDark: Record<string, { bg: string; fg: string }> = {
-    default: { bg: 'rgba(242,237,224,0.15)', fg: palette.cream }, // Fallback to cream
-    emerald: { bg: 'rgba(63,122,78,0.25)', fg: '#8AD29F' }, // Lighter emerald
-    amber: { bg: 'rgba(217,162,60,0.25)', fg: '#F5D38A' }, // Lighter amber
-    rose: { bg: 'rgba(181,68,59,0.25)', fg: '#F2B2AD' }, // Lighter rose
-    ochre: { bg: 'rgba(199,135,62,0.25)', fg: '#EBC39A' }, // Lighter ochre
-    moss: { bg: 'rgba(63,91,58,0.25)', fg: '#A3C19A' }, // Lighter moss
-    ink: { bg: 'rgba(242,237,224,0.15)', fg: palette.cream },
-    cream: { bg: 'rgba(242,237,224,0.15)', fg: palette.cream },
+    default: { bg: 'rgba(242,237,224,0.15)', fg: palette.cream },
+    emerald: { bg: 'rgba(63,122,78,0.3)', fg: '#B3F0C9' },
+    amber: { bg: 'rgba(217,162,60,0.3)', fg: '#FFEAA6' },
+    rose: { bg: 'rgba(181,68,59,0.3)', fg: '#FFD3D0' },
+    ochre: { bg: 'rgba(199,135,62,0.3)', fg: '#FFE2C2' },
+    moss: { bg: 'rgba(63,91,58,0.3)', fg: '#CDEBBF' },
+    ink: { bg: 'rgba(242,237,224,0.2)', fg: palette.cream },
+    cream: { bg: 'rgba(242,237,224,0.2)', fg: palette.cream },
   }
 
   const c = surface === 'dark' ? mapDark[variant] || mapDark.default : mapLight[variant] || mapLight.default
@@ -230,6 +231,9 @@ export function KostaDialog({
   children: ReactNode
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
 }) {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden'
@@ -241,7 +245,7 @@ export function KostaDialog({
     }
   }, [isOpen])
 
-  if (!isOpen) return null
+  if (!mounted) return null
 
   const maxWClass = {
     sm: 'max-w-sm',
@@ -251,17 +255,26 @@ export function KostaDialog({
     '2xl': 'max-w-2xl',
   }[maxWidth]
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
-        onClick={(e) => e.stopPropagation()}
-        className={`w-full ${maxWClass} bg-white rounded-2xl shadow-xl overflow-hidden`}
-        style={{ border: `1px solid ${palette.border}` }}
-      >
+  return createPortal(
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className={`relative z-10 w-full ${maxWClass} bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]`}
+            style={{ border: `1px solid ${palette.border}` }}
+          >
         <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: palette.border }}>
           <h2 style={{ fontFamily: "'Fraunces',serif", fontSize: 20, color: palette.ink }}>{title}</h2>
           <button 
@@ -274,7 +287,10 @@ export function KostaDialog({
         <div className="p-5 overflow-y-auto max-h-[80vh]">
           {children}
         </div>
-      </motion.div>
-    </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>,
+    document.body
   )
 }

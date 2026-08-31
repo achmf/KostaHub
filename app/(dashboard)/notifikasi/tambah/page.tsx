@@ -4,10 +4,10 @@ import { tambahCustomNotif } from '@/actions/notifikasi'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { useActionState } from 'react'
-import { KostaButton, KostaSectionLabel } from '@/components/KostaUI'
+import { KostaButton, KostaSectionLabel, palette } from '@/components/KostaUI'
 import { DatePickerField } from '@/components/ui/DatePickerField'
 
-const palette = { cream: '#F2EDE0', forest: '#1B2A1F', ink: '#0D140F', border: 'rgba(13,20,15,0.10)' }
+
 const inputStyle: React.CSSProperties = {
   background: 'rgba(13,20,15,0.03)', border: `1px solid ${palette.border}`,
   fontFamily: "'Inter',sans-serif", fontSize: 14, borderRadius: 12,

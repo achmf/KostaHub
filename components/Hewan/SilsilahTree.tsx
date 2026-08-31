@@ -4,18 +4,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { SilsilahNode } from '@/lib/silsilah'
-
-const palette = {
-  forest: '#1B2A1F',
-  moss: '#3F5B3A',
-  mossSoft: '#A5B5A0',
-  ochre: '#C7873E',
-  ochreSoft: '#E2B883',
-  ink: '#0D140F',
-  cream: '#F2EDE0',
-  border: 'rgba(13,20,15,0.10)',
-  borderStrong: 'rgba(13,20,15,0.18)',
-}
+import { palette } from '@/components/KostaUI'
 
 type NodeProps = {
   node: SilsilahNode

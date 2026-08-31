@@ -28,6 +28,11 @@ export async function tambahRekamMedis(formData: FormData) {
   const notes = formData.get('notes') as string
   const dokter = formData.get('dokter') as string
 
+  const butuhNotifikasiStr = formData.get('butuhNotifikasi')
+  const butuhNotifikasi = butuhNotifikasiStr === 'on' || butuhNotifikasiStr === 'true'
+  const tanggalLanjutStr = formData.get('tanggalLanjut') as string | null
+  const tanggalLanjut = butuhNotifikasi && tanggalLanjutStr ? new Date(tanggalLanjutStr) : null
+
   await prisma.rekamMedis.create({
     data: {
       hewanId,
@@ -37,23 +42,11 @@ export async function tambahRekamMedis(formData: FormData) {
       obat,
       notes: notes || null,
       namaDokter: dokter || null,
+      butuhNotifikasi,
+      tanggalLanjut,
     }
   })
 
-  // Check if it's a vaccine to create reminder
-  if (kategori === 'VAKSINASI') {
-    const nextVaksin = new Date(tanggal)
-    nextVaksin.setMonth(nextVaksin.getMonth() + 6) // Example: 6 months later
-    
-    await prisma.notifikasi.create({
-      data: {
-        title: 'Jadwal Vaksin Lanjutan',
-        message: `Hewan perlu divaksin ulang pada ${nextVaksin.toLocaleDateString()}`,
-        tanggal: nextVaksin,
-        type: 'VAKSIN'
-      }
-    })
-  }
 
   redirect('/medis')
 }

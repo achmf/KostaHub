@@ -20,14 +20,9 @@ import {
 } from 'lucide-react'
 import { GoatMark } from '@/components/GoatMark'
 import { logout } from '@/actions/auth'
+import { palette } from '@/components/KostaUI'
 
-const palette = {
-  cream: '#F2EDE0',
-  forest: '#1B2A1F',
-  ochre: '#C7873E',
-  ochreSoft: '#E2B883',
-  ink: '#0D140F',
-}
+
 
 type NavItem = {
   href: string
@@ -188,93 +183,6 @@ export default function Sidebar({ role, name, email, farmName }: SidebarProps) {
         ))}
       </nav>
 
-      {/* User panel */}
-      <div
-        className="m-4 p-4 rounded-xl"
-        style={{
-          background: 'rgba(242,237,224,0.06)',
-          border: '1px solid rgba(242,237,224,0.10)',
-        }}
-      >
-        {/* Farm aktif */}
-        {farmName && role !== 'SUPER_ADMIN' && (
-          <div
-            className="mb-3 flex items-center gap-2 px-2.5 py-1.5 rounded-lg"
-            style={{
-              background: 'rgba(199,135,62,0.12)',
-              border: '1px solid rgba(199,135,62,0.25)',
-            }}
-          >
-            <span
-              className="w-1.5 h-1.5 rounded-full shrink-0"
-              style={{ background: palette.ochre }}
-            />
-            <span
-              className="truncate text-xs"
-              style={{ fontFamily: "'Inter',sans-serif", color: palette.ochreSoft }}
-            >
-              {farmName}
-            </span>
-          </div>
-        )}
-
-        <div className="flex items-center gap-2.5">
-          <div
-            className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-            style={{
-              background: palette.ochre,
-              color: palette.ink,
-              fontFamily: "'Fraunces',serif",
-              fontSize: 14,
-            }}
-          >
-            {name.charAt(0).toUpperCase()}
-          </div>
-          <div className="min-w-0">
-            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}>{name}</div>
-            <div
-              className="opacity-60 truncate"
-              style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10 }}
-            >
-              {email}
-            </div>
-          </div>
-        </div>
-
-        {/* Ganti Farm — tampil jika bukan Super Admin */}
-        {role !== 'SUPER_ADMIN' && (
-          <Link
-            href="/farms"
-            className="cursor-pointer mt-2.5 w-full flex items-center justify-center gap-2 py-1.5 rounded-md"
-            style={{
-              background: 'rgba(199,135,62,0.12)',
-              color: palette.ochreSoft,
-              border: '1px solid rgba(199,135,62,0.20)',
-              fontFamily: "'Inter',sans-serif",
-              fontSize: 12,
-            }}
-          >
-            <Building2 size={12} />
-            Ganti Farm
-          </Link>
-        )}
-
-        <form action={logout}>
-          <button
-            type="submit"
-            className="cursor-pointer mt-2 w-full flex items-center justify-center gap-2 py-2 rounded-md"
-            style={{
-              background: 'transparent',
-              color: palette.cream,
-              border: '1px solid rgba(242,237,224,0.18)',
-              fontFamily: "'Inter',sans-serif",
-              fontSize: 12,
-            }}
-          >
-            <ArrowLeft size={12} /> Keluar
-          </button>
-        </form>
-      </div>
     </aside>
   )
 }

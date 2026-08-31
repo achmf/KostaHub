@@ -1,20 +1,12 @@
 'use client'
 
+import Link from 'next/link'
 import { Heart } from 'lucide-react'
-import { KostaCard, Badge } from '@/components/KostaUI'
-import { EmptyState } from '@/components/ui/EmptyState'
+import { KostaCard, Badge, KostaEmptyState, palette } from '@/components/KostaUI'
 import PaginationControl from '@/components/Admin/PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
 
-const palette = {
-  moss: '#3F5B3A',
-  ochre: '#C7873E',
-  ink: '#0D140F',
-  border: 'rgba(13,20,15,0.10)',
-  rose: '#B5443B',
-  amber: '#D9A23C',
-  emerald: '#3F7A4E',
-}
+
 
 function StatusBadge({ status }: { status: string }) {
   if (status === 'HAMIL') return <Badge variant="amber">Hamil</Badge>
@@ -49,10 +41,9 @@ export default function ReproduksiClient({ reproduksiList }: { reproduksiList: a
       </div>
       
       {reproduksiList.length === 0 && (
-        <EmptyState
-          icon={Heart}
+        <KostaEmptyState
           title="Belum ada data reproduksi"
-          description="Catat perkawinan untuk mulai melacak kehamilan dan kelahiran."
+          hint="Catat perkawinan untuk mulai melacak kehamilan dan kelahiran."
         />
       )}
       
@@ -67,20 +58,24 @@ export default function ReproduksiClient({ reproduksiList }: { reproduksiList: a
             style={{ borderBottom: `1px solid ${palette.border}` }}
           >
             <div>
-              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
-                {r.induk.nama || 'Tanpa Nama'}
-              </div>
-              <div className="opacity-55" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>
-                {r.induk.tag}
-              </div>
+              <Link href={`/hewan/${r.induk.id}`} className="hover:underline hover:text-moss transition-colors block">
+                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
+                  {r.induk.nama || 'Tanpa Nama'}
+                </div>
+                <div className="opacity-55" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>
+                  {r.induk.tag}
+                </div>
+              </Link>
             </div>
             <div>
-              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
-                {r.pejantan.nama || 'Tanpa Nama'}
-              </div>
-              <div className="opacity-55" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>
-                {r.pejantan.tag}
-              </div>
+              <Link href={`/hewan/${r.pejantan.id}`} className="hover:underline hover:text-moss transition-colors block">
+                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
+                  {r.pejantan.nama || 'Tanpa Nama'}
+                </div>
+                <div className="opacity-55" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>
+                  {r.pejantan.tag}
+                </div>
+              </Link>
             </div>
             <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>
               {new Date(r.tanggalKawin).toLocaleDateString('id-ID')}

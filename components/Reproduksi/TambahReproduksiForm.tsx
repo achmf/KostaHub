@@ -4,21 +4,11 @@ import { tambahReproduksi, type TambahReproduksiState } from '@/actions/reproduk
 import Link from 'next/link'
 import { ArrowLeft, AlertTriangle, ShieldAlert, CheckCircle2 } from 'lucide-react'
 import { useActionState, useState, useCallback, useRef } from 'react'
-import { KostaButton, KostaSectionLabel } from '@/components/KostaUI'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { KostaButton, KostaSectionLabel, palette } from '@/components/KostaUI'
+import { HewanSelector } from '@/components/ui/HewanSelector'
 import { DatePickerField } from '@/components/ui/DatePickerField'
 
-const palette = {
-  cream: '#F2EDE0',
-  forest: '#1B2A1F',
-  ink: '#0D140F',
-  border: 'rgba(13,20,15,0.10)',
-  rose: '#B5443B',
-  roseBg: 'rgba(181,68,59,0.06)',
-  roseBorder: 'rgba(181,68,59,0.25)',
-  moss: '#3F5B3A',
-  amber: '#D9A23C',
-}
+
 
 const inputStyle: React.CSSProperties = {
   background: 'rgba(13,20,15,0.03)', border: `1px solid ${palette.border}`,
@@ -124,37 +114,23 @@ export function TambahReproduksiForm({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label style={labelStyle}>INDUK BETINA ♀ *</label>
-              <Select
-                required
+              <HewanSelector
                 name="indukId"
-                onValueChange={(val: string | null, _evt) => handleSelectionChange('induk', val ?? '')}
-              >
-                <SelectTrigger className="h-11 w-full rounded-xl bg-white/60 border-border/60 hover:bg-white focus:bg-white transition-all shadow-sm">
-                  <SelectValue placeholder="— Pilih Indukan —" />
-                </SelectTrigger>
-                <SelectContent>
-                  {indukan.map((h) => (
-                    <SelectItem key={h.id} value={h.id}>{h.tag}{h.nama ? ` — ${h.nama}` : ''}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                hewanList={indukan}
+                onChange={(val) => handleSelectionChange('induk', val)}
+                placeholder="— Pilih Indukan —"
+                required
+              />
             </div>
             <div>
               <label style={labelStyle}>PEJANTAN ♂ *</label>
-              <Select
-                required
+              <HewanSelector
                 name="pejantanId"
-                onValueChange={(val: string | null, _evt) => handleSelectionChange('pejantan', val ?? '')}
-              >
-                <SelectTrigger className="h-11 w-full rounded-xl bg-white/60 border-border/60 hover:bg-white focus:bg-white transition-all shadow-sm">
-                  <SelectValue placeholder="— Pilih Pejantan —" />
-                </SelectTrigger>
-                <SelectContent>
-                  {pejantan.map((h) => (
-                    <SelectItem key={h.id} value={h.id}>{h.tag}{h.nama ? ` — ${h.nama}` : ''}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                hewanList={pejantan}
+                onChange={(val) => handleSelectionChange('pejantan', val)}
+                placeholder="— Pilih Pejantan —"
+                required
+              />
             </div>
           </div>
 
@@ -185,7 +161,7 @@ export function TambahReproduksiForm({
           {hasRisk && !isCheckingInbreeding && (
             <div
               className="rounded-2xl p-5 space-y-4"
-              style={{ background: palette.roseBg, border: `1.5px solid ${palette.roseBorder}` }}
+              style={{ background: 'rgba(178, 75, 75, 0.05)', border: '1.5px solid rgba(178, 75, 75, 0.15)' }}
             >
               <div className="flex items-start gap-3">
                 <AlertTriangle size={20} style={{ color: palette.rose, flexShrink: 0, marginTop: 2 }} />
@@ -243,14 +219,14 @@ export function TambahReproduksiForm({
                     />
                     <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.75)', lineHeight: 1.5 }}>
                       Saya memahami risiko genetik dari kawin sedarah dan tetap ingin melanjutkan.
-                      Data ini akan dicatat sebagai <strong>inbreeding override</strong>.
+                      Data ini akan dicatat sebagai <strong>override kawin sedarah</strong>.
                     </span>
                   </label>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 pt-1" style={{ color: 'rgba(13,20,15,0.6)', fontFamily: "'Inter',sans-serif", fontSize: 12 }}>
                   <ShieldAlert size={14} style={{ color: palette.rose }} />
-                  Hanya Super Admin yang dapat melanjutkan perkawinan dengan risiko inbreeding.
+                  Hanya Super Admin yang dapat melanjutkan perkawinan dengan risiko kawin sedarah.
                 </div>
               )}
             </div>

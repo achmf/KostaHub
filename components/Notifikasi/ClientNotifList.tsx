@@ -14,34 +14,34 @@ import PaginationControl from '@/components/Admin/PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
 
 const ICONS: Record<string, React.FC<{ size?: number }>> = {
-  VAKSIN: Syringe,
+  MEDIS: Syringe,
   LAHIR: PawPrint,
   BERAT: Scale,
   CUSTOM: Bell,
 }
 
 const TONES: Record<string, { bg: string; fg: string }> = {
-  VAKSIN:  { bg: 'rgba(199,135,62,0.14)', fg: palette.ochre },
+  MEDIS:  { bg: 'rgba(199,135,62,0.14)', fg: palette.ochre },
   LAHIR:   { bg: 'rgba(63,91,58,0.14)',   fg: palette.moss },
   BERAT:   { bg: 'rgba(63,122,78,0.14)',  fg: palette.emerald },
   CUSTOM:  { bg: 'rgba(13,20,15,0.08)',   fg: palette.ink },
 }
 
 const BADGE_VARIANT: Record<string, 'ochre' | 'moss' | 'emerald' | 'default'> = {
-  VAKSIN: 'ochre',
+  MEDIS: 'ochre',
   LAHIR:  'moss',
   BERAT:  'emerald',
   CUSTOM: 'default',
 }
 
 const TYPE_LABEL: Record<string, string> = {
-  VAKSIN: 'Jadwal Medis',
+  MEDIS: 'Jadwal Medis',
   LAHIR:  'Kelahiran',
   BERAT:  'Timbang',
   CUSTOM: 'Reminder',
 }
 
-type FilterType = 'ALL' | 'VAKSIN' | 'LAHIR' | 'BERAT' | 'CUSTOM'
+type FilterType = 'ALL' | 'MEDIS' | 'LAHIR' | 'BERAT' | 'CUSTOM'
 
 export function ClientNotifList() {
   const {
@@ -150,7 +150,7 @@ export function ClientNotifList() {
 
         {/* Filter chips */}
         <div className="flex flex-wrap gap-2 mb-5">
-          {(['ALL', 'VAKSIN', 'LAHIR', 'BERAT', 'CUSTOM'] as FilterType[]).map((f) => {
+          {(['ALL', 'MEDIS', 'LAHIR', 'BERAT', 'CUSTOM'] as FilterType[]).map((f) => {
             const count = f === 'ALL' ? list.length : list.filter((n) => n.type === f).length
             const unread = f === 'ALL'
               ? list.filter((n) => !n.isRead).length

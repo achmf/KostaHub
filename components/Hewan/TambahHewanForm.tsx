@@ -1,10 +1,10 @@
 'use client'
 
 import { tambahHewan } from '@/actions/hewan'
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { KostaButton, KostaSectionLabel } from '@/components/KostaUI'
+import { KostaButton, KostaSectionLabel, palette } from '@/components/KostaUI'
 import {
   Select,
   SelectContent,
@@ -12,15 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { HewanSelector } from '@/components/ui/HewanSelector'
 import { DatePickerField } from '@/components/ui/DatePickerField'
 
-const palette = {
-  cream: '#F2EDE0',
-  forest: '#1B2A1F',
-  ink: '#0D140F',
-  border: 'rgba(13,20,15,0.10)',
-  ochre: '#C7873E',
-}
+
 
 const inputStyle: React.CSSProperties = {
   background: 'rgba(13,20,15,0.03)',
@@ -52,10 +47,19 @@ interface Props {
   semuaHewan?: { id: string; tag: string; nama: string | null; kelamin: string }[]
 }
 
-export default function TambahHewanForm({ isSuperAdmin, farms, semuaHewan = [] }: Props) {
+export default function TambahHewanForm({ isSuperAdmin, farms, defaultFarmId, semuaHewan = [] }: Props) {
   const [state, formAction, isPending] = useActionState(async (_: unknown, formData: FormData) => {
     return await tambahHewan(formData)
   }, null)
+
+  const [farmId, setFarmId] = useState(defaultFarmId || '')
+  const [kelamin, setKelamin] = useState('')
+  const [kategori, setKategori] = useState('')
+  const [bapakId, setBapakId] = useState('')
+  const [indukId, setIndukId] = useState('')
+
+  const KELAMIN_LABELS: Record<string, string> = { JANTAN: '♂ Jantan', BETINA: '♀ Betina' }
+  const KATEGORI_LABELS: Record<string, string> = { ANAKAN: 'Anakan', DARA: 'Dara', JANTAN_MUDA: 'Jantan Muda', INDUKAN: 'Indukan', PEJANTAN: 'Pejantan' }
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -99,9 +103,10 @@ export default function TambahHewanForm({ isSuperAdmin, farms, semuaHewan = [] }
           {isSuperAdmin && (
             <div>
               <label style={labelStyle}>FARM *</label>
-              <Select name="farmId" required>
+              <input type="hidden" name="farmId" value={farmId} />
+              <Select value={farmId} onValueChange={(v) => v && setFarmId(v)}>
                 <SelectTrigger className={triggerCls}>
-                  <SelectValue placeholder="— Pilih Farm —" />
+                  <span className="flex-1 text-left line-clamp-1">{farmId ? farms.find(f => f.id === farmId)?.nama : '— Pilih Farm —'}</span>
                 </SelectTrigger>
                 <SelectContent>
                   {farms.map((f) => (
@@ -110,6 +115,9 @@ export default function TambahHewanForm({ isSuperAdmin, farms, semuaHewan = [] }
                 </SelectContent>
               </Select>
             </div>
+          )}
+          {!isSuperAdmin && defaultFarmId && (
+            <input type="hidden" name="farmId" value={defaultFarmId} />
           )}
 
           <div className="grid grid-cols-2 gap-4">
@@ -126,9 +134,12 @@ export default function TambahHewanForm({ isSuperAdmin, farms, semuaHewan = [] }
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label style={labelStyle}>JENIS KELAMIN *</label>
-              <Select name="kelamin" required>
+              <input type="hidden" name="kelamin" value={kelamin} />
+              {/* Note: we omit required prop on native input if using controlled Select, so handle validation in action, or just add required to a hidden text input if needed.
+                  But since action already validates, it's fine. */}
+              <Select value={kelamin} onValueChange={(v) => v && setKelamin(v as any)}>
                 <SelectTrigger className={triggerCls}>
-                  <SelectValue placeholder="— Pilih Kelamin —" />
+                  <span className="flex-1 text-left line-clamp-1">{KELAMIN_LABELS[kelamin] || '— Pilih Kelamin —'}</span>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="JANTAN">♂ Jantan</SelectItem>
@@ -138,9 +149,10 @@ export default function TambahHewanForm({ isSuperAdmin, farms, semuaHewan = [] }
             </div>
             <div>
               <label style={labelStyle}>KATEGORI *</label>
-              <Select name="kategori" required>
+              <input type="hidden" name="kategori" value={kategori} />
+              <Select value={kategori} onValueChange={(v) => v && setKategori(v as any)}>
                 <SelectTrigger className={triggerCls}>
-                  <SelectValue placeholder="— Pilih Kategori —" />
+                  <span className="flex-1 text-left line-clamp-1">{KATEGORI_LABELS[kategori] || '— Pilih Kategori —'}</span>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ANAKAN">Anakan</SelectItem>
@@ -181,33 +193,23 @@ export default function TambahHewanForm({ isSuperAdmin, farms, semuaHewan = [] }
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label style={labelStyle}>JANTAN ♂</label>
-                  <Select name="bapakId">
-                    <SelectTrigger className={triggerCls}>
-                      <SelectValue placeholder="— Tidak diketahui —" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {semuaHewan.filter((h) => h.kelamin === 'JANTAN').map((h) => (
-                        <SelectItem key={h.id} value={h.id}>
-                          {h.tag}{h.nama ? ` — ${h.nama}` : ''}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <HewanSelector
+                    name="bapakId"
+                    value={bapakId}
+                    onChange={(v) => setBapakId(v)}
+                    hewanList={[{id: '', tag: '— Tidak diketahui —', nama: null}, ...semuaHewan.filter((h) => h.kelamin === 'JANTAN')]}
+                    placeholder="— Tidak diketahui —"
+                  />
                 </div>
                 <div>
                   <label style={labelStyle}>INDUK ♀</label>
-                  <Select name="indukId">
-                    <SelectTrigger className={triggerCls}>
-                      <SelectValue placeholder="— Tidak diketahui —" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {semuaHewan.filter((h) => h.kelamin === 'BETINA').map((h) => (
-                        <SelectItem key={h.id} value={h.id}>
-                          {h.tag}{h.nama ? ` — ${h.nama}` : ''}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <HewanSelector
+                    name="indukId"
+                    value={indukId}
+                    onChange={(v) => setIndukId(v)}
+                    hewanList={[{id: '', tag: '— Tidak diketahui —', nama: null}, ...semuaHewan.filter((h) => h.kelamin === 'BETINA')]}
+                    placeholder="— Tidak diketahui —"
+                  />
                 </div>
               </div>
               <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: 'rgba(13,20,15,0.45)', marginTop: -8 }}>

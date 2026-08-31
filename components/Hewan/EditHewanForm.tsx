@@ -1,10 +1,10 @@
 'use client'
 
 import { editHewan } from '@/actions/hewan'
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { KostaButton, KostaSectionLabel } from '@/components/KostaUI'
+import { KostaButton, KostaSectionLabel, palette } from '@/components/KostaUI'
 import {
   Select,
   SelectContent,
@@ -12,16 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { HewanSelector } from '@/components/ui/HewanSelector'
 import type { Hewan } from '@prisma/client'
 import { DatePickerField } from '@/components/ui/DatePickerField'
 
-const palette = {
-  cream: '#F2EDE0',
-  forest: '#1B2A1F',
-  ink: '#0D140F',
-  border: 'rgba(13,20,15,0.10)',
-  ochre: '#C7873E',
-}
+
 
 const inputStyle: React.CSSProperties = {
   background: 'rgba(13,20,15,0.03)',
@@ -56,6 +51,16 @@ export default function EditHewanForm({
   const [state, formAction, isPending] = useActionState(async (_: unknown, formData: FormData) => {
     return await editHewan(hewan.id, formData)
   }, null)
+
+  const [kelamin, setKelamin] = useState(hewan.kelamin)
+  const [kategori, setKategori] = useState(hewan.kategori)
+  const [status, setStatus] = useState(hewan.status)
+  const [bapakId, setBapakId] = useState(hewan.bapakId || '')
+  const [indukId, setIndukId] = useState(hewan.indukId || '')
+
+  const KELAMIN_LABELS: Record<string, string> = { JANTAN: '♂ Jantan', BETINA: '♀ Betina' }
+  const KATEGORI_LABELS: Record<string, string> = { ANAKAN: 'Anakan', DARA: 'Dara', JANTAN_MUDA: 'Jantan Muda', INDUKAN: 'Indukan', PEJANTAN: 'Pejantan' }
+  const STATUS_LABELS: Record<string, string> = { AKTIF: 'Aktif', TERJUAL: 'Terjual', MATI: 'Mati' }
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -110,9 +115,10 @@ export default function EditHewanForm({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label style={labelStyle}>JENIS KELAMIN *</label>
-              <Select name="kelamin" required defaultValue={hewan.kelamin}>
+              <input type="hidden" name="kelamin" value={kelamin} />
+              <Select value={kelamin} onValueChange={(v) => v && setKelamin(v as any)}>
                 <SelectTrigger className={triggerCls}>
-                  <SelectValue placeholder="— Pilih Kelamin —" />
+                  <span className="flex-1 text-left line-clamp-1">{KELAMIN_LABELS[kelamin] || '— Pilih Kelamin —'}</span>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="JANTAN">♂ Jantan</SelectItem>
@@ -122,9 +128,10 @@ export default function EditHewanForm({
             </div>
             <div>
               <label style={labelStyle}>KATEGORI *</label>
-              <Select name="kategori" required defaultValue={hewan.kategori}>
+              <input type="hidden" name="kategori" value={kategori} />
+              <Select value={kategori} onValueChange={(v) => v && setKategori(v as any)}>
                 <SelectTrigger className={triggerCls}>
-                  <SelectValue placeholder="— Pilih Kategori —" />
+                  <span className="flex-1 text-left line-clamp-1">{KATEGORI_LABELS[kategori] || '— Pilih Kategori —'}</span>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ANAKAN">Anakan</SelectItem>
@@ -150,9 +157,10 @@ export default function EditHewanForm({
             </div>
             <div>
               <label style={labelStyle}>STATUS *</label>
-              <Select name="status" required defaultValue={hewan.status}>
+              <input type="hidden" name="status" value={status} />
+              <Select value={status} onValueChange={(v) => v && setStatus(v as any)}>
                 <SelectTrigger className={triggerCls}>
-                  <SelectValue placeholder="— Pilih Status —" />
+                  <span className="flex-1 text-left line-clamp-1">{STATUS_LABELS[status] || '— Pilih Status —'}</span>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="AKTIF">Aktif</SelectItem>
@@ -175,33 +183,23 @@ export default function EditHewanForm({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label style={labelStyle}>JANTAN ♂</label>
-                  <Select name="bapakId" defaultValue={hewan.bapakId || ''}>
-                    <SelectTrigger className={triggerCls}>
-                      <SelectValue placeholder="— Tidak diketahui —" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {semuaHewan.filter((h) => h.kelamin === 'JANTAN' && h.id !== hewan.id).map((h) => (
-                        <SelectItem key={h.id} value={h.id}>
-                          {h.tag}{h.nama ? ` — ${h.nama}` : ''}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <HewanSelector
+                    name="bapakId"
+                    value={bapakId}
+                    onChange={(v) => setBapakId(v)}
+                    hewanList={[{id: '', tag: '— Tidak diketahui —', nama: null}, ...semuaHewan.filter((h) => h.kelamin === 'JANTAN' && h.id !== hewan.id)]}
+                    placeholder="— Tidak diketahui —"
+                  />
                 </div>
                 <div>
                   <label style={labelStyle}>INDUK ♀</label>
-                  <Select name="indukId" defaultValue={hewan.indukId || ''}>
-                    <SelectTrigger className={triggerCls}>
-                      <SelectValue placeholder="— Tidak diketahui —" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {semuaHewan.filter((h) => h.kelamin === 'BETINA' && h.id !== hewan.id).map((h) => (
-                        <SelectItem key={h.id} value={h.id}>
-                          {h.tag}{h.nama ? ` — ${h.nama}` : ''}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <HewanSelector
+                    name="indukId"
+                    value={indukId}
+                    onChange={(v) => setIndukId(v)}
+                    hewanList={[{id: '', tag: '— Tidak diketahui —', nama: null}, ...semuaHewan.filter((h) => h.kelamin === 'BETINA' && h.id !== hewan.id)]}
+                    placeholder="— Tidak diketahui —"
+                  />
                 </div>
               </div>
               <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: 'rgba(13,20,15,0.45)', marginTop: -8 }}>

@@ -8,14 +8,13 @@ import {
   Activity, CheckCircle2, AlertCircle, LayoutGrid,
   Flame, CircleDot, PenLine, X,
 } from 'lucide-react'
+import PaginationControl from '@/components/Admin/PaginationControl'
+import { usePagination } from '@/hooks/usePagination'
+
+import { palette as corePalette } from '@/components/KostaUI'
 
 const palette = {
-  cream: '#F2EDE0',
-  forest: '#1B2A1F',
-  moss: '#3F5B3A',
-  ochre: '#C7873E',
-  ink: '#0D140F',
-  border: 'rgba(13,20,15,0.10)',
+  ...corePalette,
   muted: 'rgba(13,20,15,0.50)',
 }
 
@@ -238,6 +237,9 @@ export default function MapPageClient({ farms: initialFarms, role }: { farms: Fa
     })
   }, [farms, search, filterStatus])
 
+  const PER_PAGE = 20
+  const { paged: currentFarms, page, totalPages, onPrev, onNext } = usePagination(filteredFarms, PER_PAGE)
+
   const totalHewan = farms.reduce((a, f) => a + f._count.hewan, 0)
   const farmAktif = farms.filter(f => f.status === 'AKTIF').length
   const farmGPS = farms.filter(f => f.lat && f.lng).length
@@ -423,21 +425,35 @@ export default function MapPageClient({ farms: initialFarms, role }: { farms: Fa
               </div>
 
               {/* Farm list */}
-              <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
                 {filteredFarms.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <SlidersHorizontal size={24} style={{ color: palette.muted, marginBottom: 8 }} />
                     <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: palette.muted }}>Tidak ada farm ditemukan</p>
                   </div>
                 ) : (
-                  filteredFarms.map(farm => (
-                    <FarmCard
-                      key={farm.id}
-                      farm={farm}
-                      selected={selectedFarm?.id === farm.id}
-                      onSelect={() => setSelectedFarm(prev => prev?.id === farm.id ? null : farm)}
-                    />
-                  ))
+                  <>
+                    {currentFarms.map(farm => (
+                      <FarmCard
+                        key={farm.id}
+                        farm={farm}
+                        selected={selectedFarm?.id === farm.id}
+                        onSelect={() => setSelectedFarm(prev => prev?.id === farm.id ? null : farm)}
+                      />
+                    ))}
+                    {filteredFarms.length > 0 && (
+                      <div className="mt-2 mb-1 px-1">
+                        <PaginationControl
+                          page={page}
+                          totalPages={totalPages}
+                          onPrev={onPrev}
+                          onNext={onNext}
+                          totalItems={filteredFarms.length}
+                          perPage={PER_PAGE}
+                        />
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 

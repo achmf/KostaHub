@@ -46,7 +46,13 @@ export default function FarmSelector({ farms }: FarmSelectorProps) {
           className="absolute left-2.5 w-1.5 h-1.5 rounded-full pointer-events-none shrink-0"
           style={{ background: '#C7873E' }}
         />
-        <SelectValue placeholder="Semua Farm" />
+        <SelectValue placeholder="Semua Farm">
+          {(val: string) => {
+            if (val === 'all') return 'Semua Farm'
+            const selected = farms.find(f => f.id === val)
+            return selected ? selected.nama : 'Semua Farm'
+          }}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent align="end">
         <SelectItem value="all">Semua Farm</SelectItem>
