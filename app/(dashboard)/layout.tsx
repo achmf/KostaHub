@@ -5,12 +5,9 @@ import { redirect } from 'next/navigation'
 import { GoatMark } from '@/components/GoatMark'
 import FarmSelector from '@/components/Layout/FarmSelector'
 import { Search } from 'lucide-react'
+import UserDropdown from '@/components/Layout/UserDropdown'
 
-const palette = {
-  cream: '#F2EDE0',
-  border: 'rgba(13,20,15,0.10)',
-  ink: '#0D140F',
-}
+import { palette } from '@/components/KostaUI'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
@@ -85,8 +82,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
                     style={{
                       fontFamily: "'Inter',sans-serif",
                       fontSize: 12,
-                      fontWeight: 500,
-                      color: '#C7873E',
+                      color: palette.ochre,
                     }}
                   >
                     {farmName}
@@ -117,31 +113,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
             {session.role === 'SUPER_ADMIN' && <FarmSelector farms={allFarms} />}
 
             {/* User chip */}
-            <div
-              className="flex items-center gap-2 px-3 py-2 rounded-full"
-              style={{
-                border: `1px solid ${palette.border}`,
-                background: '#fff',
-              }}
-            >
-              <div
-                className="w-6 h-6 rounded-full flex items-center justify-center"
-                style={{
-                  background: '#C7873E',
-                  color: palette.cream,
-                  fontFamily: "'Fraunces',serif",
-                  fontSize: 11,
-                }}
-              >
-                {session.name.charAt(0).toUpperCase()}
-              </div>
-              <span
-                className="hidden md:block"
-                style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}
-              >
-                {session.name}
-              </span>
-            </div>
+            <UserDropdown
+              name={session.name}
+              email={session.email ?? ''}
+              role={session.role}
+              farmName={farmName}
+            />
           </div>
         </header>
 

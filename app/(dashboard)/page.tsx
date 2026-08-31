@@ -25,7 +25,7 @@ export default async function DashboardPage(props: { searchParams: Promise<{ [ke
     mati,
     terjual,
     reproduksiHamil,
-    notifikasiVaksin,
+    notifikasiMedis,
     kategoriStats,
     farmCount,
   ] = await Promise.all([
@@ -47,7 +47,7 @@ export default async function DashboardPage(props: { searchParams: Promise<{ [ke
     prisma.notifikasi.findMany({
       where: {
         isRead: false,
-        type: 'VAKSIN',
+        type: 'MEDIS',
         ...(farmId ? { farmId } : {}),
       },
       orderBy: { tanggal: 'asc' },
@@ -160,7 +160,7 @@ export default async function DashboardPage(props: { searchParams: Promise<{ [ke
           updatedAt: r.induk.updatedAt.toISOString(),
         },
       }))}
-      notifikasiVaksin={notifikasiVaksin.map(n => ({
+      notifikasiMedis={notifikasiMedis.map(n => ({
         ...n,
         tanggal: n.tanggal.toISOString(),
         createdAt: n.createdAt.toISOString(),

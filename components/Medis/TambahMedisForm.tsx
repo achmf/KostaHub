@@ -4,23 +4,15 @@ import { tambahRekamMedis } from '@/actions/medis'
 import Link from 'next/link'
 import { ArrowLeft, CalendarIcon, Check, ChevronsUpDown } from 'lucide-react'
 import { useActionState, useState } from 'react'
-import { KostaButton, KostaSectionLabel } from '@/components/KostaUI'
+import { KostaButton, KostaSectionLabel, palette } from '@/components/KostaUI'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Calendar } from '@/components/ui/calendar'
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
-import { format } from 'date-fns'
-import { id as localeID } from 'date-fns/locale'
+import { HewanSelector } from '@/components/ui/HewanSelector'
+import { DatePickerField } from '@/components/ui/DatePickerField'
 import { cn } from '@/lib/utils'
 
-const palette = {
-  cream: '#F2EDE0',
-  forest: '#1B2A1F',
-  ink: '#0D140F',
-  border: 'rgba(13,20,15,0.10)',
-}
+
 
 const labelStyle: React.CSSProperties = {
   fontFamily: "'JetBrains Mono',monospace",
@@ -34,8 +26,7 @@ const labelStyle: React.CSSProperties = {
 export function TambahMedisForm({ hewan }: { hewan: { id: string; tag: string; nama: string | null }[] }) {
   const [obatKategori, setObatKategori] = useState('')
   const [hewanId, setHewanId] = useState('')
-  const [openHewan, setOpenHewan] = useState(false)
-  const [date, setDate] = useState<Date | undefined>(new Date())
+  const [butuhNotifikasi, setButuhNotifikasi] = useState(false)
 
   const [state, formAction, isPending] = useActionState(async (_: unknown, formData: FormData) => {
     return await tambahRekamMedis(formData)
@@ -76,75 +67,24 @@ export function TambahMedisForm({ hewan }: { hewan: { id: string; tag: string; n
 
           <div>
             <label style={labelStyle}>PILIH HEWAN *</label>
-            <input type="hidden" name="hewanId" value={hewanId} required />
-            <Popover open={openHewan} onOpenChange={setOpenHewan}>
-              <PopoverTrigger
-                role="combobox"
-                aria-expanded={openHewan}
-                className="flex h-11 w-full items-center justify-between rounded-xl border border-border/60 bg-white/60 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all hover:bg-white shadow-sm"
-                style={{ fontFamily: "'Inter',sans-serif" }}
-              >
-                {hewanId
-                  ? (hewan.find((h) => h.id === hewanId)?.tag + (hewan.find((h) => h.id === hewanId)?.nama ? ` — ${hewan.find((h) => h.id === hewanId)?.nama}` : ''))
-                  : "— Cari atau Pilih Hewan —"}
-                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </PopoverTrigger>
-              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl border-border shadow-lg" align="start">
-                <Command>
-                  <CommandInput placeholder="Cari tag atau nama hewan..." className="text-sm h-11" />
-                  <CommandList>
-                    <CommandEmpty>Hewan tidak ditemukan.</CommandEmpty>
-                    <CommandGroup>
-                      {hewan.map((h) => (
-                        <CommandItem
-                          key={h.id}
-                          value={`${h.tag} ${h.nama || ''}`}
-                          onSelect={() => {
-                            setHewanId(h.id)
-                            setOpenHewan(false)
-                          }}
-                          className="rounded-lg my-1 cursor-pointer"
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              hewanId === h.id ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {h.tag}{h.nama ? ` — ${h.nama}` : ''}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+            <HewanSelector 
+              name="hewanId" 
+              hewanList={hewan} 
+              value={hewanId} 
+              onChange={setHewanId} 
+              required 
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label style={labelStyle}>TANGGAL *</label>
-              <input type="hidden" name="tanggal" value={date ? format(date, 'yyyy-MM-dd') : ''} required />
-              <Popover>
-                <PopoverTrigger
-                  className={cn(
-                    "flex h-11 w-full items-center justify-start text-left rounded-xl border border-border/60 bg-white/60 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all hover:bg-white shadow-sm",
-                    !date && "text-muted-foreground"
-                  )}
-                  style={{ fontFamily: "'Inter',sans-serif" }}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                  {date ? format(date, "dd MMMM yyyy", { locale: localeID }) : <span>Pilih tanggal</span>}
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 rounded-xl shadow-lg border-border" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    className="rounded-xl"
-                  />
-                </PopoverContent>
-              </Popover>
+              <DatePickerField
+                name="tanggal"
+                defaultValue={new Date()}
+                required
+                className="h-11 bg-white/60 hover:bg-white focus-visible:ring-[#3F5B3A]/40 shadow-sm"
+              />
             </div>
             <div>
               <label style={labelStyle}>DOKTER / PETUGAS</label>
@@ -161,18 +101,33 @@ export function TambahMedisForm({ hewan }: { hewan: { id: string; tag: string; n
               <label style={labelStyle}>KATEGORI TINDAKAN *</label>
               <Select name="kategori" required>
                 <SelectTrigger className="h-11 w-full rounded-xl bg-white/60 border-border/60 hover:bg-white focus:bg-white transition-all shadow-sm">
-                  <SelectValue placeholder="— Pilih Kategori —" />
+                  <SelectValue placeholder="— Pilih Kategori —">
+                    {(val: string) => {
+                      const labels: Record<string, string> = {
+                        VAKSINASI: 'Vaksinasi',
+                        PENGOBATAN_INFEKSI: 'Pengobatan Infeksi (Antibiotik)',
+                        PENGOBATAN_PARASIT: 'Pengobatan Parasit (Cacing / Kutu)',
+                        PEMERIKSAAN_RUTIN: 'Pemeriksaan Rutin / Kebuntingan',
+                        PERAWATAN_LUKA: 'Perawatan Luka / Cedera',
+                        VITAMIN: 'Pemberian Suplemen / Vitamin',
+                        PARTUS: 'Penanganan Kelahiran (Partus)',
+                        POTONG_KUKU: 'Potong Kuku / Tanduk',
+                        LAINNYA: 'Lainnya'
+                      }
+                      return val ? labels[val] : '— Pilih Kategori —'
+                    }}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-border shadow-lg">
-                  <SelectItem value="VAKSINASI">Vaksinasi</SelectItem>
-                  <SelectItem value="PENGOBATAN_INFEKSI">Pengobatan Infeksi (Antibiotik)</SelectItem>
-                  <SelectItem value="PENGOBATAN_PARASIT">Pengobatan Parasit (Cacing / Kutu)</SelectItem>
-                  <SelectItem value="PEMERIKSAAN_RUTIN">Pemeriksaan Rutin / Kebuntingan</SelectItem>
-                  <SelectItem value="PERAWATAN_LUKA">Perawatan Luka / Cedera</SelectItem>
-                  <SelectItem value="VITAMIN">Pemberian Suplemen / Vitamin</SelectItem>
-                  <SelectItem value="PARTUS">Penanganan Kelahiran (Partus)</SelectItem>
-                  <SelectItem value="POTONG_KUKU">Potong Kuku / Tanduk</SelectItem>
-                  <SelectItem value="LAINNYA">Lainnya</SelectItem>
+                  <SelectItem value="VAKSINASI" label="Vaksinasi">Vaksinasi</SelectItem>
+                  <SelectItem value="PENGOBATAN_INFEKSI" label="Pengobatan Infeksi (Antibiotik)">Pengobatan Infeksi (Antibiotik)</SelectItem>
+                  <SelectItem value="PENGOBATAN_PARASIT" label="Pengobatan Parasit (Cacing / Kutu)">Pengobatan Parasit (Cacing / Kutu)</SelectItem>
+                  <SelectItem value="PEMERIKSAAN_RUTIN" label="Pemeriksaan Rutin / Kebuntingan">Pemeriksaan Rutin / Kebuntingan</SelectItem>
+                  <SelectItem value="PERAWATAN_LUKA" label="Perawatan Luka / Cedera">Perawatan Luka / Cedera</SelectItem>
+                  <SelectItem value="VITAMIN" label="Pemberian Suplemen / Vitamin">Pemberian Suplemen / Vitamin</SelectItem>
+                  <SelectItem value="PARTUS" label="Penanganan Kelahiran (Partus)">Penanganan Kelahiran (Partus)</SelectItem>
+                  <SelectItem value="POTONG_KUKU" label="Potong Kuku / Tanduk">Potong Kuku / Tanduk</SelectItem>
+                  <SelectItem value="LAINNYA" label="Lainnya">Lainnya</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -220,6 +175,39 @@ export function TambahMedisForm({ hewan }: { hewan: { id: string; tag: string; n
                   name="obat_custom" 
                   placeholder="Ketik nama obat…" 
                   className="h-11 w-full rounded-xl bg-white/60 border-border/60 hover:bg-white focus:bg-white transition-all shadow-sm" 
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="p-5 rounded-xl space-y-4" style={{ background: 'rgba(0,0,0,0.02)', border: `1px solid ${palette.border}80` }}>
+            <div className="flex items-center justify-between">
+              <div>
+                <label style={{ ...labelStyle, marginBottom: 4, color: palette.ink }}>PENGINGAT KONTROL MEDIS</label>
+                <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.7)' }}>
+                  Aktifkan notifikasi pengingat jika hewan butuh perawatan atau vaksin lanjutan.
+                </p>
+              </div>
+              <div>
+                <input 
+                  type="checkbox" 
+                  name="butuhNotifikasi"
+                  checked={butuhNotifikasi}
+                  onChange={(e) => setButuhNotifikasi(e.target.checked)}
+                  className="w-5 h-5 rounded cursor-pointer" 
+                  style={{ accentColor: palette.forest }}
+                />
+              </div>
+            </div>
+
+            {butuhNotifikasi && (
+              <div className="animate-in fade-in zoom-in-95 duration-200 pt-4 border-t border-border/50">
+                <label style={labelStyle}>TANGGAL KONTROL / TINDAK LANJUT *</label>
+                <DatePickerField
+                  name="tanggalLanjut"
+                  defaultValue={new Date(new Date().setMonth(new Date().getMonth() + 6))}
+                  required={butuhNotifikasi}
+                  className="h-11 bg-white hover:bg-gray-50 focus-visible:ring-[#3F5B3A]/40 shadow-sm"
                 />
               </div>
             )}

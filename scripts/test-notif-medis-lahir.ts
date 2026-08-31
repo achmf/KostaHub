@@ -67,8 +67,8 @@ async function main() {
       tanggal: new Date(),
       kategori: 'VAKSINASI',
       diagnosis: '[TEST-BLACKBOX] Vaksin PMK Test',
+      butuhNotifikasi: true,
       tanggalLanjut: dua_hari,
-      status: 'RAWAT',
     },
   })
   info(`Inserted RekamMedis test record: ${rekamTest.id} (tanggalLanjut: ${dua_hari.toLocaleDateString('id-ID')})`)
@@ -92,23 +92,23 @@ async function main() {
   await generateNotifikasiOtomatis(farm.id)
   log('   Generator complete.\n')
 
-  // ── 6. Verify VAKSIN notification was created ─────────────────────────
-  log('── TEST 1: VAKSIN notification')
-  const vaksinKey = `VAKSIN-${rekamTest.id}`
-  const vaksinNotif = await prisma.notifikasi.findFirst({
-    where: { message: { contains: vaksinKey } },
+  // ── 6. Verify MEDIS notification was created ─────────────────────────
+  log('── TEST 1: MEDIS notification')
+  const medisKey = `MEDIS-${rekamTest.id}`
+  const medisNotif = await prisma.notifikasi.findFirst({
+    where: { message: { contains: medisKey } },
   })
-  if (vaksinNotif) {
-    ok(`VAKSIN notif created: "${vaksinNotif.title}"`)
-    info(`   Type: ${vaksinNotif.type}, tanggal: ${vaksinNotif.tanggal.toLocaleDateString('id-ID')}`)
-    if (vaksinNotif.type !== 'VAKSIN') fail('type bukan VAKSIN!')
-    else ok('type = VAKSIN ✓')
-    if (vaksinNotif.farmId !== farm.id) fail(`farmId mismatch: ${vaksinNotif.farmId}`)
+  if (medisNotif) {
+    ok(`MEDIS notif created: "${medisNotif.title}"`)
+    info(`   Type: ${medisNotif.type}, tanggal: ${medisNotif.tanggal.toLocaleDateString('id-ID')}`)
+    if (medisNotif.type !== 'MEDIS') fail('type bukan MEDIS!')
+    else ok('type = MEDIS ✓')
+    if (medisNotif.farmId !== farm.id) fail(`farmId mismatch: ${medisNotif.farmId}`)
     else ok(`farmId = ${farm.id} ✓`)
-    if (vaksinNotif.isRead !== false) fail('isRead should be false')
+    if (medisNotif.isRead !== false) fail('isRead should be false')
     else ok('isRead = false ✓')
   } else {
-    fail(`VAKSIN notif NOT found (key: ${vaksinKey})`)
+    fail(`MEDIS notif NOT found (key: ${medisKey})`)
   }
 
   // ── 7. Verify LAHIR notification was created ──────────────────────────
@@ -133,14 +133,14 @@ async function main() {
   // ── 8. Verify idempotency (run generator again — should NOT duplicate) ─
   log('\n── TEST 3: Idempotency (re-run generator)')
   await generateNotifikasiOtomatis(farm.id)
-  const vaksinCount = await prisma.notifikasi.count({
-    where: { message: { contains: vaksinKey } },
+  const medisCount = await prisma.notifikasi.count({
+    where: { message: { contains: medisKey } },
   })
   const lahirCount = await prisma.notifikasi.count({
     where: { message: { contains: lahirKey } },
   })
-  if (vaksinCount === 1) ok(`VAKSIN not duplicated (count=1) ✓`)
-  else fail(`VAKSIN duplicated! count=${vaksinCount}`)
+  if (medisCount === 1) ok(`MEDIS not duplicated (count=1) ✓`)
+  else fail(`MEDIS duplicated! count=${medisCount}`)
   if (lahirCount === 1) ok(`LAHIR not duplicated (count=1) ✓`)
   else fail(`LAHIR duplicated! count=${lahirCount}`)
 
@@ -151,16 +151,16 @@ async function main() {
     orderBy: [{ isRead: 'asc' }, { tanggal: 'desc' }],
     take: 100,
   })
-  const vaksinInList = allNotifs.find(n => n.message.includes(vaksinKey))
+  const medisInList = allNotifs.find(n => n.message.includes(medisKey))
   const lahirInList  = allNotifs.find(n => n.message.includes(lahirKey))
-  if (vaksinInList) ok('VAKSIN appears in list query ✓')
-  else fail('VAKSIN missing from list query')
+  if (medisInList) ok('MEDIS appears in list query ✓')
+  else fail('MEDIS missing from list query')
   if (lahirInList) ok('LAHIR appears in list query ✓')
   else fail('LAHIR missing from list query')
 
   // ── 10. Cleanup ────────────────────────────────────────────────────────
   log('\n── Cleanup...')
-  await prisma.notifikasi.deleteMany({ where: { message: { contains: vaksinKey } } })
+  await prisma.notifikasi.deleteMany({ where: { message: { contains: medisKey } } })
   await prisma.notifikasi.deleteMany({ where: { message: { contains: lahirKey } } })
   await prisma.reproduksi.delete({ where: { id: reproduksiTest.id } })
   await prisma.rekamMedis.delete({ where: { id: rekamTest.id } })

@@ -5,6 +5,7 @@ import { Camera, Loader2, UploadCloud } from 'lucide-react'
 import Image from 'next/image'
 import { uploadFotoHewanLocal } from '@/actions/upload'
 import { updateFotoHewan } from '@/actions/hewan'
+import { palette } from '@/components/KostaUI'
 
 interface HewanAvatarProfileProps {
   hewanId: string
@@ -13,11 +14,7 @@ interface HewanAvatarProfileProps {
   tag?: string
 }
 
-const palette = {
-  cream: '#F2EDE0',
-  forest: '#1B2A1F',
-  ink: '#0D140F',
-}
+
 
 export function HewanAvatarProfile({ hewanId, fotoUrl, nama, tag }: HewanAvatarProfileProps) {
   const [isPending, startTransition] = useTransition()
@@ -92,7 +89,7 @@ export function HewanAvatarProfile({ hewanId, fotoUrl, nama, tag }: HewanAvatarP
               onError={() => setPreview(null)}
             />
             {/* Overlay */}
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2">
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2">
               <Camera size={24} style={{ color: palette.cream }} />
               <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: palette.cream, fontWeight: 500 }}>
                 Ubah Foto

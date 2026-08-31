@@ -3,18 +3,9 @@ import { Plus, Heart } from 'lucide-react'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { KostaPageHeader, KostaCard, Badge, KostaButton, KostaSectionLabel } from '@/components/KostaUI'
-import { EmptyState } from '@/components/ui/EmptyState'
+import { KostaPageHeader, KostaCard, Badge, KostaButton, KostaSectionLabel, palette, KostaEmptyState } from '@/components/KostaUI'
 
-const palette = {
-  moss: '#3F5B3A',
-  ochre: '#C7873E',
-  ink: '#0D140F',
-  border: 'rgba(13,20,15,0.10)',
-  rose: '#B5443B',
-  amber: '#D9A23C',
-  emerald: '#3F7A4E',
-}
+
 
 function StatusBadge({ status }: { status: string }) {
   if (status === 'HAMIL') return <Badge variant="amber">Hamil</Badge>
@@ -115,10 +106,9 @@ export default async function ReproduksiPage(props: {
           <div>STATUS</div>
         </div>
         {reproduksiList.length === 0 && (
-          <EmptyState
-            icon={Heart}
+          <KostaEmptyState
             title="Belum ada data reproduksi"
-            description="Catat perkawinan untuk mulai melacak kehamilan dan kelahiran."
+            hint="Catat perkawinan untuk mulai melacak kehamilan dan kelahiran."
           />
         )}
         {reproduksiList.map((r) => {

@@ -1,6 +1,6 @@
 'use client'
 
-import { motion, useInView, animate } from 'framer-motion'
+import { motion, useInView, animate, AnimatePresence } from 'framer-motion'
 import { useEffect, useRef, useState, useMemo } from 'react'
 import {
   PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar,
@@ -10,22 +10,10 @@ import {
   TrendingUp, TrendingDown, AlertCircle, Calendar, Syringe,
   Scale,
 } from 'lucide-react'
-import { KostaPageHeader, KostaCard, Badge, KostaSectionLabel } from '@/components/KostaUI'
+import { KostaPageHeader, KostaCard, Badge, KostaSectionLabel, palette } from '@/components/KostaUI'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
-const palette = {
-  cream: '#F2EDE0',
-  creamSoft: '#FBF8EF',
-  forest: '#1B2A1F',
-  moss: '#3F5B3A',
-  mossSoft: '#A5B5A0',
-  ochre: '#C7873E',
-  ochreSoft: '#E2B883',
-  ink: '#0D140F',
-  border: 'rgba(13,20,15,0.10)',
-  rose: '#B5443B',
-  amber: '#D9A23C',
-  emerald: '#3F7A4E',
-}
+
 
 const pieColors = [palette.moss, palette.ink, palette.ochre, palette.mossSoft, palette.ochreSoft]
 const chartGreen = '#3F7A4E'
@@ -50,11 +38,162 @@ const PRESETS = [
   { label: '1 Thn', months: 12 },
 ] as const
 
-function getFromDate(months: number): Date {
-  const d = new Date()
-  d.setMonth(d.getMonth() - months)
-  d.setHours(0, 0, 0, 0)
-  return d
+export type DateFilter = { type: 'preset'; months: number } | { type: 'custom'; start: string; end: string }
+
+function getDateRange(filter: DateFilter): { from: Date; to: Date } {
+  if (filter.type === 'custom') {
+    const from = filter.start ? new Date(filter.start) : new Date(2000, 0, 1)
+    const to = filter.end ? new Date(filter.end) : new Date()
+    from.setHours(0, 0, 0, 0)
+    to.setHours(23, 59, 59, 999)
+    return { from, to }
+  }
+  const from = new Date()
+  from.setMonth(from.getMonth() - filter.months)
+  from.setHours(0, 0, 0, 0)
+  return { from, to: new Date() }
+}
+
+// ─── CUSTOM RANGE CALENDAR COMPONENT ─────────────────────────────
+function RangeCalendar({
+  start,
+  end,
+  onChange,
+}: {
+  start: string
+  end: string
+  onChange: (start: string, end: string) => void
+}) {
+  const parsed = start ? new Date(start) : new Date()
+  const [viewDate, setViewDate] = useState(() => new Date(parsed.getFullYear(), parsed.getMonth(), 1))
+
+  const year = viewDate.getFullYear()
+  const month = viewDate.getMonth()
+  const currentYear = new Date().getFullYear()
+  const years = Array.from({ length: 100 }, (_, i) => currentYear - 50 + i)
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const firstDay = new Date(year, month, 1).getDay() // 0 = Sunday
+
+  const handlePrev = () => setViewDate(new Date(year, month - 1, 1))
+  const handleNext = () => setViewDate(new Date(year, month + 1, 1))
+
+  const days = []
+  for (let i = 0; i < firstDay; i++) {
+    days.push(null)
+  }
+  for (let i = 1; i <= daysInMonth; i++) {
+    days.push(i)
+  }
+
+  const getDateStr = (d: number) => {
+    const next = new Date(year, month, d)
+    const offset = next.getTimezoneOffset() * 60000
+    return new Date(next.getTime() - offset).toISOString().split('T')[0]
+  }
+
+  const isStart = (d: number) => start && getDateStr(d) === start
+  const isEnd = (d: number) => end && getDateStr(d) === end
+  const inRange = (d: number) => {
+    if (!start || !end) return false
+    const str = getDateStr(d)
+    return str > start && str < end
+  }
+
+  const selectDate = (d: number) => {
+    const localStr = getDateStr(d)
+    if (start && end) {
+      onChange(localStr, '')
+    } else if (start && !end) {
+      if (localStr >= start) {
+        onChange(start, localStr)
+      } else {
+        onChange(localStr, '')
+      }
+    } else {
+      onChange(localStr, '')
+    }
+  }
+
+  return (
+    <div className="w-[230px]">
+      <div className="flex items-center justify-between mb-3 px-1">
+        <button onClick={handlePrev} className="p-1.5 rounded-full hover:bg-black/5 transition-colors cursor-pointer text-ink">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <div className="flex gap-1" style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, fontWeight: 500, color: palette.ink }}>
+          <Select value={String(month)} onValueChange={(val) => val && setViewDate(new Date(year, parseInt(val), 1))}>
+            <SelectTrigger className="h-7 border-none bg-transparent shadow-none px-1.5 py-0 w-auto hover:bg-black/5 rounded text-[13px] font-medium text-ink gap-1 [&_svg]:size-3.5 focus-visible:ring-0 focus-visible:ring-offset-0">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {monthNames.map((m, i) => (
+                <SelectItem key={i} value={String(i)}>{m}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Select value={String(year)} onValueChange={(val) => val && setViewDate(new Date(parseInt(val), month, 1))}>
+            <SelectTrigger className="h-7 border-none bg-transparent shadow-none px-1.5 py-0 w-auto hover:bg-black/5 rounded text-[13px] font-medium text-ink gap-1 [&_svg]:size-3.5 focus-visible:ring-0 focus-visible:ring-offset-0">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((y) => (
+                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <button onClick={handleNext} className="p-1.5 rounded-full hover:bg-black/5 transition-colors cursor-pointer text-ink">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
+      <div className="grid grid-cols-7 gap-y-1 text-center mb-1">
+        {['M', 'S', 'S', 'R', 'K', 'J', 'S'].map((d, i) => (
+          <div key={i} style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, opacity: 0.4 }}>
+            {d}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-y-1">
+        {days.map((d, i) => {
+          if (!d) return <div key={i} className="aspect-square" />
+          
+          const isS = isStart(d)
+          const isE = isEnd(d)
+          const inR = inRange(d)
+          const active = isS || isE
+
+          return (
+            <div key={i} className="relative aspect-square flex items-center justify-center">
+              {inR && (
+                <div className="absolute inset-y-0 -inset-x-0.5" style={{ background: 'rgba(13,20,15,0.06)' }} />
+              )}
+              {isS && end && (
+                <div className="absolute inset-y-0 right-0 w-1/2" style={{ background: 'rgba(13,20,15,0.06)' }} />
+              )}
+              {isE && start && (
+                <div className="absolute inset-y-0 left-0 w-1/2" style={{ background: 'rgba(13,20,15,0.06)' }} />
+              )}
+              <button
+                onClick={() => selectDate(d)}
+                className="relative z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer hover:bg-black/5"
+                style={{
+                  fontFamily: "'JetBrains Mono',monospace",
+                  fontSize: 11,
+                  background: active ? palette.ink : 'transparent',
+                  color: active ? palette.cream : palette.ink,
+                  fontWeight: active ? 500 : 400,
+                }}
+              >
+                {d}
+              </button>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
 }
 
 // ─── PER-CARD FILTER PILLS ─────────────────────────────────
@@ -62,31 +201,148 @@ function ChartFilter({
   value,
   onChange,
 }: {
-  value: number
-  onChange: (months: number) => void
+  value: DateFilter
+  onChange: (val: DateFilter) => void
 }) {
+  const [showCustom, setShowCustom] = useState(false)
+  const [tempStart, setTempStart] = useState(value.type === 'custom' ? value.start : '')
+  const [tempEnd, setTempEnd] = useState(value.type === 'custom' ? value.end : '')
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setShowCustom(false)
+      }
+    }
+    if (showCustom) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showCustom])
+
+  // Update temp state when value changes from outside
+  useEffect(() => {
+    if (value.type === 'custom') {
+      setTempStart(value.start)
+      setTempEnd(value.end)
+    }
+  }, [value])
+
   return (
-    <div className="flex items-center gap-1">
-      {PRESETS.map((p) => {
-        const active = value === p.months
-        return (
-          <button
-            key={p.months}
-            onClick={() => onChange(p.months)}
-            className="cursor-pointer px-2.5 py-1 rounded-full transition-all"
-            style={{
-              fontFamily: "'JetBrains Mono',monospace",
-              fontSize: 9.5,
-              letterSpacing: '0.08em',
-              border: `1px solid ${active ? palette.ink : palette.border}`,
-              background: active ? palette.ink : 'transparent',
-              color: active ? palette.cream : 'rgba(13,20,15,0.5)',
+    <div className="relative flex items-center gap-2" ref={containerRef}>
+      {/* Presets */}
+      <div className="flex items-center gap-1">
+        {PRESETS.map((p) => {
+          const active = value.type === 'preset' && value.months === p.months
+          return (
+            <button
+              key={p.months}
+              onClick={() => {
+                setShowCustom(false)
+                onChange({ type: 'preset', months: p.months })
+              }}
+              className="cursor-pointer px-2.5 py-1 rounded-full transition-all hover:bg-black/5"
+              style={{
+                fontFamily: "'JetBrains Mono',monospace",
+                fontSize: 9.5,
+                letterSpacing: '0.08em',
+                border: `1px solid ${active ? palette.ink : palette.border}`,
+                background: active ? palette.ink : 'transparent',
+                color: active ? palette.cream : 'rgba(13,20,15,0.5)',
+              }}
+            >
+              {p.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Toggle Button */}
+      <button 
+        onClick={() => setShowCustom(!showCustom)}
+        className="p-1.5 rounded-full transition-all cursor-pointer relative z-10 hover:bg-black/5"
+        style={{ 
+          background: showCustom || value.type === 'custom' ? palette.ink : 'transparent',
+          border: `1px solid ${showCustom || value.type === 'custom' ? palette.ink : 'rgba(13,20,15,0.1)'}`,
+        }}
+        title="Custom Date"
+      >
+        <Calendar 
+          size={14} 
+          style={{ 
+            color: showCustom || value.type === 'custom' ? palette.cream : palette.ink,
+            opacity: showCustom || value.type === 'custom' ? 1 : 0.5 
+          }} 
+        />
+      </button>
+
+      {/* Custom Date Popover */}
+      <AnimatePresence>
+        {showCustom && (
+          <motion.div
+            initial={{ opacity: 0, y: 8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.96 }}
+            transition={{ duration: 0.15 }}
+            className="absolute right-0 top-full mt-2 p-5 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] z-50 flex flex-col gap-4"
+            style={{ 
+              background: '#ffffff', 
+              border: `1px solid ${palette.border}`,
             }}
           >
-            {p.label}
-          </button>
-        )
-      })}
+            <div className="flex items-center gap-4 px-2 pt-1">
+              <div className="flex-1 flex flex-col">
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, opacity: 0.5, marginBottom: 2 }}>MULAI</span>
+                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: palette.ink, fontWeight: tempStart ? 500 : 400 }}>{tempStart || 'Pilih tanggal'}</span>
+              </div>
+              <div className="w-4 border-t border-dashed border-ink opacity-30" />
+              <div className="flex-1 flex flex-col text-right">
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, opacity: 0.5, marginBottom: 2 }}>SELESAI</span>
+                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: palette.ink, fontWeight: tempEnd ? 500 : 400 }}>{tempEnd || 'Pilih tanggal'}</span>
+              </div>
+            </div>
+
+            <RangeCalendar 
+              start={tempStart} 
+              end={tempEnd} 
+              onChange={(s, e) => {
+                setTempStart(s)
+                setTempEnd(e)
+              }} 
+            />
+
+            <div className="pt-3 flex items-center justify-end gap-2" style={{ borderTop: `1px solid ${palette.border}` }}>
+              <button 
+                onClick={() => setShowCustom(false)}
+                className="px-3 py-1.5 rounded-lg transition-colors hover:bg-black/5 cursor-pointer"
+                style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, fontWeight: 500, color: palette.ink }}
+              >
+                Batal
+              </button>
+              <button 
+                disabled={!tempStart || !tempEnd}
+                onClick={() => {
+                  if (tempStart && tempEnd) {
+                    onChange({ type: 'custom', start: tempStart, end: tempEnd })
+                    setShowCustom(false)
+                  }
+                }}
+                className="px-4 py-1.5 rounded-lg transition-all shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ 
+                  background: palette.ink, 
+                  color: palette.cream,
+                  fontFamily: "'Inter',sans-serif", 
+                  fontSize: 11, 
+                  fontWeight: 500 
+                }}
+              >
+                Terapkan
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -94,10 +350,9 @@ function ChartFilter({
 // ─── CLIENT-SIDE AGGREGATION HELPERS ──────────────────────
 function buildTrendData(
   raw: { createdAt: string; status: string }[],
-  months: number
+  filter: DateFilter
 ) {
-  const from = getFromDate(months)
-  const to = new Date()
+  const { from, to } = getDateRange(filter)
 
   const map = new Map<string, { masuk: number; mati: number; terjual: number }>()
   const cur = new Date(from.getFullYear(), from.getMonth(), 1)
@@ -133,10 +388,9 @@ function buildTrendData(
 
 function buildBeratData(
   raw: { tanggal: string; berat: number }[],
-  months: number
+  filter: DateFilter
 ) {
-  const from = getFromDate(months)
-  const to = new Date()
+  const { from, to } = getDateRange(filter)
 
   const map = new Map<string, { masuk: number; mati: number; terjual: number }>()
   const cur = new Date(from.getFullYear(), from.getMonth(), 1)
@@ -175,10 +429,9 @@ function buildBeratData(
 
 function buildTopDiagnosis(
   raw: { diagnosis: string; tanggal: string }[],
-  months: number
+  filter: DateFilter
 ) {
-  const from = getFromDate(months)
-  const to = new Date()
+  const { from, to } = getDateRange(filter)
 
   const count = new Map<string, number>()
   raw.forEach((m) => {
@@ -279,7 +532,7 @@ interface OverviewData {
 export default function DashboardClient({
   stats,
   reproduksiHamil,
-  notifikasiVaksin,
+  notifikasiMedis,
   kategoriStats,
   isSuperAdmin,
   farmCount,
@@ -297,7 +550,7 @@ export default function DashboardClient({
     terjual: number
   }
   reproduksiHamil: ReproItem[]
-  notifikasiVaksin: NotifItem[]
+  notifikasiMedis: NotifItem[]
   kategoriStats: KategoriStat[]
   isSuperAdmin: boolean
   farmCount: number
@@ -314,22 +567,22 @@ export default function DashboardClient({
   }))
 
   // ─── Per-card filter state (default 6 bulan) ───────────
-  const [trendMonths, setTrendMonths] = useState(6)
-  const [beratMonths, setBeratMonths] = useState(6)
-  const [diagnosisMonths, setDiagnosisMonths] = useState(6)
+  const [trendFilter, setTrendFilter] = useState<DateFilter>({ type: 'preset', months: 6 })
+  const [beratFilter, setBeratFilter] = useState<DateFilter>({ type: 'preset', months: 6 })
+  const [diagnosisFilter, setDiagnosisFilter] = useState<DateFilter>({ type: 'preset', months: 6 })
 
   // ─── Computed chart data (client-side filtering) ────────
   const trendData = useMemo(
-    () => buildTrendData(trendRaw, trendMonths),
-    [trendRaw, trendMonths]
+    () => buildTrendData(trendRaw, trendFilter),
+    [trendRaw, trendFilter]
   )
   const beratTrendData = useMemo(
-    () => buildBeratData(beratRaw, beratMonths),
-    [beratRaw, beratMonths]
+    () => buildBeratData(beratRaw, beratFilter),
+    [beratRaw, beratFilter]
   )
   const topDiagnosa = useMemo(
-    () => buildTopDiagnosis(diagnosisRaw, diagnosisMonths),
-    [diagnosisRaw, diagnosisMonths]
+    () => buildTopDiagnosis(diagnosisRaw, diagnosisFilter),
+    [diagnosisRaw, diagnosisFilter]
   )
 
   return (
@@ -444,31 +697,31 @@ export default function DashboardClient({
             l: 'Angka kematian',
             v: stats.mati,
             hint: `${overviewData.mortalityRate}% dari total`,
-            icon: <TrendingDown size={14} style={{ color: palette.rose }} />,
+            icon: <TrendingDown size={14} style={{ color: palette.ink }} />,
           },
           {
             l: 'Total terjual',
             v: stats.terjual,
             hint: 'sepanjang waktu',
-            icon: <TrendingUp size={14} style={{ color: palette.emerald }} />,
+            icon: <TrendingUp size={14} style={{ color: palette.ink }} />,
           },
           {
             l: 'Estimasi lahir 7 hari',
             v: reproduksiHamil.length,
             hint: 'berdasarkan +150 hari',
-            icon: <Calendar size={14} style={{ color: palette.moss }} />,
+            icon: <Calendar size={14} style={{ color: palette.ink }} />,
           },
           {
-            l: 'Vaksin terjadwal',
-            v: notifikasiVaksin.length,
+            l: 'Jadwal Medis',
+            v: notifikasiMedis.length,
             hint: 'minggu ini',
-            icon: <Syringe size={14} style={{ color: palette.ochre }} />,
+            icon: <Syringe size={14} style={{ color: palette.ink }} />,
           },
           {
             l: 'Rata-rata Berat',
             v: overviewData.avgBerat,
             hint: 'kg populasi aktif',
-            icon: <Scale size={14} style={{ color: palette.moss }} />,
+            icon: <Scale size={14} style={{ color: palette.ink }} />,
           },
         ].map((s) => (
           <div key={s.l} className="flex flex-col">
@@ -500,7 +753,7 @@ export default function DashboardClient({
               <KostaSectionLabel>TREN POPULASI</KostaSectionLabel>
             </div>
             <div className="flex items-center gap-3">
-              <ChartFilter value={trendMonths} onChange={setTrendMonths} />
+              <ChartFilter value={trendFilter} onChange={setTrendFilter} />
               <div className="flex gap-3 ml-1">
                 <LegendDot color={chartGreen} label="Masuk" />
                 <LegendDot color={chartRed} label="Mati" />
@@ -600,39 +853,8 @@ export default function DashboardClient({
           </div>
           <div className="flex flex-col items-center mt-2">
             <div className="w-40 h-40 relative">
-              <ResponsiveContainer>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    dataKey="value"
-                    innerRadius={48}
-                    outerRadius={72}
-                    paddingAngle={2}
-                    stroke="none"
-                    startAngle={90}
-                    endAngle={-270}
-                  >
-                    {pieData.map((_, i) => (
-                      <Cell key={i} fill={pieColors[i % pieColors.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                    itemStyle={{ color: '#ffffff' }}
-                    labelStyle={{ color: '#ffffff' }}
-                    contentStyle={{
-                      backgroundColor: '#0D140F',
-                      color: '#ffffff',
-                      border: 'none',
-                      borderRadius: 8,
-                      fontFamily: "'Inter',sans-serif",
-                      fontSize: 12,
-                      opacity: 1,
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
+              {/* Background text (under the chart) */}
+              <div className="absolute inset-0 flex items-center justify-center flex-col pointer-events-none z-0">
                 <div
                   style={{
                     fontFamily: "'Fraunces',serif",
@@ -653,6 +875,42 @@ export default function DashboardClient({
                 >
                   AKTIF
                 </div>
+              </div>
+
+              {/* Chart and Tooltip (over the text) */}
+              <div className="absolute inset-0 z-10">
+                <ResponsiveContainer>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      dataKey="value"
+                      innerRadius={48}
+                      outerRadius={72}
+                      paddingAngle={2}
+                      stroke="none"
+                      startAngle={90}
+                      endAngle={-270}
+                    >
+                      {pieData.map((_, i) => (
+                        <Cell key={i} fill={pieColors[i % pieColors.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                      itemStyle={{ color: '#ffffff' }}
+                      labelStyle={{ color: '#ffffff' }}
+                      contentStyle={{
+                        backgroundColor: '#0D140F',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: 8,
+                        fontFamily: "'Inter',sans-serif",
+                        fontSize: 12,
+                        opacity: 1,
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
             </div>
             <div className="w-full grid gap-1.5 mt-3">
@@ -749,7 +1007,7 @@ export default function DashboardClient({
         <KostaCard className="col-span-12 lg:col-span-4 p-6">
           <div className="flex items-center justify-between mb-4">
             <KostaSectionLabel>TOP DIAGNOSA MEDIS</KostaSectionLabel>
-            <ChartFilter value={diagnosisMonths} onChange={setDiagnosisMonths} />
+            <ChartFilter value={diagnosisFilter} onChange={setDiagnosisFilter} />
           </div>
           {topDiagnosa.length > 0 ? (
             <div className="grid gap-2">
@@ -862,7 +1120,7 @@ export default function DashboardClient({
               <KostaSectionLabel>TREN RATA-RATA BERAT BADAN</KostaSectionLabel>
               <Badge variant="ochre">AVG {overviewData.avgBerat} kg</Badge>
             </div>
-            <ChartFilter value={beratMonths} onChange={setBeratMonths} />
+            <ChartFilter value={beratFilter} onChange={setBeratFilter} />
           </div>
           <div className="h-48">
             {beratTrendData.some((b) => b.avgBerat !== null) ? (
@@ -1013,7 +1271,7 @@ export default function DashboardClient({
         <KostaCard className="col-span-12 lg:col-span-5 p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <KostaSectionLabel>VAKSIN AKTIF</KostaSectionLabel>
+              <KostaSectionLabel>NOTIFIKASI MEDIS</KostaSectionLabel>
               <div
                 className="mt-1"
                 style={{ fontFamily: "'Fraunces',serif", fontSize: 22, letterSpacing: '-0.02em' }}
@@ -1021,10 +1279,10 @@ export default function DashboardClient({
                 Notifikasi
               </div>
             </div>
-            <Badge variant="ochre">{notifikasiVaksin.length} BARU</Badge>
+            <Badge variant="ochre">{notifikasiMedis.length} BARU</Badge>
           </div>
           <div className="space-y-2.5">
-            {notifikasiVaksin.length === 0 && (
+            {notifikasiMedis.length === 0 && (
               <div
                 className="py-8 text-center opacity-60"
                 style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}
@@ -1032,7 +1290,7 @@ export default function DashboardClient({
                 Tidak ada notifikasi.
               </div>
             )}
-            {notifikasiVaksin.slice(0, 5).map((n, i) => (
+            {notifikasiMedis.slice(0, 5).map((n: NotifItem, i: number) => (
               <motion.div
                 key={n.id}
                 initial={{ opacity: 0, y: 6 }}

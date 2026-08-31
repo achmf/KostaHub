@@ -187,53 +187,6 @@ export default function AdminSidebar({ name, email, pendingCount: initialPending
         </div>
       )}
 
-      {/* User panel */}
-      <div
-        className="m-4 p-4 rounded-xl"
-        style={{
-          background: 'rgba(242,237,224,0.06)',
-          border: '1px solid rgba(242,237,224,0.10)',
-        }}
-      >
-        <div className="flex items-center gap-2.5">
-          <div
-            className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-            style={{
-              background: palette.ochre,
-              color: palette.ink,
-              fontFamily: "'Fraunces',serif",
-              fontSize: 14,
-              fontWeight: 600,
-            }}
-          >
-            {name.charAt(0).toUpperCase()}
-          </div>
-          <div className="min-w-0">
-            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, fontWeight: 500 }}>{name}</div>
-            <div
-              className="opacity-50 truncate"
-              style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.05em' }}
-            >
-              SUPER ADMIN
-            </div>
-          </div>
-        </div>
-        <form action={logout}>
-          <button
-            type="submit"
-            className="cursor-pointer mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-lg transition-opacity hover:opacity-80"
-            style={{
-              background: 'transparent',
-              color: palette.cream,
-              border: '1px solid rgba(242,237,224,0.18)',
-              fontFamily: "'Inter',sans-serif",
-              fontSize: 12,
-            }}
-          >
-            <LogOut size={11} /> Keluar
-          </button>
-        </form>
-      </div>
     </aside>
   )
 }

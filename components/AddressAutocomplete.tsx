@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { MapPin, Loader2, X } from 'lucide-react'
+import { palette } from '@/components/KostaUI'
 
 interface NominatimResult {
   place_id: number
@@ -19,11 +20,7 @@ interface Props {
   placeholder?: string
 }
 
-const palette = {
-  ink: '#0D140F',
-  ochre: '#C7873E',
-  border: 'rgba(13,20,15,0.12)',
-}
+
 
 export default function AddressAutocomplete({ value, onChange, onSelect, placeholder }: Props) {
   const [suggestions, setSuggestions] = useState<NominatimResult[]>([])

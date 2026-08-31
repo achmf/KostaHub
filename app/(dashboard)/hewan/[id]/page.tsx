@@ -3,21 +3,21 @@ import { getSession } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { ArrowLeft, Edit, Scale, Calendar, MapPin, Activity, GitBranch } from 'lucide-react'
 import Link from 'next/link'
-import { Badge, KostaCard, KostaSectionLabel } from '@/components/KostaUI'
+import { Badge, KostaCard, KostaSectionLabel, KostaButton } from '@/components/KostaUI'
+
+const LOCAL_PALETTE = {
+  forest: '#1B2A1F',
+  cream: '#F2EDE0',
+  ink: '#0D140F',
+  border: 'rgba(13,20,15,0.10)',
+  moss: '#3F5B3A'
+}
 import { RekamMedisHistory } from '@/components/Hewan/RekamMedisHistory'
 import { buildSilsilahTree } from '@/lib/silsilah'
 import { SilsilahTree } from '@/components/Hewan/SilsilahTree'
 import { HewanAvatarProfile } from '@/components/Hewan/HewanAvatarProfile'
 
-const palette = {
-  cream: '#F2EDE0',
-  forest: '#1B2A1F',
-  moss: '#3F5B3A',
-  ochre: '#C7873E',
-  ink: '#0D140F',
-  border: 'rgba(13,20,15,0.10)',
-  emerald: '#3F7A4E',
-}
+
 
 const KATEGORI_LABEL: Record<string, string> = {
   INDUKAN: 'Indukan', PEJANTAN: 'Pejantan', ANAKAN: 'Anakan',
@@ -59,29 +59,21 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
       <div className="flex items-center justify-between mb-8">
         <Link
           href="/hewan"
-          className="flex items-center gap-2 opacity-70 hover:opacity-100 transition-opacity"
+          className="flex items-center gap-2 opacity-70 hover:opacity-100 transition-all duration-300 hover:-translate-x-1"
           style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}
         >
           <ArrowLeft size={14} /> Kembali ke Populasi
         </Link>
         <Link href={`/hewan/${hewan.id}/edit`}>
-          <button
-            className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded-full transition-opacity hover:opacity-90"
-            style={{
-              background: palette.ink,
-              color: palette.cream,
-              fontFamily: "'Inter',sans-serif",
-              fontSize: 13,
-            }}
-          >
+          <KostaButton variant="outline" className="hover:bg-black/5">
             <Edit size={13} /> Edit Data
-          </button>
+          </KostaButton>
         </Link>
       </div>
 
       {/* Hero card */}
       <KostaCard className="overflow-hidden mb-5">
-        <div className="px-8 pt-8 pb-16 flex flex-col sm:flex-row gap-6 sm:gap-8 items-start sm:items-center" style={{ background: palette.forest, color: palette.cream }}>
+        <div className="px-8 pt-8 pb-16 flex flex-col sm:flex-row gap-6 sm:gap-8 items-start sm:items-center" style={{ background: LOCAL_PALETTE.forest, color: LOCAL_PALETTE.cream }}>
           <HewanAvatarProfile hewanId={hewan.id} fotoUrl={hewan.fotoUrl} nama={hewan.nama} tag={hewan.tag} />
           
           <div>
@@ -117,7 +109,7 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
               { icon: <MapPin size={12} />, l: 'FARM', v: hewan.farm.nama.replace('Farm ', ''), sub: 'lokasi terdaftar' },
               { icon: <Activity size={12} />, l: 'REKAM MEDIS', v: `${hewan.rekamMedis.length}`, sub: 'catatan tersimpan' },
             ].map((c) => (
-              <div key={c.l} className="p-3 rounded-xl" style={{ background: '#fff', border: `1px solid ${palette.border}` }}>
+              <div key={c.l} className="p-3 rounded-xl transition-all duration-300 hover:shadow-md hover:-translate-y-1 hover:border-black/10 bg-white" style={{ border: `1px solid ${LOCAL_PALETTE.border}` }}>
                 <div className="flex items-center gap-1.5 opacity-60" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.15em' }}>
                   {c.icon} {c.l}
                 </div>
@@ -133,9 +125,9 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
       {hewan.beratHistory.length > 0 && (
         <KostaCard className="p-6 mb-5">
           <KostaSectionLabel>RIWAYAT PENIMBANGAN</KostaSectionLabel>
-          <div className="mt-4 divide-y" style={{ borderColor: palette.border }}>
+          <div className="mt-4 divide-y" style={{ borderColor: LOCAL_PALETTE.border }}>
             {hewan.beratHistory.map((h) => (
-              <div key={h.id} className="py-3.5 flex items-center justify-between">
+              <div key={h.id} className="py-3.5 px-3 flex items-center justify-between hover:bg-black/5 rounded-lg -mx-3 transition-colors">
                 <div>
                   <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13.5 }}>
                     {h.tanggal.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -146,7 +138,7 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
                     </div>
                   )}
                 </div>
-                <div style={{ fontFamily: "'Fraunces',serif", fontSize: 22, letterSpacing: '-0.02em', color: palette.moss }}>
+                <div style={{ fontFamily: "'Fraunces',serif", fontSize: 22, letterSpacing: '-0.02em', color: LOCAL_PALETTE.moss }}>
                   {h.berat}
                   <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, opacity: 0.6 }}> kg</span>
                 </div>
@@ -162,7 +154,7 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
       {/* Silsilah / Family Tree */}
       <KostaCard className="p-6 mt-5">
         <div className="flex items-center gap-2 mb-1">
-          <GitBranch size={13} style={{ color: palette.moss }} />
+          <GitBranch size={13} style={{ color: LOCAL_PALETTE.moss }} />
           <KostaSectionLabel>SILSILAH KETURUNAN</KostaSectionLabel>
         </div>
         <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'rgba(13,20,15,0.5)', marginBottom: 20 }}>

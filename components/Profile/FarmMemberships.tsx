@@ -3,6 +3,8 @@
 import { motion } from 'framer-motion'
 import { Building2, CheckCircle2, Clock } from 'lucide-react'
 import { KostaCard, KostaSectionLabel, palette } from '@/components/KostaUI'
+import PaginationControl from '@/components/Admin/PaginationControl'
+import { usePagination } from '@/hooks/usePagination'
 
 type FarmStatus = 'AKTIF' | 'NONAKTIF' | 'DELETED'
 
@@ -43,6 +45,9 @@ const STATUS_CONFIG: Record<FarmStatus, { label: string; color: string; bg: stri
 }
 
 export function FarmMemberships({ farms }: FarmMembershipsProps) {
+  const PER_PAGE = 5
+  const { paged: currentFarms, page, totalPages, onPrev, onNext } = usePagination(farms, PER_PAGE)
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -77,7 +82,7 @@ export function FarmMemberships({ farms }: FarmMembershipsProps) {
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              {farms.map(({ farm, assignedAt }) => {
+              {currentFarms.map(({ farm, assignedAt }) => {
                 const cfg = STATUS_CONFIG[farm.status] ?? STATUS_CONFIG.NONAKTIF
                 const StatusIcon = cfg.Icon
                 const assignedDate = new Date(assignedAt).toLocaleDateString('id-ID', {
@@ -131,6 +136,18 @@ export function FarmMemberships({ farms }: FarmMembershipsProps) {
                   </div>
                 )
               })}
+            </div>
+          )}
+          {farms.length > 0 && (
+            <div className="mt-4">
+              <PaginationControl
+                page={page}
+                totalPages={totalPages}
+                onPrev={onPrev}
+                onNext={onNext}
+                totalItems={farms.length}
+                perPage={PER_PAGE}
+              />
             </div>
           )}
         </div>

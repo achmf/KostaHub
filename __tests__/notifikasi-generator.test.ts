@@ -2,7 +2,7 @@
  * WHITEBOX UNIT TESTS: lib/notifikasi-generator.ts
  *
  * Coverage targets:
- *   - generateVaksinDue          : all branches (found/not found, skip if existing, farmId null)
+ *   - generateKontrolMedisDue    : all branches (found/not found, skip if existing, farmId null)
  *   - generateKelahiranMendekat  : all branches (found/not found, skip if existing, farmId null)
  *   - generatePenimbanganTerlambat: all branches (found/not found, skip if existing)
  *   - generateNotifikasiOtomatis : orchestration, all generators called in parallel
@@ -45,6 +45,7 @@ function fakeRekamMedis(overrides = {}) {
   return {
     id: 'rekam-001',
     diagnosis: 'Vaksin PMK',
+    butuhNotifikasi: true,
     tanggalLanjut: new Date('2026-08-25T00:00:00Z'),  // +1 day, within 3-day window
     hewan: { tag: 'KST-001', nama: 'Mbah Putri' },
     ...overrides,
@@ -119,12 +120,12 @@ describe('notifikasi-generator whitebox tests', () => {
   })
 
   // ══════════════════════════════════════════════════════════════════════════
-  // SECTION B: generateVaksinDue
+  // SECTION B: generateKontrolMedisDue
   // ══════════════════════════════════════════════════════════════════════════
 
-  describe('generateVaksinDue', () => {
+  describe('generateKontrolMedisDue', () => {
 
-    it('[HAPPY PATH] creates VAKSIN notification when tanggalLanjut is within 3 days', async () => {
+    it('[HAPPY PATH] creates MEDIS notification when tanggalLanjut is within 3 days', async () => {
       const rekam = fakeRekamMedis()
 
       // findMany returns [rekamMedis], findFirst(existing notif) returns null
@@ -139,11 +140,11 @@ describe('notifikasi-generator whitebox tests', () => {
 
       expect(mockCreate).toHaveBeenCalledTimes(1)
       const created = mockCreate.mock.calls[0][0].data
-      expect(created.type).toBe('VAKSIN')
+      expect(created.type).toBe('MEDIS')
       expect(created.farmId).toBe(FARM_ID)
       expect(created.title).toContain('KST-001')
       expect(created.title).toContain('Mbah Putri')
-      expect(created.message).toContain(`VAKSIN-${rekam.id}`)
+      expect(created.message).toContain(`MEDIS-${rekam.id}`)
     })
 
     it('[BRANCH] skips creation if a notification with the same key already exists', async () => {
@@ -228,7 +229,7 @@ describe('notifikasi-generator whitebox tests', () => {
 
       expect(mockCreate).toHaveBeenCalledTimes(1)
       const created = mockCreate.mock.calls[0][0].data
-      expect(created.message).toContain('VAKSIN-rekam-002')
+      expect(created.message).toContain('MEDIS-rekam-002')
     })
 
     it('[BRANCH] empty rekamMedis list — no create called', async () => {
@@ -272,7 +273,7 @@ describe('notifikasi-generator whitebox tests', () => {
       await generateNotifikasiOtomatis(FARM_ID)
 
       const created = mockCreate.mock.calls[0][0].data
-      expect(created.message).toContain('[ref:VAKSIN-abc-xyz-789]')
+      expect(created.message).toContain('[ref:MEDIS-abc-xyz-789]')
     })
 
   })
@@ -554,7 +555,7 @@ describe('notifikasi-generator whitebox tests', () => {
 
     it('creates 3 notifications when all three generators find new data', async () => {
       mockFindMany
-        .mockResolvedValueOnce([fakeRekamMedis()])   // VAKSIN
+        .mockResolvedValueOnce([fakeRekamMedis()])   // MEDIS
         .mockResolvedValueOnce([fakeReproduksi()])   // LAHIR
         .mockResolvedValueOnce([fakeHewan()])        // BERAT
       // No existing notifs for any
@@ -565,7 +566,7 @@ describe('notifikasi-generator whitebox tests', () => {
 
       expect(mockCreate).toHaveBeenCalledTimes(3)
       const types = mockCreate.mock.calls.map(c => c[0].data.type)
-      expect(types).toContain('VAKSIN')
+      expect(types).toContain('MEDIS')
       expect(types).toContain('LAHIR')
       expect(types).toContain('BERAT')
     })

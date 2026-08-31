@@ -14,14 +14,14 @@ export async function generateNotifikasiOtomatis(farmId: string | null) {
   const medisFilter = farmId ? { hewan: { farmId } } : {}
 
   await Promise.all([
-    generateVaksinDue(now, medisFilter, farmId),
+    generateKontrolMedisDue(now, medisFilter, farmId),
     generateKelahiranMendekat(now, reproduksiFilter, farmId),
     generatePenimbanganTerlambat(now, hewanFilter, farmId),
   ])
 }
 
-// ─── VAKSIN / KONTROL DUE ─────────────────────────────────
-async function generateVaksinDue(
+// ─── KONTROL MEDIS DUE ────────────────────────────────────
+async function generateKontrolMedisDue(
   now: Date,
   filter: object,
   farmId: string | null
@@ -31,6 +31,7 @@ async function generateVaksinDue(
   const jadwal = await prisma.rekamMedis.findMany({
     where: {
       tanggalLanjut: { gte: now, lte: tiga_hari },
+      butuhNotifikasi: true,
       ...filter,
     },
     include: { hewan: { select: { tag: true, nama: true } } },
@@ -41,7 +42,7 @@ async function generateVaksinDue(
     const tag = j.hewan?.tag ?? 'unknown'
     const nama = j.hewan?.nama ? ` (${j.hewan.nama})` : ''
     const tgl = j.tanggalLanjut!.toLocaleDateString('id-ID')
-    const key = `VAKSIN-${j.id}`
+    const key = `MEDIS-${j.id}`
 
     const existing = await prisma.notifikasi.findFirst({
       where: { message: { contains: key } },
@@ -53,7 +54,7 @@ async function generateVaksinDue(
         title: `Jadwal Kontrol Medis: ${tag}${nama}`,
         message: `${j.diagnosis} — kontrol ulang tanggal ${tgl}. [ref:${key}]`,
         tanggal: j.tanggalLanjut!,
-        type: 'VAKSIN',
+        type: 'MEDIS',
         farmId,
       },
     })

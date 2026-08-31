@@ -93,6 +93,9 @@ export default function AdminAnalyticsClient({
 }: AdminAnalyticsClientProps) {
   const sortedFarms = [...hewanPerFarm].sort((a, b) => b.total - a.total)
   const { paged: pagedFarms, page, totalPages, onPrev, onNext } = usePagination(sortedFarms, 10)
+
+  const sortedMortalityFarms = [...hewanPerFarm].sort((a, b) => b.mortalityRate - a.mortalityRate)
+  const mortalityP = usePagination(sortedMortalityFarms, 5)
   return (
     <div>
       {/* Header */}
@@ -154,29 +157,33 @@ export default function AdminAnalyticsClient({
               Belum ada data farm
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={hewanPerFarm} margin={{ top: 4, right: 0, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,20,15,0.05)" vertical={false} />
-                <XAxis dataKey="nama" tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, fill: 'rgba(13,20,15,0.5)' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                  itemStyle={{ color: '#ffffff' }}
-                  labelStyle={{ color: '#ffffff' }}
-                  contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}` }}
-                  labelFormatter={(label) => {
-                    const item = hewanPerFarm.find((f) => f.nama === String(label))
-                    return item?.namaPanjang || String(label)
-                  }}
-                />
-                <Legend wrapperStyle={{ fontFamily: "'Inter',sans-serif", fontSize: 11 }} />
-                <Bar dataKey="indukan" name="Indukan" stackId="a" fill={STACKED_COLORS.indukan} radius={[0, 0, 0, 0]} />
-                <Bar dataKey="pejantan" name="Pejantan" stackId="a" fill={STACKED_COLORS.pejantan} />
-                <Bar dataKey="anakan" name="Anakan" stackId="a" fill={STACKED_COLORS.anakan} />
-                <Bar dataKey="dara" name="Dara" stackId="a" fill={STACKED_COLORS.dara} />
-                <Bar dataKey="jantanMuda" name="Jantan Muda" stackId="a" fill={STACKED_COLORS.jantanMuda} radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="overflow-x-auto overflow-y-hidden" style={{ width: '100%', scrollbarWidth: 'thin' }}>
+              <div style={{ minWidth: Math.max(hewanPerFarm.length * 60, 600) + 'px', height: 280 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={hewanPerFarm} margin={{ top: 4, right: 0, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,20,15,0.05)" vertical={false} />
+                    <XAxis dataKey="nama" tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, fill: 'rgba(13,20,15,0.5)' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                      itemStyle={{ color: '#ffffff' }}
+                      labelStyle={{ color: '#ffffff' }}
+                      contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}` }}
+                      labelFormatter={(label) => {
+                        const item = hewanPerFarm.find((f) => f.nama === String(label))
+                        return item?.namaPanjang || String(label)
+                      }}
+                    />
+                    <Legend wrapperStyle={{ fontFamily: "'Inter',sans-serif", fontSize: 11 }} />
+                    <Bar dataKey="indukan" name="Indukan" stackId="a" fill={STACKED_COLORS.indukan} radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="pejantan" name="Pejantan" stackId="a" fill={STACKED_COLORS.pejantan} />
+                    <Bar dataKey="anakan" name="Anakan" stackId="a" fill={STACKED_COLORS.anakan} />
+                    <Bar dataKey="dara" name="Dara" stackId="a" fill={STACKED_COLORS.dara} />
+                    <Bar dataKey="jantanMuda" name="Jantan Muda" stackId="a" fill={STACKED_COLORS.jantanMuda} radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           )}
         </Card>
       </motion.div>
@@ -191,9 +198,7 @@ export default function AdminAnalyticsClient({
               Tingkat kematian hewan per peternakan
             </div>
             <div className="space-y-3">
-              {hewanPerFarm
-                .sort((a, b) => b.mortalityRate - a.mortalityRate)
-                .map((farm, i) => (
+              {mortalityP.paged.map((farm, i) => (
                   <div key={farm.id}>
                     <div className="flex items-center justify-between mb-1.5">
                       <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: palette.ink }} className="truncate max-w-[180px]">
@@ -224,6 +229,18 @@ export default function AdminAnalyticsClient({
                   </div>
                 ))}
             </div>
+            {sortedMortalityFarms.length > 5 && (
+              <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${palette.border}` }}>
+                <PaginationControl
+                  page={mortalityP.page}
+                  totalPages={mortalityP.totalPages}
+                  onPrev={mortalityP.onPrev}
+                  onNext={mortalityP.onNext}
+                  totalItems={sortedMortalityFarms.length}
+                  perPage={5}
+                />
+              </div>
+            )}
           </Card>
         </motion.div>
 
@@ -239,26 +256,30 @@ export default function AdminAnalyticsClient({
                 Belum ada data reproduksi selesai
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={240}>
-                <BarChart
-                  data={reproduksiPerFarm.filter((f) => f.lahir + f.gagal > 0)}
-                  margin={{ top: 4, right: 0, left: -20, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,20,15,0.05)" vertical={false} />
-                  <XAxis dataKey="nama" tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, fill: 'rgba(13,20,15,0.5)' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                    itemStyle={{ color: '#ffffff' }}
-                    labelStyle={{ color: '#ffffff' }}
-                    contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}` }}
-                    labelFormatter={(label) => reproduksiPerFarm.find((f) => f.nama === String(label))?.namaPanjang || String(label)}
-                  />
-                  <Legend wrapperStyle={{ fontFamily: "'Inter',sans-serif", fontSize: 11 }} />
-                  <Bar dataKey="lahir" name="Berhasil Lahir" fill={palette.moss} radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="gagal" name="Gagal" fill={palette.danger} radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="overflow-x-auto overflow-y-hidden" style={{ width: '100%', scrollbarWidth: 'thin' }}>
+                <div style={{ minWidth: Math.max(reproduksiPerFarm.filter((f) => f.lahir + f.gagal > 0).length * 60, 400) + 'px', height: 240 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={reproduksiPerFarm.filter((f) => f.lahir + f.gagal > 0)}
+                      margin={{ top: 4, right: 0, left: -20, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,20,15,0.05)" vertical={false} />
+                      <XAxis dataKey="nama" tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, fill: 'rgba(13,20,15,0.5)' }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
+                      <Tooltip
+                        cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                        itemStyle={{ color: '#ffffff' }}
+                        labelStyle={{ color: '#ffffff' }}
+                        contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}` }}
+                        labelFormatter={(label) => reproduksiPerFarm.find((f) => f.nama === String(label))?.namaPanjang || String(label)}
+                      />
+                      <Legend wrapperStyle={{ fontFamily: "'Inter',sans-serif", fontSize: 11 }} />
+                      <Bar dataKey="lahir" name="Berhasil Lahir" fill={palette.moss} radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="gagal" name="Gagal" fill={palette.danger} radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
             )}
           </Card>
         </motion.div>

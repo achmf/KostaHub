@@ -3,18 +3,10 @@ import { getSession } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { ArrowLeft, Edit, Calendar, Activity } from 'lucide-react'
 import Link from 'next/link'
-import { Badge, KostaCard, KostaButton } from '@/components/KostaUI'
+import { Badge, KostaCard, KostaButton, palette } from '@/components/KostaUI'
 import { RekamMedisHistory } from '@/components/Hewan/RekamMedisHistory'
 
-const palette = {
-  cream: '#F2EDE0',
-  forest: '#1B2A1F',
-  moss: '#3F5B3A',
-  ochre: '#C7873E',
-  ink: '#0D140F',
-  border: 'rgba(13,20,15,0.10)',
-  emerald: '#3F7A4E',
-}
+
 
 export default async function RekamMedisHewanPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params
@@ -59,9 +51,11 @@ export default async function RekamMedisHewanPage(props: { params: Promise<{ id:
       </div>
 
       {/* Hero card */}
-      <KostaCard className="overflow-hidden mb-5">
-        <div className="px-8 py-8" style={{ background: palette.forest, color: palette.cream }}>
-          <div className="flex justify-between items-start">
+      <KostaCard className="overflow-hidden mb-5 border-none shadow-sm">
+        <div className="px-8 py-8 relative" style={{ background: 'linear-gradient(145deg, #1B2A1F 0%, #2A3C2E 100%)', color: '#F2EDE0' }}>
+          {/* Decorative subtle pattern/overlay */}
+          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#F2EDE0 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
+          <div className="relative z-10 flex justify-between items-start">
             <div>
               <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, letterSpacing: '0.18em', opacity: 0.55 }}>
                 {hewan.tag}
@@ -78,9 +72,9 @@ export default async function RekamMedisHewanPage(props: { params: Promise<{ id:
                 {hewan.status === 'TERJUAL' && <Badge variant="cream" surface="dark">Terjual</Badge>}
               </div>
             </div>
-            <div className="text-right">
+            <div className="relative z-10 text-right">
               <div className="opacity-50" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10 }}>TOTAL CATATAN</div>
-              <div style={{ fontFamily: "'Fraunces',serif", fontSize: '3rem', lineHeight: 1, color: palette.cream }}>
+              <div style={{ fontFamily: "'Fraunces',serif", fontSize: '3.5rem', lineHeight: 1, color: '#F2EDE0', marginTop: '0.25rem' }}>
                 {hewan.rekamMedis.length}
               </div>
             </div>

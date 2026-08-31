@@ -26,13 +26,7 @@ export default async function LaporanPage(props: { searchParams: Promise<{ [key:
   }
 
   // ─── ACTION ITEMS ──────────────────────────────────────────
-  const [hewanPerluPerhatian, kehamilanAktif, jadwalMedis, inbreedingAlerts] = await Promise.all([
-    prisma.rekamMedis.findMany({
-      where: { status: { in: ['RAWAT', 'PANTAU'] }, ...medisFarmFilter },
-      include: { hewan: { select: { tag: true, nama: true, farm: { select: { nama: true } } } } },
-      orderBy: { tanggal: 'desc' },
-      take: 10,
-    }),
+  const [kehamilanAktif, jadwalMedis, inbreedingAlerts] = await Promise.all([
     prisma.reproduksi.findMany({
       where: { status: 'HAMIL', ...reproduksiFarmFilter },
       include: {
@@ -129,6 +123,7 @@ export default async function LaporanPage(props: { searchParams: Promise<{ [key:
     include: {
       hewan: {
         select: {
+          id: true,
           tag: true, nama: true, kategori: true, kelamin: true,
           tanggalLahir: true,
           farm: { select: { nama: true } },
@@ -141,7 +136,7 @@ export default async function LaporanPage(props: { searchParams: Promise<{ [key:
 
   // Group berat per hewan
   const beratPerHewan = new Map<string, {
-    hewan: { tag: string; nama: string | null; kategori: string; kelamin: string; tanggalLahir: Date; farm: { nama: string } | null }
+    hewan: { id: string; tag: string; nama: string | null; kategori: string; kelamin: string; tanggalLahir: Date; farm: { nama: string } | null }
     records: { tanggal: Date; berat: number; catatan: string | null }[]
   }>()
   beratData.forEach(b => {
@@ -182,11 +177,7 @@ export default async function LaporanPage(props: { searchParams: Promise<{ [key:
 
   const data = {
     // Action Items
-    hewanPerluPerhatian: hewanPerluPerhatian.map(r => ({
-      id: r.id, tag: r.hewan?.tag, nama: r.hewan?.nama,
-      farm: r.hewan?.farm?.nama, diagnosis: r.diagnosis,
-      status: r.status, tanggal: r.tanggal.toISOString(),
-    })),
+
     kehamilanAktif: kehamilanAktif.map(r => ({
       id: r.id, indukTag: r.induk?.tag, indukNama: r.induk?.nama,
       pejantanTag: r.pejantan?.tag, estimasiLahir: r.estimasiLahir.toISOString(),
@@ -210,25 +201,35 @@ export default async function LaporanPage(props: { searchParams: Promise<{ [key:
       updatedAt: h.updatedAt.toISOString(),
       farm: h.farm?.nama,
     })),
+    hewanKeluar: hewanKeluar.map(h => ({
+      id: h.id, tag: h.tag, nama: h.nama, kelamin: h.kelamin,
+      kategori: h.kategori, status: h.status, berat: h.berat,
+      tanggalLahir: h.tanggalLahir.toISOString(),
+      createdAt: h.createdAt.toISOString(),
+      updatedAt: h.updatedAt.toISOString(),
+      farm: h.farm?.nama,
+    })),
     mutasiData: mutasiData.map(t => ({
-      id: t.id, tag: t.hewan?.tag, nama: t.hewan?.nama, kategori: t.hewan?.kategori,
+      id: t.id, hewanId: t.hewanId, tag: t.hewan?.tag, nama: t.hewan?.nama, kategori: t.hewan?.kategori,
       fromFarm: t.fromFarm?.nama, toFarm: t.toFarm?.nama,
       tanggal: t.tanggal.toISOString(), alasan: t.alasan,
     })),
 
     // Laporan 2: Kesehatan & Medis
     medisData: medisData.map(m => ({
-      id: m.id, hewanTag: m.hewan?.tag, hewanNama: m.hewan?.nama,
+      id: m.id, hewanId: m.hewanId, hewanTag: m.hewan?.tag, hewanNama: m.hewan?.nama,
       hewanKategori: m.hewan?.kategori, farm: m.hewan?.farm?.nama,
       tanggal: m.tanggal.toISOString(), kategori: m.kategori,
       diagnosis: m.diagnosis, obat: m.obat, namaDokter: m.namaDokter,
-      notes: m.notes, status: m.status,
+      notes: m.notes,
       tanggalLanjut: m.tanggalLanjut?.toISOString() ?? null,
     })),
 
     // Laporan 3: Breeding
     breedingData: breedingData.map(r => ({
       id: r.id,
+      indukId: r.indukId,
+      pejantanId: r.pejantanId,
       indukTag: r.induk?.tag, indukNama: r.induk?.nama, indukBerat: r.induk?.berat,
       pejantanTag: r.pejantan?.tag, pejantanNama: r.pejantan?.nama, pejantanBerat: r.pejantan?.berat,
       tanggalKawin: r.tanggalKawin.toISOString(),

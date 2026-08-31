@@ -11,7 +11,13 @@ export default async function EditHewanPage(props: { params: Promise<{ id: strin
   const farmFilter = session.role === 'SUPER_ADMIN' ? {} : { farmId: session.activeFarmId as string }
 
   const [hewan, semuaHewan] = await Promise.all([
-    prisma.hewan.findUnique({ where: { id: params.id } }),
+    prisma.hewan.findUnique({ 
+      where: { id: params.id },
+      include: {
+        bapak: { select: { id: true, tag: true, nama: true, kelamin: true } },
+        induk: { select: { id: true, tag: true, nama: true, kelamin: true } }
+      }
+    }),
     prisma.hewan.findMany({
       where: { status: 'AKTIF', ...farmFilter },
       select: { id: true, tag: true, nama: true, kelamin: true },
@@ -25,5 +31,15 @@ export default async function EditHewanPage(props: { params: Promise<{ id: strin
     redirect('/hewan')
   }
 
-  return <EditHewanForm hewan={hewan} semuaHewan={semuaHewan} />
+  let finalSemuaHewan = [...semuaHewan]
+
+  // Ensure parents are in the options even if they are inactive
+  if (hewan.bapak && !finalSemuaHewan.some(h => h.id === hewan.bapak!.id)) {
+    finalSemuaHewan.push(hewan.bapak as any)
+  }
+  if (hewan.induk && !finalSemuaHewan.some(h => h.id === hewan.induk!.id)) {
+    finalSemuaHewan.push(hewan.induk as any)
+  }
+
+  return <EditHewanForm hewan={hewan} semuaHewan={finalSemuaHewan} />
 }

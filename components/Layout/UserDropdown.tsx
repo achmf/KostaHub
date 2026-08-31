@@ -5,15 +5,9 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Building2, LogOut, ChevronDown, ShieldCheck } from 'lucide-react'
 import { logout } from '@/actions/auth'
+import { palette } from '@/components/KostaUI'
 
-const palette = {
-  cream: '#F2EDE0',
-  forest: '#1B2A1F',
-  ochre: '#C7873E',
-  ochreSoft: '#E2B883',
-  ink: '#0D140F',
-  border: 'rgba(13,20,15,0.10)',
-}
+
 
 export interface UserDropdownProps {
   name: string

@@ -5,6 +5,7 @@ import AdminSidebar from '@/components/Admin/AdminSidebar'
 import { Bell, ShieldCheck } from 'lucide-react'
 import { GoatMark } from '@/components/GoatMark'
 import Link from 'next/link'
+import UserDropdown from '@/components/Layout/UserDropdown'
 
 const palette = {
   cream: '#F2EDE0',
@@ -118,26 +119,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </div>
 
             {/* User chip */}
-            <div
-              className="flex items-center gap-2 px-3 py-2 rounded-full"
-              style={{ border: `1px solid ${palette.border}`, background: '#fff' }}
-            >
-              <div
-                className="w-6 h-6 rounded-full flex items-center justify-center"
-                style={{
-                  background: '#C7873E',
-                  color: palette.cream,
-                  fontFamily: "'Fraunces',serif",
-                  fontSize: 11,
-                  fontWeight: 600,
-                }}
-              >
-                {session.name.charAt(0).toUpperCase()}
-              </div>
-              <span className="hidden md:block" style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
-                {session.name}
-              </span>
-            </div>
+            <UserDropdown
+              name={session.name}
+              email={session.email ?? ''}
+              role={session.role}
+              profileHref="/admin/profil"
+              showRoleBadge={true}
+            />
           </div>
         </header>
 
