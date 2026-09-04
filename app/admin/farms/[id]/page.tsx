@@ -26,6 +26,8 @@ const palette = {
   info: '#2C5F8A',
 }
 
+import AdminFarmProfileActions from '@/components/Admin/AdminFarmProfileActions'
+
 export default async function AdminFarmDetailPage({
   params,
 }: {
@@ -127,18 +129,29 @@ export default async function AdminFarmDetailPage({
               </div>
             </div>
           </div>
-          <span
-            className="px-3 py-1.5 rounded-full"
-            style={{
-              background: farm.status === 'AKTIF' ? 'rgba(63,91,58,0.12)' : 'rgba(181,68,59,0.09)',
-              color: farm.status === 'AKTIF' ? palette.moss : palette.danger,
-              fontFamily: "'JetBrains Mono',monospace",
-              fontSize: 9,
-              letterSpacing: '0.15em',
-            }}
-          >
-            {farm.status}
-          </span>
+          <div className="flex flex-col items-end gap-3">
+            <span
+              className="px-3 py-1.5 rounded-full"
+              style={{
+                background: farm.status === 'AKTIF' ? 'rgba(63,91,58,0.12)' : 'rgba(181,68,59,0.09)',
+                color: farm.status === 'AKTIF' ? palette.moss : palette.danger,
+                fontFamily: "'JetBrains Mono',monospace",
+                fontSize: 9,
+                letterSpacing: '0.15em',
+              }}
+            >
+              {farm.status === 'AKTIF' ? 'Aktif' : farm.status === 'NONAKTIF' ? 'Nonaktif' : farm.status}
+            </span>
+            <AdminFarmProfileActions farm={{
+              id: farm.id,
+              nama: farm.nama,
+              alamat: farm.alamat,
+              deskripsi: farm.deskripsi,
+              lat: farm.lat,
+              lng: farm.lng,
+              status: farm.status,
+            }} />
+          </div>
         </div>
       </div>
 

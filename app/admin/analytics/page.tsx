@@ -97,19 +97,20 @@ export default async function AdminAnalyticsPage() {
   // ─── KATEGORI MEDIS ───────────────────────────────────────────
   const kategoriMedisMap = new Map<string, number>()
   allMedis.forEach((m) => {
-    kategoriMedisMap.set(m.kategori, (kategoriMedisMap.get(m.kategori) || 0) + 1)
+    let name = m.kategori
+    if (name === 'VAKSINASI') name = 'Vaksinasi'
+    else if (name === 'PENGOBATAN') name = 'Pengobatan'
+    else if (name === 'PEMERIKSAAN') name = 'Pemeriksaan'
+    else if (name === 'PERAWATAN_LUKA') name = 'Perawatan Luka'
+    else if (name === 'VITAMIN') name = 'Vitamin'
+    else name = 'Lainnya'
+    
+    kategoriMedisMap.set(name, (kategoriMedisMap.get(name) || 0) + 1)
   })
+  
   const kategoriMedisData = Array.from(kategoriMedisMap.entries())
     .sort((a, b) => b[1] - a[1])
-    .map(([name, value]) => ({
-      name: name === 'VAKSINASI' ? 'Vaksinasi'
-        : name === 'PENGOBATAN' ? 'Pengobatan'
-        : name === 'PEMERIKSAAN' ? 'Pemeriksaan'
-        : name === 'PERAWATAN_LUKA' ? 'Perawatan Luka'
-        : name === 'VITAMIN' ? 'Vitamin'
-        : 'Lainnya',
-      value,
-    }))
+    .map(([name, value]) => ({ name, value }))
 
   return (
     <AdminAnalyticsClient
