@@ -127,7 +127,7 @@ export default function AdminAnalyticsClient({
               key={btn.type}
               href={`/api/admin/export?type=${btn.type}`}
               download
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all hover:opacity-80"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl hover:-translate-y-0.5 hover:shadow-sm transition-all duration-300 ease-out"
               style={{
                 fontFamily: "'Inter',sans-serif",
                 fontSize: 12,
@@ -457,7 +457,7 @@ export default function AdminAnalyticsClient({
                     const scoreColor = healthScore >= 80 ? palette.moss : healthScore >= 60 ? palette.ochre : palette.danger
                     const medalColor = rankActual === 0 ? '#C7873E' : rankActual === 1 ? '#9B9B9B' : rankActual === 2 ? '#C67B3A' : 'rgba(13,20,15,0.3)'
                     return (
-                      <tr key={farm.id} style={{ borderBottom: `1px solid ${palette.border}` }}>
+                      <tr key={farm.id} className="hover:bg-black/5 transition-colors" style={{ borderBottom: `1px solid ${palette.border}` }}>
                         <td style={{ padding: '10px 12px', fontFamily: "'Fraunces',serif", fontSize: 16, color: medalColor, fontWeight: 400 }}>
                           {rankActual + 1}
                         </td>

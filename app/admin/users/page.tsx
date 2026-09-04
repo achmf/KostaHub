@@ -12,9 +12,8 @@ const palette = {
 }
 
 const roleBadge: Record<string, { label: string; color: string; bg: string }> = {
-  OWNER: { label: 'Owner', color: '#A0692B', bg: 'rgba(199,135,62,0.12)' },
-  PETUGAS: { label: 'Petugas', color: '#2C5F8A', bg: 'rgba(44,95,138,0.10)' },
-  DOKTER: { label: 'Dokter', color: '#3F5B3A', bg: 'rgba(63,91,58,0.10)' },
+  OWNER: { label: 'Owner', color: '#A0692B', bg: 'rgba(160,105,43,0.12)' },
+  PETUGAS: { label: 'Petugas', color: '#2C5F8A', bg: 'rgba(44,95,138,0.12)' },
   SUPER_ADMIN: { label: 'Super Admin', color: '#B5443B', bg: 'rgba(181,68,59,0.08)' },
 }
 
@@ -39,14 +38,12 @@ export default async function AdminUsersPage() {
 
   const totalOwner = users.filter((u) => u.role === 'OWNER').length
   const totalPetugas = users.filter((u) => u.role === 'PETUGAS').length
-  const totalDokter = users.filter((u) => u.role === 'DOKTER').length
   const totalPending = users.filter((u) => u.approvalStatus === 'PENDING').length
 
   const stats = [
     { label: 'Total User', value: users.length, icon: Users, color: palette.ochre, bg: 'rgba(199,135,62,0.10)' },
     { label: 'Owner', value: totalOwner, icon: UserCog, color: '#A0692B', bg: 'rgba(199,135,62,0.12)' },
     { label: 'Petugas', value: totalPetugas, icon: ShieldCheck, color: palette.info, bg: 'rgba(44,95,138,0.10)' },
-    { label: 'Dokter', value: totalDokter, icon: Stethoscope, color: palette.moss, bg: 'rgba(63,91,58,0.10)' },
     { label: 'Pending Approval', value: totalPending, icon: Clock, color: totalPending > 0 ? palette.danger : palette.moss, bg: totalPending > 0 ? 'rgba(181,68,59,0.08)' : 'rgba(63,91,58,0.10)' },
   ]
 
@@ -66,7 +63,7 @@ export default async function AdminUsersPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
         {stats.map((stat) => {
           const Icon = stat.icon
           return (

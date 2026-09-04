@@ -5,7 +5,7 @@ import { useState, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   MapPin, Search, Layers, Activity, AlertCircle,
-  LayoutGrid, Flame, CircleDot, PenLine, X,
+  PanelLeftClose, PanelLeftOpen, Flame, CircleDot, PenLine, X,
   Users, Building2, CheckCircle2,
 } from 'lucide-react'
 import PaginationControl from './PaginationControl'
@@ -490,7 +490,7 @@ export default function AdminMapClient({
               color: palette.ink,
             }}
           >
-            <LayoutGrid size={12} />
+            {sidebarOpen ? <PanelLeftClose size={12} /> : <PanelLeftOpen size={12} />}
             {sidebarOpen ? 'TUTUP' : 'PANEL'}
           </button>
 

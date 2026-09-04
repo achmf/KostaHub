@@ -30,8 +30,8 @@ export async function createStaff(formData: FormData) {
     return { error: 'Nama, email, password, dan role wajib diisi' }
   }
 
-  if (!['PETUGAS', 'DOKTER'].includes(role)) {
-    return { error: 'Role harus PETUGAS atau DOKTER' }
+  if (!['PETUGAS'].includes(role)) {
+    return { error: 'Role harus PETUGAS' }
   }
 
   const existingUser = await prisma.user.findUnique({ where: { email } })
@@ -81,13 +81,50 @@ export async function deleteStaff(staffId: string) {
     return { error: 'Bukan staff farm Anda' }
   }
 
-  if (!['PETUGAS', 'DOKTER'].includes(staff.role)) {
-    return { error: 'Hanya bisa menghapus PETUGAS atau DOKTER' }
+  if (!['PETUGAS'].includes(staff.role)) {
+    return { error: 'Hanya bisa menghapus PETUGAS' }
   }
 
   await prisma.user.update({
     where: { id: staffId },
     data: { deletedAt: new Date() },
+  })
+
+  revalidatePath('/staff')
+  return { success: true }
+}
+
+export async function updateStaff(staffId: string, formData: FormData) {
+  const session = await requireOwnerWithFarm()
+  
+  const name = formData.get('name') as string
+  const phone = formData.get('phone') as string
+  const password = formData.get('password') as string
+
+  if (!name) {
+    return { error: 'Nama wajib diisi' }
+  }
+
+  const staff = await prisma.user.findUnique({
+    where: { id: staffId },
+    include: { farms: true },
+  })
+  if (!staff) return { error: 'Staff tidak ditemukan' }
+
+  const isMemberOfActiveFarm = staff.farms.some(
+    (uf) => uf.farmId === session.activeFarmId
+  )
+  if (!isMemberOfActiveFarm) return { error: 'Bukan staff farm Anda' }
+
+  let updateData: any = { name, phone: phone || null }
+  
+  if (password && password.length >= 6) {
+    updateData.password = await bcrypt.hash(password, 10)
+  }
+
+  await prisma.user.update({
+    where: { id: staffId },
+    data: updateData,
   })
 
   revalidatePath('/staff')

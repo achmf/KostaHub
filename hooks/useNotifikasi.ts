@@ -96,8 +96,13 @@ export function useNotifikasi() {
 
     try {
       const reg = await navigator.serviceWorker.ready
+      let sub = await reg.pushManager.getSubscription()
+      if (sub) {
+        await sub.unsubscribe() // Clear old subscription to avoid VAPID mismatch error
+      }
+      
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const sub = await reg.pushManager.subscribe({
+      sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC) as any,
       })

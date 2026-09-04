@@ -110,8 +110,8 @@ export async function assignStaffToFarm(staffId: string, farmId: string) {
   // Validasi: staff harus sudah terdaftar di sistem
   const staff = await prisma.user.findUnique({ where: { id: staffId } })
   if (!staff) return { error: 'Staff tidak ditemukan' }
-  if (!['PETUGAS', 'DOKTER'].includes(staff.role)) {
-    return { error: 'Hanya PETUGAS atau DOKTER yang bisa di-assign ke farm' }
+  if (!['PETUGAS'].includes(staff.role)) {
+    return { error: 'Hanya PETUGAS yang bisa di-assign ke farm' }
   }
 
   await prisma.userFarm.upsert({

@@ -84,7 +84,6 @@ export default async function AdminFarmDetailPage({
   const roleBadge: Record<string, { label: string; color: string; bg: string }> = {
     OWNER: { label: 'Owner', color: palette.ochre, bg: 'rgba(199,135,62,0.12)' },
     PETUGAS: { label: 'Petugas', color: palette.info, bg: 'rgba(44,95,138,0.10)' },
-    DOKTER: { label: 'Dokter', color: palette.moss, bg: 'rgba(63,91,58,0.10)' },
     SUPER_ADMIN: { label: 'Admin', color: palette.danger, bg: 'rgba(181,68,59,0.08)' },
   }
 

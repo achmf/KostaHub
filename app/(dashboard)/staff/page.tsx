@@ -18,7 +18,7 @@ export default async function StaffPage() {
   })
   const staff = userFarmMembers
     .map((uf) => uf.user)
-    .filter((u) => ['PETUGAS', 'DOKTER'].includes(u.role) && u.approvalStatus === 'APPROVED' && !u.deletedAt)
+    .filter((u) => ['PETUGAS'].includes(u.role) && u.approvalStatus === 'APPROVED' && !u.deletedAt)
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 
   const farm = await prisma.farm.findUnique({

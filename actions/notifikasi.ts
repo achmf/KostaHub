@@ -24,27 +24,4 @@ export async function tandaiSudahDibaca(id: string) {
   // Tidak redirect lagi — return saja
 }
 
-export async function tambahCustomNotif(formData: FormData) {
-  const session = await getSession()
-  if (!session) throw new Error('Unauthorized')
 
-  const title = formData.get('title') as string
-  const message = formData.get('message') as string
-  const tanggal = new Date(formData.get('tanggal') as string)
-
-  const farmId = session.role === 'SUPER_ADMIN'
-    ? (formData.get('farmId') as string || null)
-    : session.activeFarmId
-
-  await prisma.notifikasi.create({
-    data: {
-      title,
-      message,
-      tanggal,
-      type: 'CUSTOM',
-      farmId,
-    },
-  })
-
-  redirect('/notifikasi')
-}

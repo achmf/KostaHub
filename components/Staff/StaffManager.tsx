@@ -3,17 +3,19 @@
 import { useState, useTransition } from 'react'
 import { createStaff, deleteStaff } from '@/actions/staff'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Trash2, User, Mail, Lock, Phone, X, Users } from 'lucide-react'
+import { Plus, Trash2, User, Mail, Lock, Phone, X, ChevronRight } from 'lucide-react'
 import { KostaButton, KostaEmptyState, palette } from '@/components/KostaUI'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import PaginationControl from '@/components/Admin/PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
+import { useRouter } from 'next/navigation'
+import { useConfirm } from '@/components/ConfirmProvider'
+import { useToast } from '@/components/ToastProvider'
 
 
 
 const ROLE_LABELS: Record<string, { label: string; bg: string; color: string }> = {
   PETUGAS: { label: 'Petugas', bg: 'rgba(63,91,58,0.12)', color: '#3F5B3A' },
-  DOKTER: { label: 'Dokter', bg: 'rgba(59,130,181,0.12)', color: '#3B82B5' },
 }
 
 type StaffItem = {
@@ -29,6 +31,9 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState('')
   const [isPending, startTransition] = useTransition()
+  const router = useRouter()
+  const { confirm: showConfirm } = useConfirm()
+  const { showToast } = useToast()
   const PER_PAGE = 10
   const { paged, page, totalPages, onPrev, onNext } = usePagination(staff, PER_PAGE)
 
@@ -40,14 +45,27 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
         setError(result.error)
       } else {
         setShowForm(false)
+        showToast({ title: 'Berhasil', message: 'Staff baru telah ditambahkan.', type: 'success' })
       }
     })
   }
 
-  function handleDelete(staffId: string, staffName: string) {
-    if (!confirm(`Hapus staff "${staffName}"?`)) return
+  async function handleDelete(staffId: string, staffName: string) {
+    const ok = await showConfirm({
+      title: 'Hapus Staff',
+      message: `Apakah Anda yakin ingin menghapus staff "${staffName}"? Tindakan ini tidak dapat dibatalkan.`,
+      variant: 'danger',
+      confirmText: 'Hapus',
+    })
+    if (!ok) return
+
     startTransition(async () => {
-      await deleteStaff(staffId)
+      const result = await deleteStaff(staffId)
+      if (result?.error) {
+        showToast({ title: 'Gagal Menghapus', message: result.error, type: 'error' })
+      } else {
+        showToast({ title: 'Berhasil', message: `Staff ${staffName} telah dihapus.`, type: 'success' })
+      }
     })
   }
 
@@ -154,7 +172,6 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
                         {(val: string) => {
                           const labels: Record<string, string> = {
                             PETUGAS: 'Petugas',
-                            DOKTER: 'Dokter'
                           }
                           return val ? labels[val] : '— Pilih Role —'
                         }}
@@ -162,7 +179,6 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="PETUGAS" label="Petugas">Petugas</SelectItem>
-                      <SelectItem value="DOKTER" label="Dokter">Dokter</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -209,7 +225,8 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
             return (
               <div
                 key={s.id}
-                className="flex items-center gap-4 px-5 py-4 rounded-2xl"
+                onClick={() => router.push(`/staff/${s.id}`)}
+                className="flex items-center gap-4 px-5 py-4 rounded-2xl group hover:bg-gray-50/50 transition-colors cursor-pointer"
                 style={{ background: '#fff', border: `1px solid ${palette.border}` }}
               >
                 <div
@@ -234,15 +251,27 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
                   </div>
                 </div>
                 {isOwner && (
-                  <button
-                    onClick={() => handleDelete(s.id, s.name)}
-                    disabled={isPending}
-                    className="cursor-pointer p-2 rounded-lg transition-all hover:bg-red-50"
-                    style={{ color: 'rgba(181,68,59,0.5)' }}
-                    title="Hapus staff"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDelete(s.id, s.name)
+                      }}
+                      disabled={isPending}
+                      className="p-2 rounded-lg transition-all hover:bg-red-50"
+                      style={{ color: 'rgba(181,68,59,0.5)' }}
+                      title="Hapus staff"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                    <div
+                      className="p-2 rounded-lg transition-all hover:bg-gray-100"
+                      style={{ color: 'rgba(13,20,15,0.5)' }}
+                      title="Lihat Profil"
+                    >
+                      <ChevronRight size={16} />
+                    </div>
+                  </div>
                 )}
               </div>
             )

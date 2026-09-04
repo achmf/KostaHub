@@ -17,7 +17,6 @@ const palette = {
 const roleBadge: Record<string, { label: string; color: string; bg: string }> = {
   OWNER: { label: 'Owner', color: '#A0692B', bg: 'rgba(199,135,62,0.12)' },
   PETUGAS: { label: 'Petugas', color: '#2C5F8A', bg: 'rgba(44,95,138,0.10)' },
-  DOKTER: { label: 'Dokter', color: '#3F5B3A', bg: 'rgba(63,91,58,0.10)' },
   SUPER_ADMIN: { label: 'Super Admin', color: '#B5443B', bg: 'rgba(181,68,59,0.08)' },
   DINAS: { label: 'Dinas', color: '#1E78A0', bg: 'rgba(30,120,160,0.08)' },
 }

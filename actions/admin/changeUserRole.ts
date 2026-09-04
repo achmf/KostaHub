@@ -22,9 +22,9 @@ export async function changeUserRole(userId: string, newRole: Role) {
     return { error: 'Anda tidak dapat mengubah role akun Anda sendiri' }
   }
 
-  const validRoles: Role[] = ['OWNER', 'PETUGAS', 'DOKTER']
+  const validRoles: Role[] = ['OWNER', 'PETUGAS']
   if (!validRoles.includes(newRole)) {
-    return { error: 'Role tidak valid. Pilih OWNER, PETUGAS, atau DOKTER.' }
+    return { error: 'Role tidak valid. Pilih OWNER atau PETUGAS.' }
   }
 
   const user = await prisma.user.findUnique({ where: { id: userId } })

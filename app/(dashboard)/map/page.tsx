@@ -7,6 +7,7 @@ export default async function MapPage(props: { searchParams: Promise<{ [key: str
   const searchParams = await props.searchParams
   const session = await getSession()
   if (!session) redirect('/login')
+  if (session.role === 'PETUGAS') redirect('/')
 
   let rawFarms: Awaited<ReturnType<typeof prisma.farm.findMany>>
   let hewanByFarm: Record<string, { status: string; kategori: string }[]> = {}

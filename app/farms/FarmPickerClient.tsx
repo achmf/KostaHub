@@ -176,7 +176,7 @@ export default function FarmPickerClient({ farms, userName, userRole, activeFarm
                   transition={{ delay: i * 0.07, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
                   onClick={() => handleSelectFarm(farm.id)}
                   disabled={isPending}
-                  className="w-full text-left cursor-pointer rounded-2xl p-5 flex items-center gap-4 group"
+                  className="w-full text-left cursor-pointer rounded-2xl p-5 flex items-center gap-4 group hover:-translate-y-1 hover:shadow-lg"
                   style={{
                     background: isSelected ? palette.forest : palette.card,
                     border: `1.5px solid ${isSelected ? palette.forest : palette.border}`,

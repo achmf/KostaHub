@@ -19,9 +19,8 @@ const palette = {
 }
 
 const ROLES = [
-  { value: 'OWNER',   label: 'Owner',   color: '#A0692B', desc: 'Pemilik farm, bisa kelola semua aset farm.' },
-  { value: 'PETUGAS', label: 'Petugas', color: '#2C5F8A', desc: 'Staff operasional harian farm.' },
-  { value: 'DOKTER',  label: 'Dokter',  color: '#3F5B3A', desc: 'Tenaga medis, bisa input rekam medis.' },
+  { value: 'OWNER',   label: 'Owner',   color: '#A0692B', desc: 'Pemilik peternakan, memiliki akses penuh ke sistem farm.' },
+  { value: 'PETUGAS', label: 'Petugas', color: '#2C5F8A', desc: 'Staf operasional, input data harian.' },
   { value: 'DINAS',   label: 'Dinas',   color: '#1E78A0', desc: 'Akses readonly ke admin dashboard.' },
 ]
 

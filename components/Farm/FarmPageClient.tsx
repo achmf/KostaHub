@@ -8,6 +8,8 @@ import { KostaPageHeader, KostaCard, KostaButton, Badge, KostaSectionLabel, pale
 import { GoatMark } from '@/components/GoatMark'
 import PaginationControl from '@/components/Admin/PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
+import { useConfirm } from '@/components/ConfirmProvider'
+import { useToast } from '@/components/ToastProvider'
 
 interface Farm {
   id: string
@@ -26,7 +28,9 @@ export default function FarmPageClient({ farms: initialFarms }: { farms: Farm[] 
   const [showModal, setShowModal] = useState(false)
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  
+  const { confirm: showConfirm } = useConfirm()
+  const { showToast } = useToast()
 
   const PER_PAGE = 12
   const { paged: currentFarms, page, totalPages, onPrev, onNext } = usePagination(farms, PER_PAGE)
@@ -45,14 +49,21 @@ export default function FarmPageClient({ farms: initialFarms }: { farms: Farm[] 
     }
   }
 
-  async function handleDelete(id: string) {
-    const result = await deleteFarm(id)
+  async function handleDelete(farm: Farm) {
+    const ok = await showConfirm({
+      title: 'Hapus Farm',
+      message: `Hapus farm "${farm.nama}"? Semua data hewan dan petugas di farm ini akan ikut terhapus.`,
+      variant: 'danger',
+      confirmText: 'Hapus',
+    })
+    if (!ok) return
+
+    const result = await deleteFarm(farm.id)
     if (result?.error) {
-      setError(result.error)
-      setDeleteConfirm(null)
+      showToast({ title: 'Gagal Menghapus', message: result.error, type: 'error' })
     } else {
-      setFarms(farms.filter((f) => f.id !== id))
-      setDeleteConfirm(null)
+      setFarms(farms.filter((f) => f.id !== farm.id))
+      showToast({ title: 'Berhasil', message: `Farm ${farm.nama} telah dihapus.`, type: 'success' })
     }
   }
 
@@ -68,15 +79,6 @@ export default function FarmPageClient({ farms: initialFarms }: { farms: Farm[] 
         }
       />
 
-      {error && (
-        <div
-          className="mb-5 px-4 py-3 rounded-xl"
-          style={{ background: 'rgba(181,68,59,0.1)', color: '#B5443B', fontFamily: "'Inter',sans-serif", fontSize: 13 }}
-        >
-          {error}
-        </div>
-      )}
-
       <div className="grid grid-cols-12 gap-4">
         {currentFarms.map((farm, i) => {
           const accent = i === 0 || i === 3
@@ -86,7 +88,7 @@ export default function FarmPageClient({ farms: initialFarms }: { farms: Farm[] 
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.07, duration: 0.5 }}
-              className="col-span-12 md:col-span-6 lg:col-span-4 rounded-2xl overflow-hidden relative group"
+              className="col-span-12 md:col-span-6 lg:col-span-4 rounded-2xl overflow-hidden relative group hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ease-out"
               style={{
                 background: accent ? palette.ink : '#fff',
                 color: accent ? palette.cream : palette.ink,
@@ -109,10 +111,10 @@ export default function FarmPageClient({ farms: initialFarms }: { farms: Farm[] 
                     </div>
                   </div>
                   <button
-                    className="cursor-pointer p-2 rounded-full opacity-60 hover:opacity-100"
-                    onClick={() => setDeleteConfirm(farm.id === deleteConfirm ? null : farm.id)}
+                    className="cursor-pointer p-2 rounded-full opacity-60 hover:opacity-100 transition-colors hover:bg-red-50 hover:text-red-500"
+                    onClick={() => handleDelete(farm)}
                   >
-                    {deleteConfirm === farm.id ? <X size={14} /> : <MoreHorizontal size={14} />}
+                    <MoreHorizontal size={14} />
                   </button>
                 </div>
                 {farm.alamat && (
@@ -154,35 +156,6 @@ export default function FarmPageClient({ farms: initialFarms }: { farms: Farm[] 
                   <div className="opacity-60" style={{ fontFamily: "'Inter',sans-serif", fontSize: 11 }}>Pengguna</div>
                 </div>
               </div>
-
-              {deleteConfirm === farm.id && (
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{ height: 'auto' }}
-                  className="px-6 pb-4 flex gap-2"
-                  style={{ borderTop: `1px solid ${accent ? 'rgba(242,237,224,0.12)' : palette.border}` }}
-                >
-                  <button
-                    onClick={() => handleDelete(farm.id)}
-                    className="cursor-pointer mt-3 flex-1 py-2 rounded-full"
-                    style={{
-                      background: '#B5443B',
-                      color: palette.cream,
-                      fontFamily: "'Inter',sans-serif",
-                      fontSize: 12,
-                    }}
-                  >
-                    Hapus Farm
-                  </button>
-                  <button
-                    onClick={() => setDeleteConfirm(null)}
-                    className="cursor-pointer mt-3 px-4 py-2 rounded-full"
-                    style={{ border: `1px solid ${accent ? 'rgba(242,237,224,0.25)' : palette.border}`, fontFamily: "'Inter',sans-serif", fontSize: 12 }}
-                  >
-                    Batal
-                  </button>
-                </motion.div>
-              )}
 
               <div
                 className="px-6 py-4 flex items-center justify-between"

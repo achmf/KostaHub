@@ -675,7 +675,7 @@ export async function GET(req: NextRequest) {
     })
 
     const ROLE_LABEL: Record<string, string> = {
-      SUPER_ADMIN: 'Super Admin', OWNER: 'Owner', PETUGAS: 'Petugas', DOKTER: 'Dokter',
+      SUPER_ADMIN: 'Super Admin', OWNER: 'Owner', PETUGAS: 'Petugas',
     }
 
     const totalApproved = users.filter(u => u.approvalStatus === 'APPROVED').length

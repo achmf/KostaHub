@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Check, X, User, Building2, Phone, Mail, MapPin, FileText, ExternalLink, AlertTriangle, CheckSquare, Square, CheckCheck } from 'lucide-react'
 import PaginationControl from './PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
+import { useConfirm } from '@/components/ConfirmProvider'
+import { useToast } from '@/components/ToastProvider'
 
 const palette = {
   cream: '#F2EDE0',
@@ -184,7 +186,6 @@ export default function ApprovalList({ users }: { users: PendingUser[] }) {
   const [isPending, startTransition] = useTransition()
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [rejectingUser, setRejectingUser] = useState<PendingUser | null>(null)
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set())
 
   // Bulk selection state
@@ -192,27 +193,31 @@ export default function ApprovalList({ users }: { users: PendingUser[] }) {
   const [bulkMode, setBulkMode] = useState(false)
   const [isBulking, startBulkTransition] = useTransition()
 
-  function showToast(message: string, type: 'success' | 'error' = 'success') {
-    setToast({ message, type })
-    setTimeout(() => setToast(null), 3500)
-  }
+  const { confirm: showConfirm } = useConfirm()
+  const { showToast } = useToast()
 
-  function handleApprove(userId: string, e: React.MouseEvent) {
+  async function handleApprove(userId: string, e: React.MouseEvent) {
     e.stopPropagation()
-    if (!window.confirm('Setujui pendaftaran ini? Owner akan bisa mengakses dashboard.')) return
+    const ok = await showConfirm({
+      title: 'Setujui Pendaftaran',
+      message: 'Setujui pendaftaran ini? Owner akan bisa mengakses dashboard.',
+      variant: 'primary',
+      confirmText: 'Setujui',
+    })
+    if (!ok) return
 
     setProcessingId(userId)
     startTransition(async () => {
       try {
         const res = await approveRegistration(userId)
         if (res?.error) {
-          showToast(res.error, 'error')
+          showToast({ title: 'Gagal', message: res.error, type: 'error' })
         } else {
           setRemovedIds((prev) => new Set(prev).add(userId))
-          showToast('Pendaftaran disetujui. Email notifikasi terkirim.', 'success')
+          showToast({ title: 'Disetujui', message: 'Pendaftaran disetujui. Email notifikasi terkirim.', type: 'success' })
         }
       } catch (err: unknown) {
-        showToast(err instanceof Error ? err.message : 'Terjadi kesalahan sistem', 'error')
+        showToast({ title: 'Error', message: err instanceof Error ? err.message : 'Terjadi kesalahan sistem', type: 'error' })
       } finally {
         setProcessingId(null)
       }
@@ -229,32 +234,38 @@ export default function ApprovalList({ users }: { users: PendingUser[] }) {
       try {
         const res = await rejectRegistration(userId, reason)
         if (res?.error) {
-          showToast(res.error, 'error')
+          showToast({ title: 'Gagal', message: res.error, type: 'error' })
         } else {
           setRemovedIds((prev) => new Set(prev).add(userId))
-          showToast('Pendaftaran ditolak. Owner dapat mengajukan ulang setelah revisi.', 'success')
+          showToast({ title: 'Ditolak', message: 'Pendaftaran ditolak. Owner dapat mengajukan ulang setelah revisi.', type: 'success' })
         }
       } catch (err: unknown) {
-        showToast(err instanceof Error ? err.message : 'Terjadi kesalahan sistem', 'error')
+        showToast({ title: 'Error', message: err instanceof Error ? err.message : 'Terjadi kesalahan sistem', type: 'error' })
       } finally {
         setProcessingId(null)
       }
     })
   }
 
-  function handleBulkApprove() {
+  async function handleBulkApprove() {
     const ids = Array.from(selectedIds)
     if (!ids.length) return
-    if (!window.confirm(`Setujui ${ids.length} farm yang dipilih?`)) return
+    const ok = await showConfirm({
+      title: 'Setujui Pilihan',
+      message: `Setujui ${ids.length} farm yang dipilih?`,
+      variant: 'primary',
+      confirmText: 'Setujui Semua',
+    })
+    if (!ok) return
     startBulkTransition(async () => {
       const res = await bulkApproveFarms(ids)
       if (res?.error) {
-        showToast(res.error, 'error')
+        showToast({ title: 'Gagal', message: res.error, type: 'error' })
       } else {
         setRemovedIds((prev) => new Set([...prev, ...ids]))
         setSelectedIds(new Set())
         setBulkMode(false)
-        showToast(`${res.count} farm berhasil disetujui.`, 'success')
+        showToast({ title: 'Berhasil', message: `${res.count} farm berhasil disetujui.`, type: 'success' })
       }
     })
   }
@@ -266,12 +277,12 @@ export default function ApprovalList({ users }: { users: PendingUser[] }) {
     startBulkTransition(async () => {
       const res = await bulkRejectFarms(ids, reason)
       if (res?.error) {
-        showToast(res.error, 'error')
+        showToast({ title: 'Gagal', message: res.error, type: 'error' })
       } else {
         setRemovedIds((prev) => new Set([...prev, ...ids]))
         setSelectedIds(new Set())
         setBulkMode(false)
-        showToast(`${res.count} farm ditolak.`, 'success')
+        showToast({ title: 'Berhasil', message: `${res.count} farm ditolak.`, type: 'success' })
       }
     })
   }
@@ -360,27 +371,6 @@ export default function ApprovalList({ users }: { users: PendingUser[] }) {
           </div>
         )}
       </div>
-
-      {/* Toast */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: 50, x: '-50%' }}
-            animate={{ opacity: 1, y: 0, x: '-50%' }}
-            exit={{ opacity: 0, y: 20, x: '-50%' }}
-            className="fixed bottom-6 left-1/2 z-50 px-6 py-3 rounded-full flex items-center gap-2 shadow-lg"
-            style={{
-              background: toast.type === 'success' ? palette.forest : palette.danger,
-              color: palette.cream,
-              fontFamily: "'Inter',sans-serif",
-              fontSize: 14,
-            }}
-          >
-            {toast.type === 'success' ? <Check size={16} /> : <X size={16} />}
-            {toast.message}
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Reject Modal */}
       <AnimatePresence>

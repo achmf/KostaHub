@@ -112,7 +112,7 @@ export function RekamMedisHistory({ records }: { records: RekamMedis[] }) {
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 rounded-xl" style={{ background: 'rgba(13,20,15,0.03)' }}>
                 <div className="flex items-center gap-2 opacity-50 mb-1" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, letterSpacing: '0.05em' }}>
-                  <User size={12} /> DOKTER
+                  <User size={12} /> PETUGAS
                 </div>
                 <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14 }}>
                   {selectedRecord.namaDokter || 'Tidak ditentukan'}

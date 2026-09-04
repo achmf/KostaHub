@@ -128,7 +128,7 @@ export default function AdminSidebar({ name, email, pendingCount: initialPending
                   <Link
                     key={n.href}
                     href={n.href}
-                    className="w-full text-left relative flex items-center gap-3 px-3 py-2.5 rounded-lg mb-0.5 transition-colors"
+                    className="w-full text-left relative flex items-center gap-3 px-3 py-2.5 rounded-lg mb-0.5 hover:bg-white/5 transition-all duration-200"
                     style={{ fontFamily: "'Inter',sans-serif", fontSize: 13.5 }}
                   >
                     {active && (
