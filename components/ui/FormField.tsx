@@ -12,13 +12,13 @@ interface FormFieldProps {
 export function FormField({ label, required, hint, error, className = '', children }: FormFieldProps) {
   return (
     <div className={className}>
-      <label className="block text-sm font-medium text-[#0A0A0A] mb-1.5">
+      <label className="block text-[13px] font-medium text-[#0D140F] mb-1.5" style={{ fontFamily: "'Inter',sans-serif" }}>
         {label}
-        {required && <span className="text-[#EF4444] ml-0.5">*</span>}
+        {required && <span className="text-[#B5443B] ml-1">*</span>}
       </label>
       {children}
-      {hint && !error && <p className="mt-1.5 text-xs text-[#9C9C9C]">{hint}</p>}
-      {error && <p className="mt-1.5 text-xs text-[#EF4444] font-medium">{error}</p>}
+      {hint && !error && <p className="mt-1.5 text-xs text-[rgba(13,20,15,0.5)]" style={{ fontFamily: "'Inter',sans-serif" }}>{hint}</p>}
+      {error && <p className="mt-1.5 text-xs text-[#B5443B] font-medium" style={{ fontFamily: "'Inter',sans-serif" }}>{error}</p>}
     </div>
   )
 }

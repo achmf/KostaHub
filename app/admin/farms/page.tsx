@@ -3,6 +3,8 @@ import { Building2, Users, Activity, MapPin, AlertTriangle, CheckCircle2 } from 
 import Link from 'next/link'
 import { EmptyState } from '@/components/ui/EmptyState'
 
+import AdminFarmsHeader from '@/components/Admin/AdminFarmsHeader'
+
 const palette = {
   cream: '#F2EDE0',
   ink: '#0D140F',
@@ -39,17 +41,7 @@ export default async function AdminFarmsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-8">
-        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.2em', color: 'rgba(13,20,15,0.4)', marginBottom: 8 }}>
-          MANAJEMEN FARM
-        </div>
-        <h1 style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 400, letterSpacing: '-0.025em' }}>
-          Semua <span style={{ fontStyle: 'italic', color: palette.ochre }}>Farm</span>
-        </h1>
-        <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, color: 'rgba(13,20,15,0.55)', marginTop: 4 }}>
-          Daftar semua peternakan yang terdaftar di sistem.
-        </p>
-      </div>
+      <AdminFarmsHeader />
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
@@ -120,7 +112,7 @@ export default async function AdminFarmsPage() {
                     letterSpacing: '0.12em',
                   }}
                 >
-                  {farm.status}
+                  {farm.status === 'AKTIF' ? 'Aktif' : farm.status === 'NONAKTIF' ? 'Nonaktif' : farm.status}
                 </span>
               </div>
 

@@ -13,7 +13,7 @@ import { palette } from '@/components/KostaUI'
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
   if (!session) redirect('/login')
-  if (session.role === 'SUPER_ADMIN') redirect('/admin')
+  if (session.role === 'SUPER_ADMIN' && !session.activeFarmId) redirect('/admin')
 
   // Jika Owner/Staff belum memilih farm → redirect ke farm picker
   if (!session.activeFarmId) {

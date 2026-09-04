@@ -45,7 +45,7 @@ const allNav: NavItemDef[] = [
   { href: '/map', label: 'Peta GIS', icon: Map, group: 'ANALITIK', roles: ['OWNER', 'SUPER_ADMIN'] },
   { href: '/staff', label: 'Kelola Staff', icon: Users2, group: 'MANAJEMEN', roles: ['OWNER'] },
   { href: '/farm', label: 'Manajemen Farm', icon: Building2, group: 'ADMIN', roles: ['SUPER_ADMIN'] },
-  { href: '/admin/approvals', label: 'Backoffice', icon: Shield, group: 'ADMIN', roles: ['SUPER_ADMIN'] },
+  { href: '/admin', label: 'Backoffice', icon: Shield, group: 'ADMIN', roles: ['SUPER_ADMIN'] },
 ]
 
 

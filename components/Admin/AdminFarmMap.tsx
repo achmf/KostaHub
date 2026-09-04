@@ -130,6 +130,18 @@ function LayerController({ layer }: { layer: MapLayer }) {
   return null
 }
 
+function MapResizer() {
+  const map = useMap()
+  useEffect(() => {
+    const observer = new ResizeObserver(() => {
+      map.invalidateSize()
+    })
+    observer.observe(map.getContainer())
+    return () => observer.disconnect()
+  }, [map])
+  return null
+}
+
 function buildPopupHtml(farm: AdminFarm) {
   const isActive = farm.status === 'AKTIF'
   const rows = [
@@ -256,6 +268,7 @@ export default function AdminFarmMap({
         <InitBounds farms={validFarms} />
         <FocusMap farm={selectedFarm} />
         <LayerController layer={layer} />
+        <MapResizer />
 
         {/* GIS layers */}
         {showHeatmap && <HeatmapLayer farms={farmsAsFarm} />}

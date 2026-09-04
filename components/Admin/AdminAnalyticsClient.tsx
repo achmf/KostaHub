@@ -157,31 +157,47 @@ export default function AdminAnalyticsClient({
               Belum ada data farm
             </div>
           ) : (
-            <div className="overflow-x-auto overflow-y-hidden" style={{ width: '100%', scrollbarWidth: 'thin' }}>
-              <div style={{ minWidth: Math.max(hewanPerFarm.length * 60, 600) + 'px', height: 280 }}>
+            <div className="relative w-full">
+              <div className="absolute left-0 top-0 bottom-0 z-10 bg-white pointer-events-none" style={{ width: 45 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={hewanPerFarm} margin={{ top: 4, right: 0, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,20,15,0.05)" vertical={false} />
-                    <XAxis dataKey="nama" tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, fill: 'rgba(13,20,15,0.5)' }} axisLine={false} tickLine={false} />
+                    <Bar dataKey="indukan" stackId="a" fill="transparent" />
+                    <Bar dataKey="pejantan" stackId="a" fill="transparent" />
+                    <Bar dataKey="anakan" stackId="a" fill="transparent" />
+                    <Bar dataKey="dara" stackId="a" fill="transparent" />
+                    <Bar dataKey="jantanMuda" stackId="a" fill="transparent" />
                     <YAxis tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
-                    <Tooltip
-                      cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                      itemStyle={{ color: '#ffffff' }}
-                      labelStyle={{ color: '#ffffff' }}
-                      contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}` }}
-                      labelFormatter={(label) => {
-                        const item = hewanPerFarm.find((f) => f.nama === String(label))
-                        return item?.namaPanjang || String(label)
-                      }}
-                    />
-                    <Legend wrapperStyle={{ fontFamily: "'Inter',sans-serif", fontSize: 11 }} />
-                    <Bar dataKey="indukan" name="Indukan" stackId="a" fill={STACKED_COLORS.indukan} radius={[0, 0, 0, 0]} />
-                    <Bar dataKey="pejantan" name="Pejantan" stackId="a" fill={STACKED_COLORS.pejantan} />
-                    <Bar dataKey="anakan" name="Anakan" stackId="a" fill={STACKED_COLORS.anakan} />
-                    <Bar dataKey="dara" name="Dara" stackId="a" fill={STACKED_COLORS.dara} />
-                    <Bar dataKey="jantanMuda" name="Jantan Muda" stackId="a" fill={STACKED_COLORS.jantanMuda} radius={[4, 4, 0, 0]} />
+                    <XAxis dataKey="nama" height={24} tick={false} axisLine={false} tickLine={false} />
+                    <Legend height={36} content={() => <div />} />
                   </BarChart>
                 </ResponsiveContainer>
+              </div>
+              <div className="overflow-x-auto overflow-y-hidden" style={{ width: '100%', scrollbarWidth: 'thin' }}>
+                <div style={{ minWidth: Math.max(hewanPerFarm.length * 60, 600) + 'px', height: 280 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={hewanPerFarm} margin={{ top: 4, right: 0, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,20,15,0.05)" vertical={false} />
+                      <XAxis dataKey="nama" height={24} tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, fill: 'rgba(13,20,15,0.5)' }} axisLine={false} tickLine={false} />
+                      <YAxis tick={false} axisLine={false} tickLine={false} />
+                      <Tooltip
+                        cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                        itemStyle={{ color: '#ffffff' }}
+                        labelStyle={{ color: '#ffffff' }}
+                        contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}` }}
+                        labelFormatter={(label) => {
+                          const item = hewanPerFarm.find((f) => f.nama === String(label))
+                          return item?.namaPanjang || String(label)
+                        }}
+                      />
+                      <Legend height={36} wrapperStyle={{ fontFamily: "'Inter',sans-serif", fontSize: 11 }} />
+                      <Bar dataKey="indukan" name="Indukan" stackId="a" fill={STACKED_COLORS.indukan} radius={[0, 0, 0, 0]} />
+                      <Bar dataKey="pejantan" name="Pejantan" stackId="a" fill={STACKED_COLORS.pejantan} />
+                      <Bar dataKey="anakan" name="Anakan" stackId="a" fill={STACKED_COLORS.anakan} />
+                      <Bar dataKey="dara" name="Dara" stackId="a" fill={STACKED_COLORS.dara} />
+                      <Bar dataKey="jantanMuda" name="Jantan Muda" stackId="a" fill={STACKED_COLORS.jantanMuda} radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </div>
           )}
@@ -256,28 +272,44 @@ export default function AdminAnalyticsClient({
                 Belum ada data reproduksi selesai
               </div>
             ) : (
-              <div className="overflow-x-auto overflow-y-hidden" style={{ width: '100%', scrollbarWidth: 'thin' }}>
-                <div style={{ minWidth: Math.max(reproduksiPerFarm.filter((f) => f.lahir + f.gagal > 0).length * 60, 400) + 'px', height: 240 }}>
+              <div className="relative w-full">
+                <div className="absolute left-0 top-0 bottom-0 z-10 bg-white pointer-events-none" style={{ width: 45 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={reproduksiPerFarm.filter((f) => f.lahir + f.gagal > 0)}
                       margin={{ top: 4, right: 0, left: -20, bottom: 0 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,20,15,0.05)" vertical={false} />
-                      <XAxis dataKey="nama" tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, fill: 'rgba(13,20,15,0.5)' }} axisLine={false} tickLine={false} />
+                      <Bar dataKey="lahir" fill="transparent" />
+                      <Bar dataKey="gagal" fill="transparent" />
                       <YAxis tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
-                      <Tooltip
-                        cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                        itemStyle={{ color: '#ffffff' }}
-                        labelStyle={{ color: '#ffffff' }}
-                        contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}` }}
-                        labelFormatter={(label) => reproduksiPerFarm.find((f) => f.nama === String(label))?.namaPanjang || String(label)}
-                      />
-                      <Legend wrapperStyle={{ fontFamily: "'Inter',sans-serif", fontSize: 11 }} />
-                      <Bar dataKey="lahir" name="Berhasil Lahir" fill={palette.moss} radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="gagal" name="Gagal" fill={palette.danger} radius={[4, 4, 0, 0]} />
+                      <XAxis dataKey="nama" height={24} tick={false} axisLine={false} tickLine={false} />
+                      <Legend height={36} content={() => <div />} />
                     </BarChart>
                   </ResponsiveContainer>
+                </div>
+                <div className="overflow-x-auto overflow-y-hidden" style={{ width: '100%', scrollbarWidth: 'thin' }}>
+                  <div style={{ minWidth: Math.max(reproduksiPerFarm.filter((f) => f.lahir + f.gagal > 0).length * 60, 400) + 'px', height: 240 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={reproduksiPerFarm.filter((f) => f.lahir + f.gagal > 0)}
+                        margin={{ top: 4, right: 0, left: -20, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,20,15,0.05)" vertical={false} />
+                        <XAxis dataKey="nama" height={24} tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, fill: 'rgba(13,20,15,0.5)' }} axisLine={false} tickLine={false} />
+                        <YAxis tick={false} axisLine={false} tickLine={false} />
+                        <Tooltip
+                          cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                          itemStyle={{ color: '#ffffff' }}
+                          labelStyle={{ color: '#ffffff' }}
+                          contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}` }}
+                          labelFormatter={(label) => reproduksiPerFarm.find((f) => f.nama === String(label))?.namaPanjang || String(label)}
+                        />
+                        <Legend height={36} wrapperStyle={{ fontFamily: "'Inter',sans-serif", fontSize: 11 }} />
+                        <Bar dataKey="lahir" name="Berhasil Lahir" fill={palette.moss} radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="gagal" name="Gagal" fill={palette.danger} radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
               </div>
             )}

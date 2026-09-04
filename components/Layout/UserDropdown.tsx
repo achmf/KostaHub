@@ -93,14 +93,14 @@ export default function UserDropdown({
           {name.charAt(0).toUpperCase()}
         </div>
         <span
-          className="hidden md:block"
+          className="hidden md:block whitespace-nowrap truncate text-left max-w-[120px] lg:max-w-[200px]"
           style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: palette.ink }}
         >
           {name}
         </span>
         <ChevronDown
           size={13}
-          className="hidden md:block"
+          className="hidden md:block shrink-0"
           style={{
             opacity: 0.5,
             color: palette.ink,

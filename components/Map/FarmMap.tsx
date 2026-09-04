@@ -134,6 +134,18 @@ function LayerController({ layer }: { layer: MapLayer }) {
   return null
 }
 
+function MapResizer() {
+  const map = useMap()
+  useEffect(() => {
+    const observer = new ResizeObserver(() => {
+      map.invalidateSize()
+    })
+    observer.observe(map.getContainer())
+    return () => observer.disconnect()
+  }, [map])
+  return null
+}
+
 // ─── Popup HTML ───────────────────────────────────────────────────────────────
 function buildPopupHtml(farm: Farm) {
   const isActive = farm.status === 'AKTIF'
@@ -240,6 +252,7 @@ export default function FarmMap({
       <InitBounds farms={validFarms} />
       <FocusMap farm={selectedFarm} />
       <LayerController layer={layer} />
+      <MapResizer />
 
       {/* Heatmap overlay */}
       {showHeatmap && <HeatmapLayer farms={farms} />}
