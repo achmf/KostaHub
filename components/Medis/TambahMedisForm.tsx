@@ -87,7 +87,7 @@ export function TambahMedisForm({ hewan }: { hewan: { id: string; tag: string; n
               />
             </div>
             <div>
-              <label style={labelStyle}>DOKTER / PETUGAS</label>
+              <label style={labelStyle}>PETUGAS PEMERIKSA</label>
               <Input 
                 name="dokter" 
                 placeholder="Nama pemeriksa" 

@@ -6,6 +6,7 @@ import { changeUserRole } from '@/actions/admin/changeUserRole'
 import { User, Mail, Phone, Building2, Trash2, ChevronDown } from 'lucide-react'
 import PaginationControl from './PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
+import { useConfirm } from '@/components/ConfirmProvider'
 
 const palette = {
   cream: '#F2EDE0',
@@ -18,7 +19,6 @@ const ROLE_LABELS: Record<string, { label: string; bg: string; color: string }> 
   SUPER_ADMIN: { label: 'Super Admin', bg: 'rgba(181,68,59,0.1)', color: '#B5443B' },
   OWNER: { label: 'Owner', bg: 'rgba(199,135,62,0.15)', color: palette.ochre },
   PETUGAS: { label: 'Petugas', bg: 'rgba(63,91,58,0.12)', color: '#3F5B3A' },
-  DOKTER: { label: 'Dokter', bg: 'rgba(59,130,181,0.12)', color: '#3B82B5' },
 }
 
 type UserItem = {
@@ -35,18 +35,32 @@ export default function UserList({ users }: { users: UserItem[] }) {
   const [filter, setFilter] = useState('ALL')
   const [isPending, startTransition] = useTransition()
 
+  const { confirm: showConfirm } = useConfirm()
+
   const filtered = filter === 'ALL' ? users : users.filter((u) => u.role === filter)
   const { paged, page, totalPages, onPrev, onNext } = usePagination(filtered, 10)
 
-  function handleDelete(userId: string, userName: string) {
-    if (!confirm(`Hapus user "${userName}"? Tindakan ini tidak bisa dibatalkan.`)) return
+  async function handleDelete(userId: string, userName: string) {
+    const ok = await showConfirm({
+      title: 'Hapus User',
+      message: `Hapus user "${userName}"? Tindakan ini tidak bisa dibatalkan.`,
+      variant: 'danger',
+      confirmText: 'Hapus',
+    })
+    if (!ok) return
     startTransition(async () => {
       await deleteUser(userId)
     })
   }
 
-  function handleRoleChange(userId: string, userName: string, newRole: string) {
-    if (!confirm(`Ubah role "${userName}" menjadi ${ROLE_LABELS[newRole]?.label ?? newRole}?`)) return
+  async function handleRoleChange(userId: string, userName: string, newRole: string) {
+    const ok = await showConfirm({
+      title: 'Ubah Role',
+      message: `Ubah role "${userName}" menjadi ${ROLE_LABELS[newRole]?.label ?? newRole}?`,
+      variant: 'warning',
+      confirmText: 'Ubah Role',
+    })
+    if (!ok) return
     startTransition(async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await changeUserRole(userId, newRole as any)
@@ -57,7 +71,7 @@ export default function UserList({ users }: { users: UserItem[] }) {
     <div>
       {/* Filter pills */}
       <div className="flex items-center gap-2 mb-6 flex-wrap">
-        {['ALL', 'SUPER_ADMIN', 'OWNER', 'PETUGAS', 'DOKTER'].map((role) => (
+        {['ALL', 'SUPER_ADMIN', 'OWNER', 'PETUGAS'].map((role) => (
           <button
             key={role}
             onClick={() => setFilter(role)}
@@ -145,7 +159,7 @@ export default function UserList({ users }: { users: UserItem[] }) {
                             outline: 'none',
                           }}
                         >
-                          {['OWNER', 'PETUGAS', 'DOKTER'].map((r) => (
+                          {['OWNER', 'PETUGAS'].map((r) => (
                             <option key={r} value={r}>{ROLE_LABELS[r]?.label ?? r}</option>
                           ))}
                         </select>

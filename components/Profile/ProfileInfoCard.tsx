@@ -9,7 +9,6 @@ const ROLE_LABELS: Record<string, string> = {
   DINAS: 'Dinas',
   OWNER: 'Owner',
   PETUGAS: 'Petugas',
-  DOKTER: 'Dokter',
 }
 
 const ROLE_VARIANT: Record<string, 'emerald' | 'amber' | 'ochre' | 'moss' | 'rose'> = {
@@ -17,7 +16,6 @@ const ROLE_VARIANT: Record<string, 'emerald' | 'amber' | 'ochre' | 'moss' | 'ros
   DINAS: 'amber',
   OWNER: 'emerald',
   PETUGAS: 'moss',
-  DOKTER: 'ochre',
 }
 
 interface ProfileInfoCardProps {

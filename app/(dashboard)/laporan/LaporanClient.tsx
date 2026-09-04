@@ -414,7 +414,7 @@ function LaporanMedis({ data }: { data: any[] }) {
         </div>
 
         <TableHeader
-          cols={['TANGGAL', 'TAG', 'KATEGORI', 'DIAGNOSIS / TINDAKAN', 'OBAT / VAKSIN', 'DOKTER', 'KONTROL']}
+          cols={['TANGGAL', 'TAG', 'KATEGORI', 'DIAGNOSIS / TINDAKAN', 'OBAT / VAKSIN', 'PETUGAS', 'KONTROL']}
           grid="0.7fr 0.7fr 0.9fr 1.6fr 1fr 0.9fr 0.7fr"
         />
         {filtered.length === 0 ? <NoResults /> : medisP.paged.map((m: any, i: number) => (

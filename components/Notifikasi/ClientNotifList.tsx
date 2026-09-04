@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Syringe, PawPrint, Scale, Bell, Check,
@@ -17,31 +17,17 @@ const ICONS: Record<string, React.FC<{ size?: number }>> = {
   MEDIS: Syringe,
   LAHIR: PawPrint,
   BERAT: Scale,
-  CUSTOM: Bell,
 }
 
-const TONES: Record<string, { bg: string; fg: string }> = {
-  MEDIS:  { bg: 'rgba(199,135,62,0.14)', fg: palette.ochre },
-  LAHIR:   { bg: 'rgba(63,91,58,0.14)',   fg: palette.moss },
-  BERAT:   { bg: 'rgba(63,122,78,0.14)',  fg: palette.emerald },
-  CUSTOM:  { bg: 'rgba(13,20,15,0.08)',   fg: palette.ink },
-}
 
-const BADGE_VARIANT: Record<string, 'ochre' | 'moss' | 'emerald' | 'default'> = {
-  MEDIS: 'ochre',
-  LAHIR:  'moss',
-  BERAT:  'emerald',
-  CUSTOM: 'default',
-}
 
 const TYPE_LABEL: Record<string, string> = {
   MEDIS: 'Jadwal Medis',
   LAHIR:  'Kelahiran',
   BERAT:  'Timbang',
-  CUSTOM: 'Reminder',
 }
 
-type FilterType = 'ALL' | 'MEDIS' | 'LAHIR' | 'BERAT' | 'CUSTOM'
+type FilterType = 'ALL' | 'MEDIS' | 'LAHIR' | 'BERAT'
 
 export function ClientNotifList() {
   const {
@@ -52,6 +38,11 @@ export function ClientNotifList() {
 
   const [filter, setFilter] = useState<FilterType>('ALL')
   const [pendingId, setPendingId] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const filtered = list.filter((n) => filter === 'ALL' || n.type === filter)
 
@@ -111,19 +102,12 @@ export function ClientNotifList() {
                   <CheckCheck size={13} /> Baca Semua
                 </KostaButton>
               )}
-
-              {/* Tambah reminder */}
-              <Link href="/notifikasi/tambah">
-                <KostaButton>
-                  <Plus size={13} /> Buat Reminder
-                </KostaButton>
-              </Link>
             </div>
           }
         />
 
         {/* Push permission banner */}
-        {!pushEnabled && typeof window !== 'undefined' && 'PushManager' in window && (
+        {!pushEnabled && mounted && 'PushManager' in window && (
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -150,7 +134,7 @@ export function ClientNotifList() {
 
         {/* Filter chips */}
         <div className="flex flex-wrap gap-2 mb-5">
-          {(['ALL', 'MEDIS', 'LAHIR', 'BERAT', 'CUSTOM'] as FilterType[]).map((f) => {
+          {(['ALL', 'MEDIS', 'LAHIR', 'BERAT'] as FilterType[]).map((f) => {
             const count = f === 'ALL' ? list.length : list.filter((n) => n.type === f).length
             const unread = f === 'ALL'
               ? list.filter((n) => !n.isRead).length
@@ -218,7 +202,7 @@ export function ClientNotifList() {
           <AnimatePresence>
             {paged.map((n, i) => {
               const Icon = ICONS[n.type] ?? Bell
-              const tone = TONES[n.type] ?? TONES.CUSTOM
+              const tone = { bg: 'rgba(13,20,15,0.08)', fg: palette.ink }
               const isPending = pendingId === n.id
 
               return (
@@ -229,7 +213,7 @@ export function ClientNotifList() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 8, height: 0, marginBottom: 0 }}
                   transition={{ delay: i * 0.03 }}
-                  className="rounded-2xl p-4 flex items-center gap-4"
+                  className="rounded-2xl p-4 flex items-center gap-4 group hover:-translate-y-0.5"
                   style={{
                     background: n.isRead ? 'rgba(255,255,255,0.5)' : '#fff',
                     border: `1px solid ${n.isRead ? palette.border : 'rgba(13,20,15,0.12)'}`,
@@ -249,7 +233,7 @@ export function ClientNotifList() {
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant={BADGE_VARIANT[n.type] ?? 'default'}>
+                      <Badge variant="default">
                         {TYPE_LABEL[n.type] ?? n.type}
                       </Badge>
                       {!n.isRead && (

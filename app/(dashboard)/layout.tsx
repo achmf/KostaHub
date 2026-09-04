@@ -6,6 +6,7 @@ import { GoatMark } from '@/components/GoatMark'
 import FarmSelector from '@/components/Layout/FarmSelector'
 import { Search } from 'lucide-react'
 import UserDropdown from '@/components/Layout/UserDropdown'
+import NotificationDropdown from '@/components/Layout/NotificationDropdown'
 
 import { palette } from '@/components/KostaUI'
 
@@ -111,6 +112,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
             {/* Farm selector — super admin only (fallback, karena SUPER_ADMIN diredirect ke /admin) */}
             {session.role === 'SUPER_ADMIN' && <FarmSelector farms={allFarms} />}
+
+            {/* Notifications */}
+            <NotificationDropdown />
 
             {/* User chip */}
             <UserDropdown

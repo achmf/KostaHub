@@ -6,6 +6,7 @@ import LaporanClient from './LaporanClient'
 export default async function LaporanPage(props: { searchParams: Promise<{ [key: string]: string | undefined }> }) {
   const session = await getSession()
   if (!session) redirect('/login')
+  if (session.role === 'PETUGAS') redirect('/')
   const searchParams = await props.searchParams
 
   let farmId = session.activeFarmId as string | null

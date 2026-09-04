@@ -5,7 +5,7 @@ import { useState, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   MapPin, Search, SlidersHorizontal, Layers,
-  Activity, CheckCircle2, AlertCircle, LayoutGrid,
+  Activity, CheckCircle2, AlertCircle, PanelLeftClose, PanelLeftOpen,
   Flame, CircleDot, PenLine, X,
 } from 'lucide-react'
 import PaginationControl from '@/components/Admin/PaginationControl'
@@ -500,7 +500,7 @@ export default function MapPageClient({ farms: initialFarms, role }: { farms: Fa
               color: palette.ink,
             }}
           >
-            <LayoutGrid size={12} />
+            {sidebarOpen ? <PanelLeftClose size={12} /> : <PanelLeftOpen size={12} />}
             {sidebarOpen ? 'TUTUP' : 'PANEL'}
           </button>
 

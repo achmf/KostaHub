@@ -635,7 +635,7 @@ export default function AdminDashboardClient({
                   <Link
                     key={f.id}
                     href={`/admin/farms/${f.id}`}
-                    className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-black/3 transition-colors group"
+                    className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-black/5 transition-colors group"
                     style={{ border: `1px solid ${palette.border}` }}
                   >
                     <div className="flex items-center gap-2.5">

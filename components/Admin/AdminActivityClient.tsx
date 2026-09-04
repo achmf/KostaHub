@@ -172,7 +172,7 @@ export default function AdminActivityClient({ activities }: { activities: Activi
 
                   {/* Card */}
                   <div
-                    className="flex-1 rounded-xl px-4 py-3 group hover:shadow-sm transition-shadow"
+                    className="flex-1 rounded-xl px-4 py-3 group hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 ease-out"
                     style={{ background: '#fff', border: `1px solid ${palette.border}` }}
                   >
                     <div className="flex items-start justify-between gap-2">
