@@ -5,6 +5,7 @@ import { withAuth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { type FarmStatus } from '@prisma/client'
 import { farmSchema, farmRegistrationSchema } from '@/lib/validations/farm.schema'
+import { invalidateFarm } from '@/lib/cache-invalidation'
 
 import { createFarmLogic, createAdditionalFarmLogic, assignUserToFarmLogic, assignStaffToFarmLogic, removeUserFromFarmLogic, updateFarmLogic, deleteFarmLogic, getFarmsLogic, createFarmRegistrationLogic } from '@/services/farm.service'
 
@@ -15,6 +16,7 @@ export const createFarm = withAuth(async (session, formData: FormData) => {
   const result = await createFarmLogic(parsed.data, session as any)
   if ('error' in result) return result
 
+  invalidateFarm()
   revalidatePath('/farm')
   return { success: true }
 })
@@ -26,6 +28,7 @@ export const createAdditionalFarm = withAuth(async (session, formData: FormData)
   const result = await createAdditionalFarmLogic(parsed.data, session as any)
   if ('error' in result) return result
 
+  invalidateFarm()
   revalidatePath('/farms')
   return { success: true, pendingApproval: true }
 })
@@ -61,6 +64,7 @@ export const updateFarm = withAuth(async (session, id: string, formData: FormDat
   const result = await updateFarmLogic(id, parsed.data, session as any)
   if ('error' in result) return result
 
+  invalidateFarm()
   revalidatePath('/farm')
   revalidatePath(`/farm/${id}`)
   return { success: true }
@@ -70,6 +74,7 @@ export const deleteFarm = withAuth(async (session, id: string) => {
   const result = await deleteFarmLogic(id, session as any)
   if ('error' in result) return result
 
+  invalidateFarm()
   revalidatePath('/farm')
   return { success: true }
 })

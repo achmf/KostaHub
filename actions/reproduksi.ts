@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { checkInbreeding } from '@/lib/inbreeding'
 import { withAuth } from '@/lib/auth'
+import { invalidateReproduksi } from '@/lib/cache-invalidation'
 
 export type TambahReproduksiState = {
   warning?: boolean
@@ -63,5 +64,6 @@ export const tambahReproduksi = withAuth(async (session, formData: FormData): Pr
     }
   })
 
+  invalidateReproduksi()
   redirect('/reproduksi')
 })
