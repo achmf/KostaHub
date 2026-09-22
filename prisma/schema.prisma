@@ -135,6 +135,7 @@ model UserFarm {
   assignedAt DateTime @default(now())
 
   @@id([userId, farmId])
+  @@index([farmId])
 }
 
 model Hewan {
@@ -171,6 +172,11 @@ model Hewan {
   // Tag unik hanya dalam satu farm yang sama
   @@unique([tag, farmId])
   @@index([tanggalLahir])
+  @@index([farmId])
+  @@index([kategori])
+  @@index([createdAt])
+  @@index([bapakId])
+  @@index([indukId])
 }
 
 model TagRfid {
@@ -207,6 +213,8 @@ model RekamMedis {
   updatedAt       DateTime      @updatedAt
 
   @@index([tanggal])
+  @@index([hewanId])
+  @@index([dokterId])
 }
 
 model Reproduksi {
@@ -226,6 +234,9 @@ model Reproduksi {
   updatedAt         DateTime         @updatedAt
 
   @@index([tanggalKawin])
+  @@index([indukId])
+  @@index([pejantanId])
+  @@index([status])
 }
 
 model TransferHewan {
@@ -241,6 +252,9 @@ model TransferHewan {
   createdAt  DateTime @default(now())
 
   @@index([tanggal])
+  @@index([hewanId])
+  @@index([fromFarmId])
+  @@index([toFarmId])
 }
 
 model BeratBadan {
@@ -253,6 +267,7 @@ model BeratBadan {
   createdAt DateTime @default(now())
 
   @@index([tanggal])
+  @@index([hewanId])
 }
 
 model Notifikasi {
@@ -269,6 +284,8 @@ model Notifikasi {
 
   @@index([tanggal])
   @@index([isRead])
+  @@index([farmId])
+  @@index([type])
 }
 
 model KematianHewan {
