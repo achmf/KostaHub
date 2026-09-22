@@ -2,18 +2,15 @@
 
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
-import { getSession } from '@/lib/auth'
+import { withAuth } from '@/lib/auth'
 
-export async function tambahRekamMedis(formData: FormData) {
-  const session = await getSession()
-  if (!session) throw new Error('Unauthorized')
-
+export const tambahRekamMedis = withAuth(async (session, formData: FormData) => {
   const hewanId = formData.get('hewanId') as string
   if (!hewanId) return { error: 'Hewan tidak dipilih' }
 
   const hewan = await prisma.hewan.findUnique({ where: { id: hewanId } })
   if (!hewan) return { error: 'Hewan tidak ditemukan' }
-  if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.farmId) {
+  if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.activeFarmId) {
     return { error: 'Akses ditolak' }
   }
   const tanggal = new Date(formData.get('tanggal') as string)
@@ -28,32 +25,24 @@ export async function tambahRekamMedis(formData: FormData) {
   const notes = formData.get('notes') as string
   const dokter = formData.get('dokter') as string
 
+  const butuhNotifikasiStr = formData.get('butuhNotifikasi')
+  const butuhNotifikasi = butuhNotifikasiStr === 'on' || butuhNotifikasiStr === 'true'
+  const tanggalLanjutStr = formData.get('tanggalLanjut') as string | null
+  const tanggalLanjut = butuhNotifikasi && tanggalLanjutStr ? new Date(tanggalLanjutStr) : null
+
   await prisma.rekamMedis.create({
     data: {
       hewanId,
       tanggal,
-      kategori,
+      kategori: kategori as import('@prisma/client').KategoriMedis,
       diagnosis,
       obat,
       notes: notes || null,
-      dokter: dokter || null
+      namaDokter: dokter || null,
+      butuhNotifikasi,
+      tanggalLanjut,
     }
   })
 
-  // Check if it's a vaccine to create reminder
-  if (kategori === 'VAKSINASI') {
-    const nextVaksin = new Date(tanggal)
-    nextVaksin.setMonth(nextVaksin.getMonth() + 6) // Example: 6 months later
-    
-    await prisma.notifikasi.create({
-      data: {
-        title: 'Jadwal Vaksin Lanjutan',
-        message: `Hewan perlu divaksin ulang pada ${nextVaksin.toLocaleDateString()}`,
-        tanggal: nextVaksin,
-        type: 'VAKSIN'
-      }
-    })
-  }
-
   redirect('/medis')
-}
+})

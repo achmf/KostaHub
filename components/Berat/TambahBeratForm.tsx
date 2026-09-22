@@ -4,9 +4,11 @@ import { addBeratBadan } from '@/actions/berat'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { useActionState } from 'react'
-import { KostaButton, KostaSectionLabel } from '@/components/KostaUI'
+import { KostaButton, KostaSectionLabel, palette } from '@/components/KostaUI'
+import { DatePickerField } from '@/components/ui/DatePickerField'
+import { HewanSelector } from '@/components/ui/HewanSelector'
 
-const palette = { cream: '#F2EDE0', forest: '#1B2A1F', ink: '#0D140F', border: 'rgba(13,20,15,0.10)' }
+
 const inputStyle: React.CSSProperties = {
   background: 'rgba(13,20,15,0.03)', border: `1px solid ${palette.border}`,
   fontFamily: "'Inter',sans-serif", fontSize: 14, borderRadius: 12,
@@ -26,17 +28,17 @@ export function TambahBeratForm({ hewanList, defaultHewanId }: { hewanList: Hewa
 
   return (
     <div className="max-w-2xl mx-auto">
-      <Link href="/berat" className="flex items-center gap-2 mb-8 opacity-70 hover:opacity-100 transition-opacity"
+      <Link href="/berat" className="flex w-fit items-center gap-2 min-h-10 mb-4 md:min-h-0 md:mb-8 opacity-70 hover:opacity-100 transition-opacity"
         style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: palette.ink }}>
         <ArrowLeft size={14} /> Kembali ke Berat Badan
       </Link>
 
       <div className="rounded-3xl overflow-hidden" style={{ background: '#fff', border: `1px solid ${palette.border}` }}>
-        <div className="px-8 pt-8 pb-6" style={{ background: palette.forest, color: palette.cream }}>
+        <div className="px-5 pt-6 pb-5 sm:px-8 sm:pt-8 sm:pb-6" style={{ background: palette.forest, color: palette.cream }}>
           <KostaSectionLabel>
             <span style={{ color: 'rgba(242,237,224,0.55)' }}>BERAT BADAN · CATAT</span>
           </KostaSectionLabel>
-          <h1 className="mt-2" style={{ fontFamily: "'Fraunces',serif", fontSize: 32, letterSpacing: '-0.025em', lineHeight: 1.05 }}>
+          <h1 className="mt-2" style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(26px, 7vw, 32px)', letterSpacing: '-0.025em', lineHeight: 1.05 }}>
             Catat Penimbangan
           </h1>
           <p className="mt-2 opacity-70" style={{ fontFamily: "'Inter',sans-serif", fontSize: 14 }}>
@@ -44,7 +46,7 @@ export function TambahBeratForm({ hewanList, defaultHewanId }: { hewanList: Hewa
           </p>
         </div>
 
-        <form action={formAction} className="px-8 py-8 space-y-5">
+        <form action={formAction} className="px-5 py-6 sm:px-8 sm:py-8 space-y-5">
           {state?.error && (
             <div className="px-4 py-3 rounded-xl" style={{ background: 'rgba(181,68,59,0.1)', color: '#B5443B', fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
               {state.error}
@@ -53,22 +55,28 @@ export function TambahBeratForm({ hewanList, defaultHewanId }: { hewanList: Hewa
           
           <div>
             <label style={labelStyle}>HEWAN *</label>
-            <select required name="hewanId" defaultValue={defaultHewanId} style={inputStyle}>
-              <option value="">— Pilih Hewan —</option>
-              {hewanList.map((h) => (
-                <option key={h.id} value={h.id}>{h.tag}{h.nama ? ` — ${h.nama}` : ''}</option>
-              ))}
-            </select>
+            <HewanSelector
+              name="hewanId"
+              hewanList={hewanList}
+              value={defaultHewanId || undefined}
+              required
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label style={labelStyle}>TANGGAL TIMBANG *</label>
-              <input required name="tanggal" type="date" defaultValue={new Date().toISOString().split('T')[0]} style={inputStyle} />
+              <DatePickerField
+                name="tanggal"
+                required
+                defaultValue={new Date().toISOString().split('T')[0]}
+                disableFuture
+                placeholder="Pilih tanggal timbang"
+              />
             </div>
             <div>
               <label style={labelStyle}>BERAT (KG) *</label>
-              <input required name="berat" type="number" step="0.1" min="0.1" placeholder="cth: 32.5" style={inputStyle} />
+              <input required name="berat" type="number" inputMode="decimal" step="0.1" min="0.1" placeholder="cth: 32.5" style={inputStyle} />
             </div>
           </div>
 
@@ -77,11 +85,11 @@ export function TambahBeratForm({ hewanList, defaultHewanId }: { hewanList: Hewa
             <textarea name="catatan" rows={3} style={{...inputStyle, resize: 'none'}} placeholder="Catatan tambahan (kondisi fisik, dll)" />
           </div>
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
             <Link href="/berat">
-              <KostaButton variant="outline" type="button">Batal</KostaButton>
+              <KostaButton variant="outline" type="button" className="w-full sm:w-auto justify-center">Batal</KostaButton>
             </Link>
-            <KostaButton type="submit" disabled={isPending}>
+            <KostaButton type="submit" disabled={isPending} className="w-full sm:w-auto justify-center">
               {isPending ? 'Menyimpan…' : 'Simpan Penimbangan'}
             </KostaButton>
           </div>

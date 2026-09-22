@@ -9,14 +9,14 @@ export default async function TambahBeratPage(props: { searchParams: Promise<{ h
   const searchParams = await props.searchParams
   const hewanId = searchParams?.hewanId
 
-  let farmId = session.farmId as string | null
+  let farmId = session.activeFarmId as string | null
   if (session.role === 'SUPER_ADMIN' && searchParams?.farmId) {
     farmId = searchParams.farmId
   }
   const farmFilter = farmId ? { farmId } : {}
 
   const hewanList = await prisma.hewan.findMany({
-    where: { status: 'AKTIF', ...farmFilter },
+    where: { kematian: { is: null }, ...farmFilter },
     select: { id: true, tag: true, nama: true }
   })
 

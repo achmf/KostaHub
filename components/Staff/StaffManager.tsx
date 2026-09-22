@@ -3,19 +3,19 @@
 import { useState, useTransition } from 'react'
 import { createStaff, deleteStaff } from '@/actions/staff'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Trash2, User, Mail, Lock, Phone, X, Users } from 'lucide-react'
+import { Plus, Trash2, User, Mail, Lock, Phone, X, ChevronRight } from 'lucide-react'
+import { KostaButton, KostaEmptyState, palette } from '@/components/KostaUI'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import PaginationControl from '@/components/Admin/PaginationControl'
+import { usePagination } from '@/hooks/usePagination'
+import { useRouter } from 'next/navigation'
+import { useConfirm } from '@/components/ConfirmProvider'
+import { useToast } from '@/components/ToastProvider'
 
-const palette = {
-  cream: '#F2EDE0',
-  ink: '#0D140F',
-  ochre: '#C7873E',
-  border: 'rgba(13,20,15,0.10)',
-  forest: '#1B2A1F',
-}
+
 
 const ROLE_LABELS: Record<string, { label: string; bg: string; color: string }> = {
   PETUGAS: { label: 'Petugas', bg: 'rgba(63,91,58,0.12)', color: '#3F5B3A' },
-  DOKTER: { label: 'Dokter', bg: 'rgba(59,130,181,0.12)', color: '#3B82B5' },
 }
 
 type StaffItem = {
@@ -31,6 +31,11 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState('')
   const [isPending, startTransition] = useTransition()
+  const router = useRouter()
+  const { confirm: showConfirm } = useConfirm()
+  const { showToast } = useToast()
+  const PER_PAGE = 10
+  const { paged, page, totalPages, onPrev, onNext } = usePagination(staff, PER_PAGE)
 
   async function handleCreate(formData: FormData) {
     setError('')
@@ -40,14 +45,27 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
         setError(result.error)
       } else {
         setShowForm(false)
+        showToast({ title: 'Berhasil', message: 'Staff baru telah ditambahkan.', type: 'success' })
       }
     })
   }
 
-  function handleDelete(staffId: string, staffName: string) {
-    if (!confirm(`Hapus staff "${staffName}"?`)) return
+  async function handleDelete(staffId: string, staffName: string) {
+    const ok = await showConfirm({
+      title: 'Hapus Staff',
+      message: `Apakah Anda yakin ingin menghapus staff "${staffName}"? Tindakan ini tidak dapat dibatalkan.`,
+      variant: 'danger',
+      confirmText: 'Hapus',
+    })
+    if (!ok) return
+
     startTransition(async () => {
-      await deleteStaff(staffId)
+      const result = await deleteStaff(staffId)
+      if (result?.error) {
+        showToast({ title: 'Gagal Menghapus', message: result.error, type: 'error' })
+      } else {
+        showToast({ title: 'Berhasil', message: `Staff ${staffName} telah dihapus.`, type: 'success' })
+      }
     })
   }
 
@@ -55,31 +73,30 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
     <div>
       {/* Add button */}
       {isOwner && (
-        <button
+        <KostaButton
           onClick={() => setShowForm(!showForm)}
-          className="cursor-pointer flex items-center gap-2 px-5 py-3 rounded-full mb-6 transition-all"
-          style={{
-            background: showForm ? 'rgba(13,20,15,0.06)' : palette.ink,
-            color: showForm ? palette.ink : palette.cream,
-            fontFamily: "'Inter',sans-serif",
-            fontSize: 13,
-            border: `1px solid ${showForm ? palette.border : palette.ink}`,
-          }}
+          className="mb-6"
+          variant={showForm ? 'outline' : 'primary'}
         >
           {showForm ? <X size={14} /> : <Plus size={14} />}
           {showForm ? 'Batal' : 'Tambah Staff'}
-        </button>
+        </KostaButton>
       )}
 
       {/* Add form */}
       <AnimatePresence>
         {showForm && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
+        <motion.div
+            initial={{ height: 0 }}
+            animate={{ height: 'auto' }}
+            exit={{ height: 0 }}
             className="overflow-hidden mb-6"
           >
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
             <form
               action={handleCreate}
               className="p-6 rounded-2xl space-y-4"
@@ -119,6 +136,7 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
                   <input
                     name="name"
                     required
+                    autoComplete="off"
                     placeholder="Nama staff"
                     className="w-full px-4 py-3 rounded-xl"
                     style={{ background: 'rgba(13,20,15,0.03)', border: `1px solid ${palette.border}`, fontFamily: "'Inter',sans-serif", fontSize: 14, color: palette.ink, outline: 'none' }}
@@ -132,6 +150,7 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
                     name="email"
                     type="email"
                     required
+                    autoComplete="off"
                     placeholder="email@staff.com"
                     className="w-full px-4 py-3 rounded-xl"
                     style={{ background: 'rgba(13,20,15,0.03)', border: `1px solid ${palette.border}`, fontFamily: "'Inter',sans-serif", fontSize: 14, color: palette.ink, outline: 'none' }}
@@ -145,6 +164,7 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
                     name="password"
                     type="password"
                     required
+                    autoComplete="new-password"
                     placeholder="Min 6 karakter"
                     className="w-full px-4 py-3 rounded-xl"
                     style={{ background: 'rgba(13,20,15,0.03)', border: `1px solid ${palette.border}`, fontFamily: "'Inter',sans-serif", fontSize: 14, color: palette.ink, outline: 'none' }}
@@ -154,15 +174,21 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
                   <label className="flex items-center gap-1.5 mb-2" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, letterSpacing: '0.15em', color: 'rgba(13,20,15,0.55)' }}>
                     ROLE <span style={{ color: '#B5443B' }}>*</span>
                   </label>
-                  <select
-                    name="role"
-                    required
-                    className="w-full px-4 py-3 rounded-xl"
-                    style={{ background: 'rgba(13,20,15,0.03)', border: `1px solid ${palette.border}`, fontFamily: "'Inter',sans-serif", fontSize: 14, color: palette.ink, outline: 'none' }}
-                  >
-                    <option value="PETUGAS">Petugas</option>
-                    <option value="DOKTER">Dokter</option>
-                  </select>
+                  <Select name="role" required defaultValue="PETUGAS">
+                    <SelectTrigger className="h-11 w-full rounded-xl bg-white/60 border-border/60 hover:bg-white transition-all shadow-sm">
+                      <SelectValue placeholder="— Pilih Role —">
+                        {(val: string) => {
+                          const labels: Record<string, string> = {
+                            PETUGAS: 'Petugas',
+                          }
+                          return val ? labels[val] : '— Pilih Role —'
+                        }}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PETUGAS" label="Petugas">Petugas</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -172,26 +198,23 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
                 </label>
                 <input
                   name="phone"
+                  type="tel"
+                  autoComplete="off"
                   placeholder="08xxxxxxxxxx"
                   className="w-full px-4 py-3 rounded-xl"
                   style={{ background: 'rgba(13,20,15,0.03)', border: `1px solid ${palette.border}`, fontFamily: "'Inter',sans-serif", fontSize: 14, color: palette.ink, outline: 'none' }}
                 />
               </div>
 
-              <button
+              <KostaButton
                 type="submit"
                 disabled={isPending}
-                className="cursor-pointer px-6 py-3 rounded-full"
-                style={{
-                  background: isPending ? 'rgba(13,20,15,0.5)' : palette.ink,
-                  color: palette.cream,
-                  fontFamily: "'Inter',sans-serif",
-                  fontSize: 13,
-                }}
+                className="w-full sm:w-auto justify-center"
               >
                 {isPending ? 'Menyimpan…' : 'Simpan Staff'}
-              </button>
+              </KostaButton>
             </form>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -199,25 +222,23 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
       {/* Staff list */}
       {staff.length === 0 ? (
         <div
-          className="flex flex-col items-center justify-center py-16 rounded-2xl"
+          className="rounded-2xl"
           style={{ background: '#fff', border: `1px solid ${palette.border}` }}
         >
-          <div className="flex justify-center mb-3" style={{ color: palette.ink, opacity: 0.3 }}>
-            <Users size={48} strokeWidth={1.5} />
-          </div>
-          <div style={{ fontFamily: "'Fraunces',serif", fontSize: 17 }}>Belum ada staff</div>
-          <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.5)', marginTop: 4 }}>
-            Tambahkan petugas atau dokter untuk membantu mengelola farm.
-          </div>
+          <KostaEmptyState
+            title="Belum ada staff"
+            hint="Tambahkan petugas atau dokter untuk membantu mengelola farm."
+          />
         </div>
       ) : (
         <div className="space-y-3">
-          {staff.map((s) => {
+          {paged.map((s) => {
             const roleInfo = ROLE_LABELS[s.role] ?? { label: s.role, bg: 'rgba(0,0,0,0.05)', color: palette.ink }
             return (
               <div
                 key={s.id}
-                className="flex items-center gap-4 px-5 py-4 rounded-2xl"
+                onClick={() => router.push(`/staff/${s.id}`)}
+                className="flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-4 rounded-2xl group hover:bg-gray-50/50 transition-colors cursor-pointer"
                 style={{ background: '#fff', border: `1px solid ${palette.border}` }}
               >
                 <div
@@ -227,8 +248,8 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
                   {s.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500 }}>{s.name}</span>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className="min-w-0 wrap-anywhere" style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500 }}>{s.name}</span>
                     <span
                       className="px-2 py-0.5 rounded-full"
                       style={{ background: roleInfo.bg, color: roleInfo.color, fontSize: 10, fontWeight: 500 }}
@@ -236,25 +257,49 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
                       {roleInfo.label}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 mt-0.5" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'rgba(13,20,15,0.5)' }}>
-                    <span className="flex items-center gap-1"><Mail size={10} />{s.email}</span>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'rgba(13,20,15,0.5)' }}>
+                    <span className="flex items-center gap-1 min-w-0"><Mail size={10} className="shrink-0" /><span className="truncate">{s.email}</span></span>
                     {s.phone && <span className="flex items-center gap-1"><Phone size={10} />{s.phone}</span>}
                   </div>
                 </div>
                 {isOwner && (
-                  <button
-                    onClick={() => handleDelete(s.id, s.name)}
-                    disabled={isPending}
-                    className="cursor-pointer p-2 rounded-lg transition-all hover:bg-red-50"
-                    style={{ color: 'rgba(181,68,59,0.5)' }}
-                    title="Hapus staff"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  <div className="flex items-center gap-1 sm:gap-2 pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 pointer-fine:focus-within:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDelete(s.id, s.name)
+                      }}
+                      disabled={isPending}
+                      className="w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg transition-all hover:bg-red-50"
+                      style={{ color: 'rgba(181,68,59,0.5)' }}
+                      title="Hapus staff"
+                      aria-label={`Hapus staff ${s.name}`}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                    <div
+                      className="p-2 rounded-lg transition-all hover:bg-gray-100"
+                      style={{ color: 'rgba(13,20,15,0.5)' }}
+                      title="Lihat Profil"
+                    >
+                      <ChevronRight size={16} />
+                    </div>
+                  </div>
                 )}
               </div>
             )
           })}
+
+          {staff.length > 0 && (
+            <PaginationControl
+              page={page}
+              totalPages={totalPages}
+              onPrev={onPrev}
+              onNext={onNext}
+              totalItems={staff.length}
+              perPage={PER_PAGE}
+            />
+          )}
         </div>
       )}
     </div>

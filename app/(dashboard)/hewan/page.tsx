@@ -8,7 +8,7 @@ export default async function HewanPage(props: { searchParams: Promise<{ [key: s
   const session = await getSession()
   if (!session) redirect('/login')
 
-  let farmId = session.farmId as string | null
+  let farmId = session.activeFarmId as string | null
   if (session.role === 'SUPER_ADMIN' && searchParams.farmId) {
     farmId = searchParams.farmId
   }
@@ -24,12 +24,13 @@ export default async function HewanPage(props: { searchParams: Promise<{ [key: s
       },
       rekamMedis: {
         select: { id: true } // only counting length is needed
-      }
+      },
+      kematian: { select: { tanggalMati: true } }, // for status badge: ada = mati, null = hidup
     },
     orderBy: { createdAt: 'desc' }
   })
 
   const isSuperAdmin = session.role === 'SUPER_ADMIN'
 
-  return <HewanClient hewanList={hewanList} isSuperAdmin={isSuperAdmin} />
+  return <HewanClient hewanList={hewanList as any} isSuperAdmin={isSuperAdmin} />
 }

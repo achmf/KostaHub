@@ -4,19 +4,11 @@ import { tambahReproduksi, type TambahReproduksiState } from '@/actions/reproduk
 import Link from 'next/link'
 import { ArrowLeft, AlertTriangle, ShieldAlert, CheckCircle2 } from 'lucide-react'
 import { useActionState, useState, useCallback, useRef } from 'react'
-import { KostaButton, KostaSectionLabel } from '@/components/KostaUI'
+import { KostaButton, KostaSectionLabel, palette } from '@/components/KostaUI'
+import { HewanSelector } from '@/components/ui/HewanSelector'
+import { DatePickerField } from '@/components/ui/DatePickerField'
 
-const palette = {
-  cream: '#F2EDE0',
-  forest: '#1B2A1F',
-  ink: '#0D140F',
-  border: 'rgba(13,20,15,0.10)',
-  rose: '#B5443B',
-  roseBg: 'rgba(181,68,59,0.06)',
-  roseBorder: 'rgba(181,68,59,0.25)',
-  moss: '#3F5B3A',
-  amber: '#D9A23C',
-}
+
 
 const inputStyle: React.CSSProperties = {
   background: 'rgba(13,20,15,0.03)', border: `1px solid ${palette.border}`,
@@ -98,18 +90,18 @@ export function TambahReproduksiForm({
 
   return (
     <div className="max-w-2xl mx-auto">
-      <Link href="/reproduksi" className="flex items-center gap-2 mb-8 opacity-70 hover:opacity-100 transition-opacity"
+      <Link href="/reproduksi" className="flex w-fit items-center gap-2 min-h-10 mb-4 md:min-h-0 md:mb-8 opacity-70 hover:opacity-100 transition-opacity"
         style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: palette.ink }}>
         <ArrowLeft size={14} /> Kembali ke Reproduksi
       </Link>
 
       <div className="rounded-3xl overflow-hidden" style={{ background: '#fff', border: `1px solid ${palette.border}` }}>
         {/* Header */}
-        <div className="px-8 pt-8 pb-6" style={{ background: palette.forest, color: palette.cream }}>
+        <div className="px-5 pt-6 pb-5 sm:px-8 sm:pt-8 sm:pb-6" style={{ background: palette.forest, color: palette.cream }}>
           <KostaSectionLabel>
             <span style={{ color: 'rgba(242,237,224,0.55)' }}>REPRODUKSI · CATAT</span>
           </KostaSectionLabel>
-          <h1 className="mt-2" style={{ fontFamily: "'Fraunces',serif", fontSize: 32, letterSpacing: '-0.025em', lineHeight: 1.05 }}>
+          <h1 className="mt-2" style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(26px, 7vw, 32px)', letterSpacing: '-0.025em', lineHeight: 1.05 }}>
             Catat Perkawinan
           </h1>
           <p className="mt-2 opacity-70" style={{ fontFamily: "'Inter',sans-serif", fontSize: 14 }}>
@@ -117,43 +109,41 @@ export function TambahReproduksiForm({
           </p>
         </div>
 
-        <form action={formAction} className="px-8 py-8 space-y-5">
+        <form action={formAction} className="px-5 py-6 sm:px-8 sm:py-8 space-y-5">
           {/* Pasangan selection */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label style={labelStyle}>INDUK BETINA ♀ *</label>
-              <select
-                required
+              <HewanSelector
                 name="indukId"
-                style={inputStyle}
-                onChange={(e) => handleSelectionChange('induk', e.target.value)}
-              >
-                <option value="">— Pilih Indukan —</option>
-                {indukan.map((h) => (
-                  <option key={h.id} value={h.id}>{h.tag}{h.nama ? ` — ${h.nama}` : ''}</option>
-                ))}
-              </select>
+                hewanList={indukan}
+                onChange={(val) => handleSelectionChange('induk', val)}
+                placeholder="— Pilih Indukan —"
+                required
+              />
             </div>
             <div>
               <label style={labelStyle}>PEJANTAN ♂ *</label>
-              <select
-                required
+              <HewanSelector
                 name="pejantanId"
-                style={inputStyle}
-                onChange={(e) => handleSelectionChange('pejantan', e.target.value)}
-              >
-                <option value="">— Pilih Pejantan —</option>
-                {pejantan.map((h) => (
-                  <option key={h.id} value={h.id}>{h.tag}{h.nama ? ` — ${h.nama}` : ''}</option>
-                ))}
-              </select>
+                hewanList={pejantan}
+                onChange={(val) => handleSelectionChange('pejantan', val)}
+                placeholder="— Pilih Pejantan —"
+                required
+              />
             </div>
           </div>
 
           {/* Tanggal kawin */}
           <div>
             <label style={labelStyle}>TANGGAL KAWIN *</label>
-            <input required name="tanggalKawin" type="date" defaultValue={new Date().toISOString().split('T')[0]} style={inputStyle} />
+            <DatePickerField
+              name="tanggalKawin"
+              required
+              defaultValue={new Date().toISOString().split('T')[0]}
+              disableFuture
+              placeholder="Pilih tanggal kawin"
+            />
             <p className="mt-1 opacity-60" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>
               Estimasi lahir = tanggal kawin + 150 hari.
             </p>
@@ -170,8 +160,8 @@ export function TambahReproduksiForm({
           {/* Inbreeding Warning Panel */}
           {hasRisk && !isCheckingInbreeding && (
             <div
-              className="rounded-2xl p-5 space-y-4"
-              style={{ background: palette.roseBg, border: `1.5px solid ${palette.roseBorder}` }}
+              className="rounded-2xl p-4 sm:p-5 space-y-4"
+              style={{ background: 'rgba(178, 75, 75, 0.05)', border: '1.5px solid rgba(178, 75, 75, 0.15)' }}
             >
               <div className="flex items-start gap-3">
                 <AlertTriangle size={20} style={{ color: palette.rose, flexShrink: 0, marginTop: 2 }} />
@@ -229,14 +219,14 @@ export function TambahReproduksiForm({
                     />
                     <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.75)', lineHeight: 1.5 }}>
                       Saya memahami risiko genetik dari kawin sedarah dan tetap ingin melanjutkan.
-                      Data ini akan dicatat sebagai <strong>inbreeding override</strong>.
+                      Data ini akan dicatat sebagai <strong>override kawin sedarah</strong>.
                     </span>
                   </label>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 pt-1" style={{ color: 'rgba(13,20,15,0.6)', fontFamily: "'Inter',sans-serif", fontSize: 12 }}>
                   <ShieldAlert size={14} style={{ color: palette.rose }} />
-                  Hanya Super Admin yang dapat melanjutkan perkawinan dengan risiko inbreeding.
+                  Hanya Super Admin yang dapat melanjutkan perkawinan dengan risiko kawin sedarah.
                 </div>
               )}
             </div>
@@ -256,13 +246,14 @@ export function TambahReproduksiForm({
           <input type="hidden" name="forceSubmit" value={overrideConfirmed ? 'true' : 'false'} />
 
           {/* Actions */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
             <Link href="/reproduksi">
-              <KostaButton variant="outline" type="button">Batal</KostaButton>
+              <KostaButton variant="outline" type="button" className="w-full sm:w-auto justify-center">Batal</KostaButton>
             </Link>
             <KostaButton
               type="submit"
               disabled={isPending || (!!hasRisk && (!isSuperAdmin || !overrideConfirmed))}
+              className="w-full sm:w-auto justify-center"
             >
               {isPending ? 'Menyimpan…' : 'Simpan Perkawinan'}
             </KostaButton>

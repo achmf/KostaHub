@@ -83,8 +83,8 @@ function SelectContent({
         <SelectPrimitive.Popup
           data-slot="select-content"
           className={cn(
-            // Base layout
-            "relative isolate z-50 overflow-hidden",
+            // Base layout — DO NOT use overflow-hidden here; it clips the scrollable List
+            "relative isolate z-50 flex flex-col",
             "max-h-[min(var(--available-height,320px),320px)] w-[var(--anchor-width)] min-w-[180px]",
             "rounded-xl border border-border/60 bg-white shadow-xl",
             "text-sm text-foreground",
@@ -98,9 +98,7 @@ function SelectContent({
           )}
           {...props}
         >
-          <SelectScrollUpButton />
-          <SelectPrimitive.List className="p-1.5 overflow-y-auto">{children}</SelectPrimitive.List>
-          <SelectScrollDownButton />
+          <SelectPrimitive.List className="flex-1 overflow-y-auto overscroll-contain p-1.5 min-h-0">{children}</SelectPrimitive.List>
         </SelectPrimitive.Popup>
       </SelectPrimitive.Positioner>
     </SelectPrimitive.Portal>
@@ -166,52 +164,12 @@ function SelectSeparator({
   )
 }
 
-function SelectScrollUpButton({
-  className,
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.ScrollUpArrow>) {
-  return (
-    <SelectPrimitive.ScrollUpArrow
-      data-slot="select-scroll-up-button"
-      className={cn(
-        "top-0 z-10 flex w-full cursor-default items-center justify-center bg-popover py-1 [&_svg:not([class*='size-'])]:size-4",
-        className
-      )}
-      {...props}
-    >
-      <ChevronUpIcon
-      />
-    </SelectPrimitive.ScrollUpArrow>
-  )
-}
-
-function SelectScrollDownButton({
-  className,
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.ScrollDownArrow>) {
-  return (
-    <SelectPrimitive.ScrollDownArrow
-      data-slot="select-scroll-down-button"
-      className={cn(
-        "bottom-0 z-10 flex w-full cursor-default items-center justify-center bg-popover py-1 [&_svg:not([class*='size-'])]:size-4",
-        className
-      )}
-      {...props}
-    >
-      <ChevronDownIcon
-      />
-    </SelectPrimitive.ScrollDownArrow>
-  )
-}
-
 export {
   Select,
   SelectContent,
   SelectGroup,
   SelectItem,
   SelectLabel,
-  SelectScrollDownButton,
-  SelectScrollUpButton,
   SelectSeparator,
   SelectTrigger,
   SelectValue,

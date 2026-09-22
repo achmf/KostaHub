@@ -1,6 +1,7 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { login } from '@/actions/auth'
 import { motion } from 'framer-motion'
 import { ArrowUpRight } from 'lucide-react'
@@ -16,18 +17,24 @@ const palette = {
 }
 
 export default function LoginPage() {
-  const [state, formAction, isPending] = useActionState(async (prevState: unknown, formData: FormData) => {
-    return await login(formData)
-  }, null)
+  const router = useRouter()
+  const [state, formAction, isPending] = useActionState(login, null)
+
+  // Handle server-side redirect signal (PENDING/REJECTED accounts)
+  useEffect(() => {
+    if (state && 'redirectTo' in state && state.redirectTo) {
+      router.push(state.redirectTo as string)
+    }
+  }, [state, router])
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-6"
+      className="min-h-dvh flex p-4 sm:p-6"
       style={{ background: palette.cream }}
     >
       {/* Topographic background decoration */}
       <svg
-        className="fixed inset-0 w-full h-full pointer-events-none"
+        className="fixed inset-0 w-full h-full pointer-events-none overflow-hidden"
         viewBox="0 0 100 100"
         preserveAspectRatio="xMidYMid slice"
         style={{ opacity: 0.06 }}
@@ -43,13 +50,13 @@ export default function LoginPage() {
         ))}
       </svg>
 
-      <div className="relative z-10 w-full max-w-[420px]">
+      <div className="relative z-10 m-auto w-full max-w-[420px]">
         {/* Brand nav */}
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="flex items-center gap-2.5 mb-12 justify-center"
+          className="flex items-center gap-2.5 mb-8 sm:mb-12 justify-center"
           style={{ color: palette.ink }}
         >
           <GoatMark className="w-8 h-8" />
@@ -68,7 +75,7 @@ export default function LoginPage() {
         >
           {/* Card header — forest band */}
           <div
-            className="px-8 pt-8 pb-10"
+            className="px-6 pt-6 pb-8 sm:px-8 sm:pt-8 sm:pb-10"
             style={{ background: palette.forest, color: palette.cream }}
           >
             <div
@@ -102,7 +109,7 @@ export default function LoginPage() {
           </div>
 
           {/* Form */}
-          <form action={formAction} className="px-8 py-8 space-y-5">
+          <form action={formAction} className="p-6 sm:p-8 space-y-5">
             {/* Error */}
             {state?.error && (
               <motion.div
@@ -139,6 +146,7 @@ export default function LoginPage() {
                 id="login-email"
                 type="email"
                 name="email"
+                autoComplete="email"
                 required
                 placeholder="you@example.com"
                 className="w-full px-4 py-3 rounded-xl transition-all"
@@ -179,6 +187,7 @@ export default function LoginPage() {
                 id="login-password"
                 type="password"
                 name="password"
+                autoComplete="current-password"
                 required
                 placeholder="••••••••"
                 className="w-full px-4 py-3 rounded-xl transition-all"
@@ -215,7 +224,7 @@ export default function LoginPage() {
                 cursor: isPending ? 'not-allowed' : 'pointer',
               }}
             >
-              {isPending ? 'Memproses…' : 'Masuk ke Dasbor'}
+              {isPending ? 'Memproses…' : 'Masuk'}
               {!isPending && (
                 <span
                   className="w-7 h-7 rounded-full flex items-center justify-center transition-transform group-hover:rotate-45"
@@ -228,9 +237,9 @@ export default function LoginPage() {
           </form>
 
           {/* Register link */}
-          <div className="px-8 pb-6 text-center" style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.5)' }}>
+          <div className="px-6 sm:px-8 pb-6 text-center" style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.5)' }}>
             Belum punya akun?{' '}
-            <a href="/register" style={{ color: palette.ochre, fontWeight: 500 }}>
+            <a href="/register" className="inline-block py-2.5 sm:py-0" style={{ color: palette.ochre, fontWeight: 500 }}>
               Daftar sebagai Owner
             </a>
           </div>

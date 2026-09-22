@@ -2,7 +2,11 @@
 
 import { useState, useTransition } from 'react'
 import { deleteUser } from '@/actions/admin'
-import { User, Mail, Phone, Building2, Trash2 } from 'lucide-react'
+import { changeUserRole } from '@/actions/admin/changeUserRole'
+import { User, Mail, Phone, Building2, Trash2, ChevronDown } from 'lucide-react'
+import PaginationControl from './PaginationControl'
+import { usePagination } from '@/hooks/usePagination'
+import { useConfirm } from '@/components/ConfirmProvider'
 
 const palette = {
   cream: '#F2EDE0',
@@ -15,7 +19,6 @@ const ROLE_LABELS: Record<string, { label: string; bg: string; color: string }> 
   SUPER_ADMIN: { label: 'Super Admin', bg: 'rgba(181,68,59,0.1)', color: '#B5443B' },
   OWNER: { label: 'Owner', bg: 'rgba(199,135,62,0.15)', color: palette.ochre },
   PETUGAS: { label: 'Petugas', bg: 'rgba(63,91,58,0.12)', color: '#3F5B3A' },
-  DOKTER: { label: 'Dokter', bg: 'rgba(59,130,181,0.12)', color: '#3B82B5' },
 }
 
 type UserItem = {
@@ -32,12 +35,35 @@ export default function UserList({ users }: { users: UserItem[] }) {
   const [filter, setFilter] = useState('ALL')
   const [isPending, startTransition] = useTransition()
 
-  const filtered = filter === 'ALL' ? users : users.filter((u) => u.role === filter)
+  const { confirm: showConfirm } = useConfirm()
 
-  function handleDelete(userId: string, userName: string) {
-    if (!confirm(`Hapus user "${userName}"? Tindakan ini tidak bisa dibatalkan.`)) return
+  const filtered = filter === 'ALL' ? users : users.filter((u) => u.role === filter)
+  const { paged, page, totalPages, onPrev, onNext } = usePagination(filtered, 10)
+
+  async function handleDelete(userId: string, userName: string) {
+    const ok = await showConfirm({
+      title: 'Hapus User',
+      message: `Hapus user "${userName}"? Tindakan ini tidak bisa dibatalkan.`,
+      variant: 'danger',
+      confirmText: 'Hapus',
+    })
+    if (!ok) return
     startTransition(async () => {
       await deleteUser(userId)
+    })
+  }
+
+  async function handleRoleChange(userId: string, userName: string, newRole: string) {
+    const ok = await showConfirm({
+      title: 'Ubah Role',
+      message: `Ubah role "${userName}" menjadi ${ROLE_LABELS[newRole]?.label ?? newRole}?`,
+      variant: 'warning',
+      confirmText: 'Ubah Role',
+    })
+    if (!ok) return
+    startTransition(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await changeUserRole(userId, newRole as any)
     })
   }
 
@@ -45,7 +71,7 @@ export default function UserList({ users }: { users: UserItem[] }) {
     <div>
       {/* Filter pills */}
       <div className="flex items-center gap-2 mb-6 flex-wrap">
-        {['ALL', 'SUPER_ADMIN', 'OWNER', 'PETUGAS', 'DOKTER'].map((role) => (
+        {['ALL', 'SUPER_ADMIN', 'OWNER', 'PETUGAS'].map((role) => (
           <button
             key={role}
             onClick={() => setFilter(role)}
@@ -88,7 +114,7 @@ export default function UserList({ users }: { users: UserItem[] }) {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((user) => {
+            {paged.map((user) => {
               const roleInfo = ROLE_LABELS[user.role] ?? { label: user.role, bg: 'rgba(0,0,0,0.05)', color: palette.ink }
               return (
                 <tr key={user.id} className="border-t" style={{ borderColor: palette.border }}>
@@ -109,12 +135,37 @@ export default function UserList({ users }: { users: UserItem[] }) {
                     </div>
                   </td>
                   <td className="px-5 py-4">
-                    <span
-                      className="px-2.5 py-1 rounded-full"
-                      style={{ background: roleInfo.bg, color: roleInfo.color, fontSize: 11, fontWeight: 500 }}
-                    >
-                      {roleInfo.label}
-                    </span>
+                    {user.role === 'SUPER_ADMIN' ? (
+                      <span
+                        className="px-2.5 py-1 rounded-full"
+                        style={{ background: roleInfo.bg, color: roleInfo.color, fontSize: 11, fontWeight: 500 }}
+                      >
+                        {roleInfo.label}
+                      </span>
+                    ) : (
+                      <div className="relative inline-block">
+                        <select
+                          defaultValue={user.role}
+                          onChange={(e) => handleRoleChange(user.id, user.name, e.target.value)}
+                          disabled={isPending}
+                          className="cursor-pointer appearance-none pl-2.5 pr-7 py-1 rounded-full transition-all"
+                          style={{
+                            background: roleInfo.bg,
+                            color: roleInfo.color,
+                            fontSize: 11,
+                            fontWeight: 500,
+                            border: `1px solid ${roleInfo.color}30`,
+                            fontFamily: "'Inter',sans-serif",
+                            outline: 'none',
+                          }}
+                        >
+                          {['OWNER', 'PETUGAS'].map((r) => (
+                            <option key={r} value={r}>{ROLE_LABELS[r]?.label ?? r}</option>
+                          ))}
+                        </select>
+                        <ChevronDown size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: roleInfo.color }} />
+                      </div>
+                    )}
                   </td>
                   <td className="px-5 py-4" style={{ color: 'rgba(13,20,15,0.6)' }}>
                     {user.farm?.nama ?? '—'}
@@ -141,6 +192,18 @@ export default function UserList({ users }: { users: UserItem[] }) {
           </tbody>
         </table>
       </div>
+      {filtered.length > 0 && (
+        <div className="px-5 pb-5">
+          <PaginationControl
+            page={page}
+            totalPages={totalPages}
+            onPrev={onPrev}
+            onNext={onNext}
+            totalItems={filtered.length}
+            perPage={10}
+          />
+        </div>
+      )}
     </div>
   )
 }

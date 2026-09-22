@@ -8,7 +8,7 @@ export default async function TambahReproduksiPage(props: { searchParams: Promis
   if (!session) redirect('/login')
   const searchParams = await props.searchParams
 
-  let farmId = session.farmId as string | null
+  let farmId = session.activeFarmId as string | null
   if (session.role === 'SUPER_ADMIN' && searchParams.farmId) {
     farmId = searchParams.farmId
   }
@@ -16,11 +16,11 @@ export default async function TambahReproduksiPage(props: { searchParams: Promis
 
   const [indukan, pejantan] = await Promise.all([
     prisma.hewan.findMany({
-      where: { status: 'AKTIF', kategori: 'INDUKAN', ...farmFilter },
+      where: { kematian: { is: null }, kategori: 'INDUKAN', ...farmFilter },
       select: { id: true, tag: true, nama: true },
     }),
     prisma.hewan.findMany({
-      where: { status: 'AKTIF', kategori: 'PEJANTAN', ...farmFilter },
+      where: { kematian: { is: null }, kategori: 'PEJANTAN', ...farmFilter },
       select: { id: true, tag: true, nama: true },
     }),
   ])

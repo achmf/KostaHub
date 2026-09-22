@@ -1,107 +1,110 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { getSession } from '@/lib/auth'
+import { withAuth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
+import { type FarmStatus } from '@prisma/client'
+import { farmSchema, farmRegistrationSchema } from '@/lib/validations/farm.schema'
 
-function requireSuperAdmin(session: { role?: string } | null) {
-  if (session?.role !== 'SUPER_ADMIN') {
-    throw new Error('Akses ditolak. Hanya Super Admin.')
-  }
-}
+import { createFarmLogic, createAdditionalFarmLogic, assignUserToFarmLogic, assignStaffToFarmLogic, removeUserFromFarmLogic, updateFarmLogic, deleteFarmLogic, getFarmsLogic, createFarmRegistrationLogic } from '@/services/farm.service'
 
-export async function createFarm(formData: FormData) {
-  const session = await getSession()
-  requireSuperAdmin(session)
-
-  const nama = formData.get('nama') as string
-  const alamat = formData.get('alamat') as string
-  const lat = parseFloat(formData.get('lat') as string)
-  const lng = parseFloat(formData.get('lng') as string)
-  const deskripsi = formData.get('deskripsi') as string
-
-  if (!nama) return { error: 'Nama farm wajib diisi' }
-
-  await prisma.farm.create({
-    data: {
-      nama,
-      alamat: alamat || null,
-      lat: isNaN(lat) ? null : lat,
-      lng: isNaN(lng) ? null : lng,
-      deskripsi: deskripsi || null,
-      status: 'AKTIF',
-    }
-  })
+export const createFarm = withAuth(async (session, formData: FormData) => {
+  const parsed = farmSchema.safeParse(Object.fromEntries(formData))
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
+  
+  const result = await createFarmLogic(parsed.data, session as any)
+  if ('error' in result) return result
 
   revalidatePath('/farm')
   return { success: true }
-}
+})
 
-export async function updateFarm(id: string, formData: FormData) {
-  const session = await getSession()
-  requireSuperAdmin(session)
+export const createAdditionalFarm = withAuth(async (session, formData: FormData) => {
+  const parsed = farmSchema.safeParse(Object.fromEntries(formData))
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
+  
+  const result = await createAdditionalFarmLogic(parsed.data, session as any)
+  if ('error' in result) return result
 
-  const nama = formData.get('nama') as string
-  const alamat = formData.get('alamat') as string
-  const lat = parseFloat(formData.get('lat') as string)
-  const lng = parseFloat(formData.get('lng') as string)
-  const deskripsi = formData.get('deskripsi') as string
-  const status = formData.get('status') as string
-  const geojson = formData.get('geojson') as string
+  revalidatePath('/farms')
+  return { success: true, pendingApproval: true }
+})
 
-  await prisma.farm.update({
-    where: { id },
-    data: {
-      nama,
-      alamat: alamat || null,
-      lat: isNaN(lat) ? null : lat,
-      lng: isNaN(lng) ? null : lng,
-      deskripsi: deskripsi || null,
-      status: status || 'AKTIF',
-      geojson: geojson || null,
-    }
-  })
+export const assignUserToFarm = withAuth(async (session, userId: string, farmId: string) => {
+  const result = await assignUserToFarmLogic(userId, farmId, session as any)
+  if ('error' in result) return result
+
+  revalidatePath('/admin/users')
+  return { success: true }
+})
+
+export const assignStaffToFarm = withAuth(async (session, staffId: string, farmId: string) => {
+  const result = await assignStaffToFarmLogic(staffId, farmId, session as any)
+  if ('error' in result) return result
+
+  revalidatePath('/staff')
+  return { success: true }
+})
+
+export const removeUserFromFarm = withAuth(async (session, userId: string, farmId: string) => {
+  const result = await removeUserFromFarmLogic(userId, farmId, session as any)
+  if ('error' in result) return result
+
+  revalidatePath('/staff')
+  return { success: true }
+})
+
+export const updateFarm = withAuth(async (session, id: string, formData: FormData) => {
+  const parsed = farmSchema.safeParse(Object.fromEntries(formData))
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
+  
+  const result = await updateFarmLogic(id, parsed.data, session as any)
+  if ('error' in result) return result
 
   revalidatePath('/farm')
   revalidatePath(`/farm/${id}`)
   return { success: true }
-}
+})
 
-export async function deleteFarm(id: string) {
-  const session = await getSession()
-  requireSuperAdmin(session)
+export const deleteFarm = withAuth(async (session, id: string) => {
+  const result = await deleteFarmLogic(id, session as any)
+  if ('error' in result) return result
 
-  const hewanCount = await prisma.hewan.count({ where: { farmId: id } })
-  if (hewanCount > 0) {
-    return { error: `Farm masih memiliki ${hewanCount} hewan. Pindahkan dulu sebelum menghapus.` }
-  }
-
-  await prisma.farm.delete({ where: { id } })
   revalidatePath('/farm')
   return { success: true }
-}
+})
 
-export async function getFarms() {
-  const session = await getSession()
-  if (!session) return []
+export const getFarms = withAuth(async (session) => {
+  return getFarmsLogic(session as any)
+})
 
-  if (session.role === 'SUPER_ADMIN') {
-    return prisma.farm.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: {
-        _count: { select: { hewan: true, users: true } }
-      }
-    })
+export const createFarmRegistration = withAuth(async (session, formData: FormData) => {
+  const parsed = farmRegistrationSchema.safeParse(Object.fromEntries(formData))
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
+  
+  const farmSertifikat = formData.get('farmSertifikat') as File | null
+
+  let sertifikatUrl: string | null = null
+  if (farmSertifikat && farmSertifikat.size > 0) {
+    try {
+      const { writeFile, mkdir } = await import('fs/promises')
+      const path = await import('path')
+      const bytes = await farmSertifikat.arrayBuffer()
+      const buffer = Buffer.from(bytes)
+      const uploadDir = path.join(process.cwd(), 'public/uploads')
+      await mkdir(uploadDir, { recursive: true })
+      const ext = farmSertifikat.name.split('.').pop() || 'png'
+      const fileName = `${Date.now()}-${Math.round(Math.random() * 1000)}.${ext}`
+      await writeFile(path.join(uploadDir, fileName), buffer)
+      sertifikatUrl = `/uploads/${fileName}`
+    } catch (e) {
+      console.error('File upload failed', e)
+    }
   }
 
-  if (session.farmId) {
-    return prisma.farm.findMany({
-      where: { id: session.farmId },
-      include: {
-        _count: { select: { hewan: true, users: true } }
-      }
-    })
-  }
+  const result = await createFarmRegistrationLogic(parsed.data, sertifikatUrl, session as any)
+  if ('error' in result) return result
 
-  return []
-}
+  revalidatePath('/farms')
+  return { success: true, pendingApproval: true }
+})

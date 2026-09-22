@@ -5,41 +5,56 @@ import { redirect } from 'next/navigation'
 import { GoatMark } from '@/components/GoatMark'
 import FarmSelector from '@/components/Layout/FarmSelector'
 import { Search } from 'lucide-react'
+import UserDropdown from '@/components/Layout/UserDropdown'
+import NotificationDropdown from '@/components/Layout/NotificationDropdown'
+import { MobileMenuProvider } from '@/components/Layout/MobileMenuContext'
+import MobileMenuButton from '@/components/Layout/MobileMenuButton'
 
-const palette = {
-  cream: '#F2EDE0',
-  border: 'rgba(13,20,15,0.10)',
-  ink: '#0D140F',
-}
+import { palette } from '@/components/KostaUI'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
   if (!session) redirect('/login')
+  if ((session.role === 'SUPER_ADMIN' || session.role === 'DINAS') && !session.activeFarmId) redirect('/admin')
+
+  // Jika Owner/Staff belum memilih farm → redirect ke farm picker
+  if (!session.activeFarmId) {
+    redirect('/farms')
+  }
 
   let farmName: string | undefined
   let allFarms: { id: string; nama: string }[] = []
 
-  if (session.role === 'SUPER_ADMIN') {
-    allFarms = await prisma.farm.findMany({ select: { id: true, nama: true } })
-  } else if (session.farmId) {
-    const farm = await prisma.farm.findUnique({ where: { id: session.farmId }, select: { nama: true } })
+  // Ambil nama farm yang sedang aktif
+  if (session.activeFarmId) {
+    const farm = await prisma.farm.findUnique({
+      where: { id: session.activeFarmId },
+      select: { nama: true },
+    })
     farmName = farm?.nama
   }
 
+  // Super Admin bisa lihat semua farm (tidak akan masuk ke sini, tapi untuk safety)
+  if (session.role === 'SUPER_ADMIN') {
+    allFarms = await prisma.farm.findMany({ select: { id: true, nama: true } })
+  }
+
   return (
-    <div className="min-h-screen flex" style={{ background: palette.cream, color: palette.ink }}>
-      <Sidebar
+    <MobileMenuProvider>
+      <div className="min-h-screen flex" style={{ background: palette.cream, color: palette.ink }}>
+        <Sidebar
         role={session.role}
         name={session.name}
         email={session.email ?? ''}
         farmName={farmName}
+        userId={session.id}
       />
 
       {/* Main area */}
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Header */}
         <header
-          className="sticky top-0 z-30 px-6 md:px-10 py-4 flex items-center justify-between gap-4"
+          className="sticky top-0 z-30 px-4 sm:px-6 lg:px-10 py-3 lg:py-4 flex items-center justify-between gap-3"
           style={{
             background: 'rgba(242,237,224,0.85)',
             backdropFilter: 'blur(8px)',
@@ -47,26 +62,49 @@ export default async function DashboardLayout({ children }: { children: React.Re
           }}
         >
           <div className="flex items-center gap-3 min-w-0">
-            {/* Mobile brand */}
-            <div className="lg:hidden flex items-center gap-2" style={{ color: palette.ink }}>
-              <GoatMark className="w-6 h-6" />
-              <span style={{ fontFamily: "'Fraunces',serif", fontWeight: 600 }}>KostaHub</span>
+            {/* Mobile brand & hamburger */}
+            <div className="lg:hidden flex items-center gap-2 min-w-0" style={{ color: palette.ink }}>
+              <MobileMenuButton />
+              <GoatMark className="w-6 h-6 shrink-0" />
+              <div className="min-w-0 leading-tight">
+                <div style={{ fontFamily: "'Fraunces',serif", fontWeight: 600 }}>KostaHub</div>
+                {farmName && (
+                  <div className="truncate" style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: palette.ochre }}>
+                    {farmName}
+                  </div>
+                )}
+              </div>
             </div>
-            {/* Desktop breadcrumb */}
-            <span
-              className="hidden lg:block"
-              style={{
-                fontFamily: "'JetBrains Mono',monospace",
-                fontSize: 11,
-                letterSpacing: '0.15em',
-                color: 'rgba(13,20,15,0.5)',
-              }}
-            >
-              KOSTAHUB
-            </span>
+            {/* Desktop farm name */}
+            <div className="hidden lg:flex items-center gap-2">
+              <span
+                style={{
+                  fontFamily: "'JetBrains Mono',monospace",
+                  fontSize: 11,
+                  letterSpacing: '0.15em',
+                  color: 'rgba(13,20,15,0.5)',
+                }}
+              >
+                KOSTAHUB
+              </span>
+              {farmName && (
+                <>
+                  <span style={{ color: 'rgba(13,20,15,0.3)', fontSize: 12 }}>/</span>
+                  <span
+                    style={{
+                      fontFamily: "'Inter',sans-serif",
+                      fontSize: 12,
+                      color: palette.ochre,
+                    }}
+                  >
+                    {farmName}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-2 md:gap-3 shrink-0">
             {/* Search pill */}
             <div
               className="hidden md:flex items-center gap-2 px-3 py-2 rounded-full"
@@ -80,46 +118,36 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 placeholder="Cari tag, nama, dokter…"
                 className="bg-transparent outline-none w-44"
                 style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}
+                suppressHydrationWarning
               />
             </div>
 
-            {/* Farm selector — super admin only */}
-            {session.role === 'SUPER_ADMIN' && <FarmSelector farms={allFarms} />}
+            {/* Farm selector — super admin only (fallback, karena SUPER_ADMIN diredirect ke /admin) */}
+            {session.role === 'SUPER_ADMIN' && (
+              <div className="hidden sm:block">
+                <FarmSelector farms={allFarms} />
+              </div>
+            )}
+
+            {/* Notifications */}
+            <NotificationDropdown />
 
             {/* User chip */}
-            <div
-              className="flex items-center gap-2 px-3 py-2 rounded-full"
-              style={{
-                border: `1px solid ${palette.border}`,
-                background: '#fff',
-              }}
-            >
-              <div
-                className="w-6 h-6 rounded-full flex items-center justify-center"
-                style={{
-                  background: '#C7873E',
-                  color: palette.cream,
-                  fontFamily: "'Fraunces',serif",
-                  fontSize: 11,
-                }}
-              >
-                {session.name.charAt(0).toUpperCase()}
-              </div>
-              <span
-                className="hidden md:block"
-                style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}
-              >
-                {session.name}
-              </span>
-            </div>
+            <UserDropdown
+              name={session.name}
+              email={session.email ?? ''}
+              role={session.role}
+              farmName={farmName}
+            />
           </div>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 px-6 md:px-10 py-10">
+        <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10">
           {children}
         </main>
       </div>
     </div>
+    </MobileMenuProvider>
   )
 }

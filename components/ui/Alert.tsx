@@ -50,7 +50,7 @@ export function Alert({ variant, title, children, onDismiss, className = '' }: A
       {onDismiss && (
         <button
           onClick={onDismiss}
-          className="shrink-0 opacity-50 hover:opacity-100 transition-opacity mt-0.5"
+          className="cursor-pointer shrink-0 opacity-50 hover:opacity-100 transition-opacity mt-0.5"
           aria-label="Tutup notifikasi"
         >
           <X size={14} />

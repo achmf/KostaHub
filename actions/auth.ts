@@ -6,13 +6,29 @@ import { encrypt } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 
-export async function login(formData: FormData) {
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
+async function setSessionCookie(payload: Parameters<typeof encrypt>[0]) {
+  const session = await encrypt(payload)
+  const cookieStore = await cookies()
+  cookieStore.set('session', session, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 60 * 60 * 24,
+  })
+}
 
-  if (!email || !password) {
-    return { error: 'Email dan password wajib diisi' }
+import { loginSchema } from '@/lib/validations/auth.schema'
+
+export async function login(_prevState: unknown, formData: FormData) {
+  const parsed = loginSchema.safeParse(Object.fromEntries(formData))
+  
+  if (!parsed.success) {
+    // Return first validation error for compatibility with existing UI
+    return { error: parsed.error.issues[0].message }
   }
+
+  const { email, password } = parsed.data
 
   const user = await prisma.user.findUnique({ where: { email } })
   if (!user || user.deletedAt) {
@@ -24,30 +40,62 @@ export async function login(formData: FormData) {
     return { error: 'Kredensial tidak valid' }
   }
 
-  if (user.approvalStatus === 'PENDING') {
-    redirect('/status')
+
+  // Super Admin & Dinas — langsung ke /admin
+  if (user.role === 'SUPER_ADMIN' || user.role === 'DINAS') {
+    await setSessionCookie({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      activeFarmId: null,
+    })
+    redirect('/admin')
   }
 
-  const sessionData = {
+  // Owner / Petugas / Dokter — cek farm yang mereka miliki
+  const userFarms = await prisma.userFarm.findMany({
+    where: { userId: user.id },
+    include: { farm: { select: { id: true, status: true } } },
+  })
+
+  // Belum punya farm sama sekali → arahkan ke pendaftaran farm
+  if (userFarms.length === 0) {
+    await setSessionCookie({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      activeFarmId: null,
+    })
+    redirect('/farms/new')
+  }
+
+  // Cek farm yang sudah AKTIF
+  const activeFarms = userFarms.filter((uf) => uf.farm.status === 'AKTIF')
+
+  // Tepat 1 farm AKTIF → langsung masuk dashboard
+  if (activeFarms.length === 1) {
+    await setSessionCookie({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      activeFarmId: activeFarms[0].farm.id,
+    })
+    redirect('/')
+  }
+
+  // Semua farm NONAKTIF (pending/ditolak) ATAU lebih dari 1 farm aktif
+  // → selalu ke /farms agar user bisa melihat status farm & melakukan revisi
+  await setSessionCookie({
     id: user.id,
     name: user.name,
     email: user.email,
     role: user.role,
-    farmId: user.farmId ?? null,
-  }
-
-  const session = await encrypt(sessionData)
-  
-  const cookieStore = await cookies()
-  cookieStore.set('session', session, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 60 * 60 * 24,
+    activeFarmId: null,
   })
-
-  redirect('/')
+  redirect('/farms')
 }
 
 export async function logout() {

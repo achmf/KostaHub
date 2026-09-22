@@ -1,21 +1,18 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { getSession } from '@/lib/auth'
+import { withAuth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 
 import { redirect } from 'next/navigation'
 
-export async function addBeratBadan(formData: FormData) {
-  const session = await getSession()
-  if (!session) throw new Error('Unauthorized')
-
+export const addBeratBadan = withAuth(async (session, formData: FormData) => {
   const hewanId = formData.get('hewanId') as string
   if (!hewanId) return { error: 'Hewan tidak dipilih' }
 
   const hewan = await prisma.hewan.findUnique({ where: { id: hewanId } })
   if (!hewan) return { error: 'Hewan tidak ditemukan' }
-  if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.farmId) {
+  if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.activeFarmId) {
     return { error: 'Akses ditolak' }
   }
 
@@ -37,15 +34,12 @@ export async function addBeratBadan(formData: FormData) {
 
   revalidatePath(`/hewan/${hewanId}`)
   redirect('/berat')
-}
+})
 
-export async function getBeratHistory(hewanId: string) {
-  const session = await getSession()
-  if (!session) throw new Error('Unauthorized')
-
+export const getBeratHistory = withAuth(async (session, hewanId: string) => {
   const hewan = await prisma.hewan.findUnique({ where: { id: hewanId } })
   if (!hewan) throw new Error('Hewan tidak ditemukan')
-  if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.farmId) {
+  if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.activeFarmId) {
     throw new Error('Akses ditolak')
   }
 
@@ -53,4 +47,4 @@ export async function getBeratHistory(hewanId: string) {
     where: { hewanId },
     orderBy: { tanggal: 'asc' }
   })
-}
+})

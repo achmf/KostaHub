@@ -1,66 +1,69 @@
 'use client'
 
 import { useState } from 'react'
-import { KostaCard, KostaSectionLabel, Badge, KostaDialog, KostaButton } from '@/components/KostaUI'
+import { KostaCard, KostaSectionLabel, Badge, KostaDialog, KostaButton, KostaEmptyState, palette } from '@/components/KostaUI'
 import { Activity, Calendar, User, Pill, FileText, ImageIcon } from 'lucide-react'
 import Image from 'next/image'
+import PaginationControl from '@/components/Admin/PaginationControl'
+import { usePagination } from '@/hooks/usePagination'
 
-const palette = {
-  cream: '#F2EDE0',
-  forest: '#1B2A1F',
-  moss: '#3F5B3A',
-  ochre: '#C7873E',
-  ink: '#0D140F',
-  border: 'rgba(13,20,15,0.10)',
-  emerald: '#3F7A4E',
-}
+
 
 interface RekamMedis {
   id: string
   tanggal: Date
   diagnosis: string
   obat: string | null
-  dokter: string | null
+  namaDokter: string | null
   notes: string | null
   fotoUrl: string | null
-  status: string
   tanggalLanjut: Date | null
 }
 
 export function RekamMedisHistory({ records }: { records: RekamMedis[] }) {
   const [selectedRecord, setSelectedRecord] = useState<RekamMedis | null>(null)
 
-  if (records.length === 0) return null
+  const PER_PAGE = 5
+  const { paged: currentRecords, page, totalPages, onPrev, onNext } = usePagination(records, PER_PAGE)
+
+  if (records.length === 0) {
+    return (
+      <KostaCard className="p-5 sm:p-6">
+        <KostaEmptyState
+          title="Belum ada riwayat medis"
+          hint="Tambahkan catatan medis pertama untuk hewan ini."
+        />
+      </KostaCard>
+    )
+  }
 
   return (
     <>
-      <KostaCard className="p-6">
+      <KostaCard className="p-5 sm:p-6">
         <KostaSectionLabel>RIWAYAT REKAM MEDIS</KostaSectionLabel>
         <div className="mt-4 divide-y" style={{ borderColor: palette.border }}>
-          {records.map((m) => (
+          {currentRecords.map((m) => (
             <div 
               key={m.id} 
-              className="py-3.5 flex items-start gap-3 cursor-pointer hover:bg-black/5 rounded-lg px-2 -mx-2 transition-colors"
+              className="py-4 flex items-start gap-4 cursor-pointer hover:bg-black/[0.02] hover:-translate-y-px rounded-xl px-3 -mx-3 transition-all duration-300 group"
               onClick={() => setSelectedRecord(m)}
             >
               <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-110 transition-transform duration-300"
                 style={{ background: 'rgba(199,135,62,0.12)', color: palette.ochre }}
               >
-                <Activity size={13} />
+                <Activity size={16} />
               </div>
-              <div className="flex-1 min-w-0">
-                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13.5 }}>{m.diagnosis}</div>
-                <div className="opacity-55 mt-0.5 flex items-center gap-2 flex-wrap" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>
+              <div className="flex-1 min-w-0 pt-0.5">
+                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink }}>{m.diagnosis}</div>
+                <div className="opacity-60 mt-1 flex items-center gap-2 flex-wrap" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11 }}>
                   <span>{new Date(m.tanggal).toLocaleDateString('id-ID')}</span>
                   <span>·</span>
-                  <span>{m.dokter ?? 'Tanpa dokter'}</span>
+                  <span>{m.namaDokter ?? 'Tanpa dokter'}</span>
                 </div>
               </div>
               <div className="flex flex-col items-end gap-1.5 shrink-0">
-                {m.status === 'SEMBUH' && <Badge variant="emerald">Sembuh</Badge>}
-                {m.status === 'RAWAT' && <Badge variant="ochre">Dalam Perawatan</Badge>}
-                {m.status === 'PANTAU' && <Badge variant="moss">Pantau</Badge>}
+
                 {m.tanggalLanjut && (
                   <span className="text-[10px] opacity-50 flex items-center gap-1" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
                     <Calendar size={10} /> {new Date(m.tanggalLanjut).toLocaleDateString('id-ID')}
@@ -70,6 +73,18 @@ export function RekamMedisHistory({ records }: { records: RekamMedis[] }) {
             </div>
           ))}
         </div>
+        {records.length > 0 && (
+          <div className="mt-6">
+            <PaginationControl
+              page={page}
+              totalPages={totalPages}
+              onPrev={onPrev}
+              onNext={onNext}
+              totalItems={records.length}
+              perPage={PER_PAGE}
+            />
+          </div>
+        )}
       </KostaCard>
 
       <KostaDialog
@@ -90,19 +105,17 @@ export function RekamMedisHistory({ records }: { records: RekamMedis[] }) {
                 </div>
               </div>
               <div>
-                {selectedRecord.status === 'SEMBUH' && <Badge variant="emerald">Sembuh</Badge>}
-                {selectedRecord.status === 'RAWAT' && <Badge variant="ochre">Dalam Perawatan</Badge>}
-                {selectedRecord.status === 'PANTAU' && <Badge variant="moss">Pantau</Badge>}
+
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 rounded-xl" style={{ background: 'rgba(13,20,15,0.03)' }}>
                 <div className="flex items-center gap-2 opacity-50 mb-1" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, letterSpacing: '0.05em' }}>
-                  <User size={12} /> DOKTER
+                  <User size={12} /> PETUGAS
                 </div>
                 <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14 }}>
-                  {selectedRecord.dokter || 'Tidak ditentukan'}
+                  {selectedRecord.namaDokter || 'Tidak ditentukan'}
                 </div>
               </div>
               <div className="p-4 rounded-xl" style={{ background: 'rgba(13,20,15,0.03)' }}>
@@ -131,7 +144,7 @@ export function RekamMedisHistory({ records }: { records: RekamMedis[] }) {
                 <div className="flex items-center gap-2 opacity-50 mb-2" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, letterSpacing: '0.05em' }}>
                   <FileText size={12} /> CATATAN MEDIS
                 </div>
-                <div className="p-4 rounded-xl border leading-relaxed" style={{ borderColor: palette.border, fontFamily: "'Inter',sans-serif", fontSize: 14 }}>
+                <div className="p-4 rounded-xl border leading-relaxed break-words" style={{ borderColor: palette.border, fontFamily: "'Inter',sans-serif", fontSize: 14 }}>
                   {selectedRecord.notes}
                 </div>
               </div>
@@ -155,7 +168,7 @@ export function RekamMedisHistory({ records }: { records: RekamMedis[] }) {
             )}
 
             <div className="flex justify-end pt-4">
-              <KostaButton variant="outline" onClick={() => setSelectedRecord(null)}>Tutup</KostaButton>
+              <KostaButton variant="outline" onClick={() => setSelectedRecord(null)} className="w-full sm:w-auto justify-center">Tutup</KostaButton>
             </div>
           </div>
         )}

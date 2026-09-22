@@ -1,263 +1,1080 @@
 'use client'
 
-import { useState } from 'react'
+import Link from 'next/link'
+import { useState, useMemo } from 'react'
+import PaginationControl from '@/components/Admin/PaginationControl'
+import { usePagination } from '@/hooks/usePagination'
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell,
-} from 'recharts'
-import { Download, Printer, FileSpreadsheet } from 'lucide-react'
+  FileSpreadsheet, Download, Stethoscope, Calendar, Shield, Search,
+  CircleAlert, PawPrint, ArrowUpDown, ArrowUp, ArrowDown,
+  Syringe, FlaskConical, Pill, Heart, Scissors,
+  Baby, Scale, TrendingUp, TrendingDown, Minus,
+  ArrowRightLeft, PackagePlus, PackageMinus, Skull,
+  ShoppingCart, ChevronDown, ChevronUp, ChevronRight, ShieldAlert,
+} from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
+import {
+  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
+} from 'recharts'
 import { KostaPageHeader, KostaCard, KostaButton, Badge, KostaSectionLabel, palette } from '@/components/KostaUI'
 
-type TabType = 'populasi' | 'reproduksi' | 'medis' | 'mutasi'
+type TabType = 'keluar-masuk' | 'medis' | 'breeding' | 'pertumbuhan'
 
-const pieColors = [palette.moss, palette.ink, palette.ochre, palette.mossSoft, palette.ochreSoft]
+const KATEGORI_MEDIS_ICON: Record<string, React.ReactNode> = {
+  VAKSINASI: <Syringe size={13} />,
+  VITAMIN: <FlaskConical size={13} />,
+  PENGOBATAN: <Pill size={13} />,
+  PEMERIKSAAN: <Stethoscope size={13} />,
+  PERAWATAN_LUKA: <Scissors size={13} />,
+  LAINNYA: <Heart size={13} />,
+}
 
-export default function LaporanClient({ data, isGlobal, farmName }: { data: any; isGlobal: boolean; farmName: string }) {
-  const [tab, setTab] = useState<TabType>('populasi')
+const KATEGORI_MEDIS_LABEL: Record<string, string> = {
+  VAKSINASI: 'Vaksinasi',
+  VITAMIN: 'Vitamin',
+  PENGOBATAN: 'Pengobatan',
+  PEMERIKSAAN: 'Pemeriksaan',
+  PERAWATAN_LUKA: 'Perawatan Luka',
+  LAINNYA: 'Lainnya',
+}
 
-  const totalGlobal = (data.farmChartData as any[]).reduce((a: number, f: any) => a + f.populasi, 0)
+const KATEGORI_MEDIS_COLOR: Record<string, string> = {
+  VAKSINASI: palette.moss,
+  VITAMIN: palette.ochre,
+  PENGOBATAN: palette.rose,
+  PEMERIKSAAN: '#5B7FA6',
+  PERAWATAN_LUKA: '#B5803B',
+  LAINNYA: palette.ink,
+}
 
-  const katPie: { name: string; value: number }[] = data.kategoriChartData ?? []
-  const farmBar = (data.farmChartData as any[]).map((f: any) => ({ name: f.name.replace('Farm ', ''), v: f.populasi }))
-  const medisBar = (data.medisChartData as any[]).map((f: any) => ({ name: f.name.replace('Farm ', ''), v: f.kasus }))
+export default function LaporanClient({ data, isGlobal, farmName, farmId }: { data: any; isGlobal: boolean; farmName: string; farmId?: string | null }) {
+  const [tab, setTab] = useState<TabType>('keluar-masuk')
+  const [exportLoading, setExportLoading] = useState(false)
+
+  async function handleExport() {
+    setExportLoading(true)
+    try {
+      const params = farmId ? `?farmId=${farmId}` : ''
+      const res    = await fetch(`/api/farm/laporan/export${params}`)
+      if (!res.ok) throw new Error('Export gagal')
+      const blob = await res.blob()
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      const date = new Date().toISOString().split('T')[0]
+      a.href     = url
+      a.download = `KostaHub-Laporan-${farmName.replace(/[^a-zA-Z0-9]/g, '-')}-${date}.xlsx`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      alert('Gagal mengunduh laporan. Coba lagi.')
+    } finally {
+      setExportLoading(false)
+    }
+  }
+
+
+
+  const tabs: { key: TabType; label: string; sub: string; count: number }[] = [
+    { key: 'keluar-masuk', label: 'Status & Riwayat Ternak', sub: 'Aktif, masuk, keluar, mutasi', count: (data.hewanMasuk?.length ?? 0) + (data.hewanKeluar?.length ?? 0) + (data.mutasiData?.length ?? 0) },
+    { key: 'medis', label: 'Kesehatan & Medis', sub: 'Vaksin, vitamin, pengobatan', count: data.medisData?.length ?? 0 },
+    { key: 'breeding', label: 'Kartu Breeding', sub: 'Perkawinan & kelahiran', count: data.breedingData?.length ?? 0 },
+    { key: 'pertumbuhan', label: 'Pertumbuhan Bobot', sub: 'Penimbangan berkala', count: data.pertumbuhanData?.length ?? 0 },
+  ]
 
   return (
     <div>
       <KostaPageHeader
-        title={isGlobal ? "Audit Lintas Cabang" : `Laporan ${farmName}`}
-        description={isGlobal 
-          ? "Konsolidasi data populasi, reproduksi, rekam medis, dan mutasi antar farm." 
-          : "Statistik operasional data populasi, reproduksi, rekam medis, dan mutasi farm Anda."}
+        title={isGlobal ? 'Audit Lintas Cabang' : `Laporan ${farmName}`}
+        description="Detail rekaman operasional farm — tindakan prioritas dan data ternak per kategori."
         action={
-          <div className="flex gap-2">
-            <KostaButton variant="outline" onClick={() => window.print()}>
-              <FileSpreadsheet size={13} /> Export Excel
-            </KostaButton>
-            <KostaButton onClick={() => window.print()}>
-              <Printer size={13} /> Cetak PDF
-            </KostaButton>
-          </div>
+          <KostaButton
+            onClick={handleExport}
+            disabled={exportLoading}
+            className="whitespace-nowrap min-h-10 md:min-h-0"
+          >
+            {exportLoading ? (
+              <>
+                <svg width="16" height="16" className="md:w-[14px] md:h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                  style={{ animation: 'spin 1s linear infinite', opacity: 0.7 }}>
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+                <span style={{ opacity: 0.7 }}>Membuat file...</span>
+              </>
+            ) : (
+              <>
+                <FileSpreadsheet size={16} className="md:w-[14px] md:h-[14px]" style={{ color: palette.ochre }} />
+                <span>Export<span className="hidden md:inline"> Laporan</span></span>
+                <span className="hidden md:inline" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, opacity: 0.5, letterSpacing: '0.05em' }}>.xlsx</span>
+                <Download size={14} className="md:w-[12px] md:h-[12px]" style={{ opacity: 0.45, marginLeft: 2 }} />
+              </>
+            )}
+            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+          </KostaButton>
         }
       />
 
-      {/* Executive summary + population bar */}
-      <div className="grid grid-cols-12 gap-4 mb-4">
-        <KostaCard
-          className="col-span-12 lg:col-span-5 p-6"
-          style={{ background: palette.ink, color: palette.cream, border: 'none' }}
-        >
-          <KostaSectionLabel>
-            <span style={{ color: 'rgba(242,237,224,0.55)' }}>EXECUTIVE SUMMARY</span>
-          </KostaSectionLabel>
-          <div
-            className="mt-3"
-            style={{ fontFamily: "'Fraunces',serif", fontSize: 28, lineHeight: 1.05, letterSpacing: '-0.02em' }}
+
+
+      {/* ─── TAB NAV ─────────────────────────────────────── */}
+      <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 pb-3 mb-1 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-visible sm:mx-0 sm:px-0 sm:pb-0 sm:mb-4">
+        {tabs.map((t, i) => (
+          <motion.button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.06 }}
+            className="cursor-pointer rounded-2xl p-4 text-left transition-all shrink-0 w-[44%] sm:w-auto"
+            style={{
+              background: tab === t.key ? palette.ink : '#fff',
+              color: tab === t.key ? palette.cream : palette.ink,
+              border: `1px solid ${tab === t.key ? palette.ink : palette.border}`,
+              boxShadow: tab === t.key ? '0 4px 16px rgba(13,20,15,0.15)' : 'none',
+            }}
           >
-            {isGlobal 
-              ? `${data.farmChartData?.length ?? 0} farm aktif beroperasi di seluruh Jawa Barat.` 
-              : `Ringkasan performa operasional untuk ${farmName}.`}
-          </div>
-          <div className="mt-6 grid grid-cols-3 gap-4">
-            {[
-              { l: isGlobal ? 'Populasi global' : 'Populasi total', v: totalGlobal },
-              { l: 'Kasus medis', v: data.medisData?.length ?? 0 },
-              { l: 'Mutasi tercatat', v: data.mutasiData?.length ?? 0 },
-            ].map((s) => (
-              <div key={s.l}>
-                <div style={{ fontFamily: "'Fraunces',serif", fontSize: 36, letterSpacing: '-0.025em' }}>{s.v}</div>
-                <div className="opacity-70" style={{ fontFamily: "'Inter',sans-serif", fontSize: 11 }}>{s.l}</div>
-              </div>
-            ))}
-          </div>
-        </KostaCard>
-
-        <KostaCard className="col-span-12 lg:col-span-7 p-6">
-          <div className="flex items-center justify-between mb-3">
-            <KostaSectionLabel>{isGlobal ? 'DISTRIBUSI POPULASI PER FARM' : 'DISTRIBUSI POPULASI'}</KostaSectionLabel>
-            <Badge variant="moss">AKTIF</Badge>
-          </div>
-          <div className="h-52">
-            <ResponsiveContainer>
-              <BarChart data={farmBar}>
-                <XAxis
-                  dataKey="name"
-                  tickLine={false}
-                  axisLine={false}
-                  style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: palette.ink, opacity: 0.6 }}
-                />
-                <Tooltip
-                  contentStyle={{ background: palette.ink, color: palette.cream, border: 'none', borderRadius: 8, fontFamily: "'Inter',sans-serif", fontSize: 12 }}
-                />
-                <Bar dataKey="v" fill={palette.moss} radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </KostaCard>
+            <div style={{
+              fontFamily: "'JetBrains Mono',monospace", fontSize: 9,
+              letterSpacing: '0.14em',
+              opacity: tab === t.key ? 0.6 : 0.45,
+              marginBottom: 6,
+            }}>
+              {String(i + 1).padStart(2, '0')} / LAPORAN
+            </div>
+            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, fontWeight: 500, marginBottom: 2 }}>
+              {t.label}
+            </div>
+            <div style={{
+              fontFamily: "'Inter',sans-serif", fontSize: 11,
+              opacity: tab === t.key ? 0.55 : 0.4,
+            }}>
+              {t.sub}
+            </div>
+            <div className="mt-3 flex items-baseline gap-1">
+              <span style={{
+                fontFamily: "'Fraunces',serif", fontSize: 22,
+                letterSpacing: '-0.025em',
+                color: tab === t.key ? palette.cream : palette.moss,
+              }}>
+                {t.count}
+              </span>
+              <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 10, opacity: 0.5 }}>data</span>
+            </div>
+          </motion.button>
+        ))}
       </div>
 
-      {/* Category pie + medis bar */}
-      <div className="grid grid-cols-12 gap-4 mb-6">
-        <KostaCard className="col-span-12 lg:col-span-5 p-6">
-          <KostaSectionLabel>{isGlobal ? 'RASIO KATEGORI GLOBAL' : 'RASIO KATEGORI'}</KostaSectionLabel>
-          <div className="flex items-center gap-4 mt-3">
-            <div className="w-40 h-40">
-              <ResponsiveContainer>
-                <PieChart>
-                  <Pie data={katPie} dataKey="value" innerRadius={42} outerRadius={70} paddingAngle={2} stroke="none">
-                    {katPie.map((_, i) => <Cell key={i} fill={pieColors[i]} />)}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex-1 grid gap-1.5">
-              {katPie.map((p, i) => (
-                <div key={p.name} className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full" style={{ background: pieColors[i] }} />
-                  <span className="flex-1" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{p.name}</span>
-                  <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11 }}>{p.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </KostaCard>
-
-        <KostaCard className="col-span-12 lg:col-span-7 p-6">
-          <KostaSectionLabel>{isGlobal ? 'FREKUENSI MEDIS PER FARM' : 'FREKUENSI MEDIS'}</KostaSectionLabel>
-          <div className="h-52 mt-3">
-            <ResponsiveContainer>
-              <BarChart data={medisBar} layout="vertical" margin={{ left: 30 }}>
-                <YAxis
-                  dataKey="name"
-                  type="category"
-                  axisLine={false}
-                  tickLine={false}
-                  style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: palette.ink, opacity: 0.6 }}
-                />
-                <XAxis type="number" hide />
-                <Tooltip
-                  contentStyle={{ background: palette.ink, color: palette.cream, border: 'none', borderRadius: 8, fontFamily: "'Inter',sans-serif", fontSize: 12 }}
-                />
-                <Bar dataKey="v" fill={palette.ochre} radius={[0, 6, 6, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </KostaCard>
-      </div>
-
-      {/* Multi-tab detail table */}
-      <KostaCard className="overflow-hidden">
-        <div className="flex border-b" style={{ borderColor: palette.border }}>
-          {([
-            ['populasi', 'Populasi', data.populasiData?.length ?? 0],
-            ['reproduksi', 'Reproduksi', data.reproduksiData?.length ?? 0],
-            ['medis', 'Rekam Medis', data.medisData?.length ?? 0],
-            ['mutasi', 'Mutasi & Transfer', data.mutasiData?.length ?? 0],
-          ] as const).map(([k, l, n]) => (
-            <button
-              key={k}
-              onClick={() => setTab(k as TabType)}
-              className="cursor-pointer relative px-5 py-4 flex items-center gap-2"
-              style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}
-            >
-              <span style={{ opacity: tab === k ? 1 : 0.55 }}>{l}</span>
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.5 }}>{n}</span>
-              {tab === k && (
-                <motion.div
-                  layoutId="tab-line"
-                  className="absolute left-3 right-3 -bottom-px h-0.5"
-                  style={{ background: palette.ink }}
-                />
-              )}
-            </button>
-          ))}
-          <div className="ml-auto px-5 py-3 flex items-center">
-            <KostaButton variant="ghost" size="sm">
-              <Download size={12} /> Unduh
-            </KostaButton>
-          </div>
-        </div>
-
-        <AnimatePresence mode="wait">
-          {tab === 'populasi' && (
-            <motion.div key="populasi" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <TableHeader cols={['TAG', 'KATEGORI', 'FARM', 'BERAT', 'TERDAFTAR']} grid="0.9fr_1fr_1fr_0.6fr_0.8fr" />
-              {(data.populasiData ?? []).slice(0, 20).map((h: any, i: number) => (
-                <TableRow key={h.id} i={i} grid="0.9fr_1fr_1fr_0.6fr_0.8fr" cells={[
-                  <span key="t" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{h.tag}</span>,
-                  <span key="k" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{h.kategori}</span>,
-                  <span key="f" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{h.farm?.nama?.replace('Farm ', '')}</span>,
-                  <span key="b" style={{ fontFamily: "'Fraunces',serif", fontSize: 14 }}>{h.berat ?? '—'}kg</span>,
-                  <span key="d" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11 }}>{new Date(h.createdAt).toLocaleDateString('id-ID')}</span>,
-                ]} />
-              ))}
-            </motion.div>
-          )}
-          {tab === 'reproduksi' && (
-            <motion.div key="reproduksi" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <TableHeader cols={['INDUK', 'PEJANTAN', 'FARM', 'TGL KAWIN', 'STATUS']} grid="1fr_1fr_0.7fr_0.8fr_0.6fr" />
-              {(data.reproduksiData ?? []).slice(0, 20).map((r: any, i: number) => (
-                <TableRow key={r.id} i={i} grid="1fr_1fr_0.7fr_0.8fr_0.6fr" cells={[
-                  <span key="i" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{r.induk?.tag}</span>,
-                  <span key="p" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{r.pejantan?.tag}</span>,
-                  <span key="f" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{r.induk?.farm?.nama?.replace('Farm ', '')}</span>,
-                  <span key="k" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11 }}>{new Date(r.tanggalKawin).toLocaleDateString('id-ID')}</span>,
-                  <Badge key="s" variant={r.status === 'HAMIL' ? 'amber' : r.status === 'LAHIR' ? 'emerald' : 'rose'}>{r.status}</Badge>,
-                ]} />
-              ))}
-            </motion.div>
-          )}
-          {tab === 'medis' && (
-            <motion.div key="medis" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <TableHeader cols={['TAG', 'TANGGAL', 'DIAGNOSIS', 'OBAT', 'DOKTER']} grid="0.7fr_0.7fr_1.4fr_0.8fr_0.8fr" />
-              {(data.medisData ?? []).slice(0, 20).map((m: any, i: number) => (
-                <TableRow key={m.id} i={i} grid="0.7fr_0.7fr_1.4fr_0.8fr_0.8fr" cells={[
-                  <span key="t" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11 }}>{m.hewan?.tag}</span>,
-                  <span key="d" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11 }}>{new Date(m.tanggal).toLocaleDateString('id-ID')}</span>,
-                  <span key="g" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{m.diagnosis}</span>,
-                  <Badge key="o" variant="moss">{m.obat || '—'}</Badge>,
-                  <span key="k" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{m.dokter || '—'}</span>,
-                ]} />
-              ))}
-            </motion.div>
-          )}
-          {tab === 'mutasi' && (
-            <motion.div key="mutasi" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <TableHeader cols={['TAG', 'DARI', 'KE', 'TANGGAL', 'ALASAN']} grid="0.7fr_0.8fr_0.8fr_0.7fr_1.4fr" />
-              {(data.mutasiData ?? []).slice(0, 20).map((t: any, i: number) => (
-                <TableRow key={t.id} i={i} grid="0.7fr_0.8fr_0.8fr_0.7fr_1.4fr" cells={[
-                  <span key="t" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11 }}>{t.hewan?.tag}</span>,
-                  <span key="d" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{t.fromFarm?.nama?.replace('Farm ', '')}</span>,
-                  <span key="k" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{t.toFarm?.nama?.replace('Farm ', '')}</span>,
-                  <span key="g" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11 }}>{new Date(t.tanggal).toLocaleDateString('id-ID')}</span>,
-                  <span key="a" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{t.alasan || '—'}</span>,
-                ]} />
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </KostaCard>
+      {/* ─── CONTENT ─────────────────────────────────────── */}
+      <AnimatePresence mode="wait">
+        {tab === 'keluar-masuk' && <LaporanKeluarMasuk key="km" data={data} />}
+        {tab === 'medis' && <LaporanMedis key="medis" data={data.medisData} />}
+        {tab === 'breeding' && <LaporanBreeding key="breeding" data={data.breedingData} />}
+        {tab === 'pertumbuhan' && <LaporanPertumbuhan key="pertumbuhan" data={data.pertumbuhanData} />}
+      </AnimatePresence>
     </div>
   )
 }
 
+
+
+// ─── LAPORAN 1: STATUS & RIWAYAT TERNAK ────────────────────────
+function LaporanKeluarMasuk({ data }: { data: any }) {
+  const [activeSection, setActiveSection] = useState<'aktif' | 'masuk' | 'mati' | 'mutasi'>('aktif')
+
+  const [search, setSearch] = useState('')
+
+  // hewanKeluar = semua kematian records (synthetic status: 'MATI')
+  const hewanMasuk = data.hewanMasuk ?? []
+  const hewanKeluar = data.hewanKeluar ?? []
+  const hewanMati = hewanKeluar // semua keluar = mati
+  const hewanKematianIds = new Set((hewanKeluar as any[]).map((h: any) => h.id))
+  // hewanAktif = hewan yang tidak ada di daftar kematian
+  const hewanAktif = (hewanMasuk as any[]).filter((h: any) => !hewanKematianIds.has(h.id))
+  const mutasi = data.mutasiData ?? []
+
+  const sections = [
+    { key: 'aktif' as const, label: 'Ternak Hidup', icon: <PackagePlus size={13} />, count: hewanAktif.length, color: palette.moss },
+    { key: 'masuk' as const, label: 'Ternak Masuk', icon: <PackagePlus size={13} />, count: hewanMasuk.length, color: palette.ink },
+    { key: 'mati' as const, label: 'Ternak Mati', icon: <Skull size={13} />, count: hewanMati.length, color: palette.rose },
+    { key: 'mutasi' as const, label: 'Mutasi / Transfer', icon: <ArrowRightLeft size={13} />, count: mutasi.length, color: '#5B7FA6' },
+  ]
+
+  const getActiveData = () => {
+    switch (activeSection) {
+      case 'aktif': return hewanAktif
+      case 'masuk': return hewanMasuk
+      case 'mati': return hewanMati
+      case 'mutasi': return mutasi
+      default: return []
+    }
+  }
+
+  const activeData = getActiveData()
+
+  const filteredData = useMemo(() => {
+    const q = search.toLowerCase()
+    return activeData.filter((item: any) => {
+      if (activeSection === 'mutasi') {
+        return !q || item.tag?.toLowerCase().includes(q) || item.nama?.toLowerCase().includes(q) ||
+          item.fromFarm?.toLowerCase().includes(q) || item.toFarm?.toLowerCase().includes(q)
+      }
+      return !q || item.tag?.toLowerCase().includes(q) || item.nama?.toLowerCase().includes(q)
+    }).slice(0, 50)
+  }, [activeData, search, activeSection])
+
+  const pagination = usePagination(filteredData, 20)
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+      {/* Section toggle */}
+      <KostaCard className="mb-4 p-2">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 sm:overflow-visible">
+          {sections.map(s => (
+            <button
+              key={s.key}
+              onClick={() => { setActiveSection(s.key); setSearch('') }}
+              className="cursor-pointer rounded-xl px-4 py-3 flex items-center gap-2 transition-all shrink-0 whitespace-nowrap sm:whitespace-normal"
+              style={{
+                background: activeSection === s.key ? s.color : 'transparent',
+                color: activeSection === s.key ? '#fff' : palette.ink,
+              }}
+            >
+              <span style={{ opacity: activeSection === s.key ? 1 : 0.5 }}>{s.icon}</span>
+              <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5, fontWeight: activeSection === s.key ? 500 : 400 }}>
+                {s.label}
+              </span>
+              <span className="ml-auto" style={{
+                fontFamily: "'JetBrains Mono',monospace", fontSize: 11,
+                opacity: activeSection === s.key ? 0.8 : 0.45,
+              }}>
+                {s.count}
+              </span>
+            </button>
+          ))}
+        </div>
+      </KostaCard>
+
+      <KostaCard className="overflow-hidden">
+        {/* Search bar */}
+        <div className="px-5 py-3 flex items-center gap-3 border-b" style={{ borderColor: palette.border }}>
+          <Search size={13} style={{ opacity: 0.4 }} />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Cari tag atau nama ternak..."
+            className="flex-1 min-w-0 bg-transparent outline-none"
+            style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}
+          />
+          {search && (
+            <button type="button" onClick={() => setSearch('')} aria-label="Hapus pencarian" className="cursor-pointer opacity-40 hover:opacity-70 text-xs w-10 h-10 -my-3 -mr-3 shrink-0 flex items-center justify-center">✕</button>
+          )}
+        </div>
+
+        {filteredData.length === 0 && <NoResults />}
+
+        {/* ── MOBILE: card list ── */}
+        {filteredData.length > 0 && (
+          <div className="flex flex-col divide-y md:hidden" style={{ borderColor: palette.border }}>
+            {pagination.paged.map((item: any) => {
+              if (activeSection === 'mutasi') {
+                return (
+                  <div key={item.id} className="px-4 py-3.5 flex flex-col gap-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12 }}>{item.tag}</div>
+                        <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}>{item.nama || <span style={{ opacity: 0.4 }}>—</span>}</div>
+                      </div>
+                      <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, opacity: 0.6, flexShrink: 0 }}>{formatDate(item.tanggal)}</div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap" style={{ borderTop: `1px solid rgba(13,20,15,0.05)`, paddingTop: 8 }}>
+                      <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5 }}>{item.fromFarm?.replace('Farm ', '') || '—'}</span>
+                      <span style={{ opacity: 0.4 }}>→</span>
+                      <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5 }}>{item.toFarm?.replace('Farm ', '') || '—'}</span>
+                      {item.alasan && <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, opacity: 0.55 }}>· {item.alasan}</span>}
+                    </div>
+                  </div>
+                )
+              }
+              // aktif / masuk / mati
+              return (
+                <Link key={item.id} href={`/hewan/${item.id}`} className="block px-4 py-3.5 active:bg-black/[0.03] transition-colors">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{item.tag}</span>
+                        <Badge variant={item.kategori === 'INDUKAN' ? 'moss' : item.kategori === 'PEJANTAN' ? 'ink' : 'ochre'}>
+                          {item.kategori?.replace('_', ' ')}
+                        </Badge>
+                        <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{item.kelamin === 'JANTAN' ? '♂' : '♀'}</span>
+                      </div>
+                      <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}>{item.nama || <span style={{ opacity: 0.4 }}>Tanpa Nama</span>}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div style={{ fontFamily: "'Fraunces',serif", fontSize: 15 }}>{item.berat ? `${item.berat} kg` : '—'}</div>
+                      {activeSection === 'mati' && item.tanggalMati ? (
+                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: palette.rose, marginTop: 2 }}>
+                          Mati {formatDate(item.tanggalMati)}
+                        </div>
+                      ) : (
+                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.5, marginTop: 2 }}>
+                          {formatDate(item.createdAt)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {activeSection === 'mati' && item.penyebab && (
+                    <div className="mt-1.5" style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, opacity: 0.55 }}>
+                      Penyebab: {item.penyebab.replace('_', ' ')}
+                    </div>
+                  )}
+                </Link>
+              )
+            })}
+          </div>
+        )}
+
+        {/* ── DESKTOP: horizontal-scroll table ── */}
+        <div className="overflow-x-auto hidden md:block">
+        {/* Masuk & Aktif table */}
+        {(activeSection === 'aktif' || activeSection === 'masuk') && (
+          <>
+            <TableHeader cols={['TAG', 'NAMA', 'KATEGORI', 'KELAMIN', 'BERAT AWAL', 'TGL DAFTAR', 'FARM']} grid="0.8fr 1fr 0.9fr 0.7fr 0.7fr 0.8fr 0.8fr" />
+            {filteredData.length === 0 ? <NoResults /> : pagination.paged.map((h: any, i: number) => (
+              <TableRow key={h.id} i={i} grid="0.8fr 1fr 0.9fr 0.7fr 0.7fr 0.8fr 0.8fr" cells={[
+                <Link href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{h.tag}</span></Link>,
+                <Link href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{h.nama || <span style={{ opacity: 0.4 }}>—</span>}</span></Link>,
+                <Badge variant={h.kategori === 'INDUKAN' ? 'moss' : h.kategori === 'PEJANTAN' ? 'ink' : 'ochre'}>{h.kategori.replace('_', ' ')}</Badge>,
+                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{h.kelamin === 'JANTAN' ? '♂' : '♀'}</span>,
+                <span style={{ fontFamily: "'Fraunces',serif", fontSize: 14 }}>{h.berat ? `${h.berat} kg` : '—'}</span>,
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(h.createdAt)}</span>,
+                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, opacity: 0.7 }}>{h.farm || '—'}</span>,
+              ]} />
+            ))}
+          </>
+        )}
+        
+        {/* Mati table */}
+        {activeSection === 'mati' && (
+          <>
+            <TableHeader cols={['TAG', 'NAMA', 'BERAT', 'TGL DAFTAR', 'TANGGAL MATI', 'PENYEBAB', 'FARM']} grid="0.8fr 1fr 0.6fr 0.8fr 0.8fr 1fr 0.8fr" />
+            {filteredData.length === 0 ? <NoResults /> : pagination.paged.map((h: any, i: number) => (
+              <TableRow key={h.id} i={i} grid="0.8fr 1fr 0.6fr 0.8fr 0.8fr 1fr 0.8fr" cells={[
+                <Link href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{h.tag}</span></Link>,
+                <Link href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{h.nama || '—'}</span></Link>,
+                <span style={{ fontFamily: "'Fraunces',serif", fontSize: 14 }}>{h.berat ? `${h.berat} kg` : '—'}</span>,
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(h.createdAt)}</span>,
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, color: palette.rose }}>{h.tanggalMati ? formatDate(h.tanggalMati) : '—'}</span>,
+                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, opacity: 0.6 }}>
+                  {h.penyebab ? h.penyebab.replace('_', ' ') : 'Ternak mati'}
+                </span>,
+                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, opacity: 0.7 }}>{h.farm || '—'}</span>,
+              ]} />
+            ))}
+          </>
+        )}
+
+        {/* Mutasi table */}
+        {activeSection === 'mutasi' && (
+          <>
+            <TableHeader cols={['TAG', 'NAMA', 'DARI FARM', 'KE FARM', 'TGL TRANSFER', 'ALASAN']} grid="0.7fr 0.9fr 1fr 1fr 0.8fr 1.4fr" />
+            {filteredData.length === 0 ? <NoResults /> : pagination.paged.map((t: any, i: number) => (
+              <TableRow key={t.id} i={i} grid="0.7fr 0.9fr 1fr 1fr 0.8fr 1.4fr" cells={[
+                <Link href={`/hewan/${t.hewanId}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{t.tag}</span></Link>,
+                <Link href={`/hewan/${t.hewanId}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{t.nama || '—'}</span></Link>,
+                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{t.fromFarm?.replace('Farm ', '')}</span>,
+                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{t.toFarm?.replace('Farm ', '')}</span>,
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(t.tanggal)}</span>,
+                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, opacity: 0.7 }}>{t.alasan || '—'}</span>,
+              ]} />
+            ))}
+          </>
+        )}
+        </div>
+
+        {filteredData.length > 0 && (
+          <div className="px-5 pb-4">
+            <PaginationControl page={pagination.page} totalPages={pagination.totalPages} onPrev={pagination.onPrev} onNext={pagination.onNext} totalItems={filteredData.length} perPage={20} />
+          </div>
+        )}
+      </KostaCard>
+    </motion.div>
+  )
+}
+
+
+// ─── LAPORAN 2: KESEHATAN & MEDIS ──────────────────────────
+function LaporanMedis({ data }: { data: any[] }) {
+  const [filterKategori, setFilterKategori] = useState<string>('ALL')
+  const [search, setSearch] = useState('')
+
+  const kategoris = ['ALL', 'VAKSINASI', 'VITAMIN', 'PENGOBATAN', 'PEMERIKSAAN', 'PERAWATAN_LUKA', 'LAINNYA']
+
+  const filtered = useMemo(() => {
+    return (data ?? []).filter((m: any) => {
+      const matchKat = filterKategori === 'ALL' || m.kategori === filterKategori
+      const q = search.toLowerCase()
+      const matchSearch = !q || m.hewanTag?.toLowerCase().includes(q) ||
+        m.hewanNama?.toLowerCase().includes(q) || m.diagnosis?.toLowerCase().includes(q) ||
+        m.obat?.toLowerCase().includes(q) || m.namaDokter?.toLowerCase().includes(q)
+      return matchKat && matchSearch
+    })
+  }, [data, filterKategori, search])
+
+  const medisP = usePagination(filtered, 20)
+
+  // Stats per kategori
+  const stats = useMemo(() => {
+    const counts: Record<string, number> = {}
+    ;(data ?? []).forEach((m: any) => {
+      counts[m.kategori] = (counts[m.kategori] || 0) + 1
+    })
+    return counts
+  }, [data])
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+      {/* Stats strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 mb-4">
+        {['VAKSINASI', 'VITAMIN', 'PENGOBATAN', 'PEMERIKSAAN', 'PERAWATAN_LUKA', 'LAINNYA'].map(k => (
+          <div
+            key={k}
+            className="p-4 cursor-pointer transition-all rounded-2xl"
+            onClick={() => setFilterKategori(filterKategori === k ? 'ALL' : k)}
+            style={{
+              background: '#fff',
+              border: filterKategori === k ? `2px solid ${KATEGORI_MEDIS_COLOR[k]}` : `1px solid ${palette.border}`,
+            }}
+          >
+            <div className="flex items-center gap-2 mb-2" style={{ color: KATEGORI_MEDIS_COLOR[k] }}>
+              {KATEGORI_MEDIS_ICON[k]}
+              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.1em', opacity: 0.8 }}>
+                {KATEGORI_MEDIS_LABEL[k].toUpperCase()}
+              </span>
+            </div>
+            <div style={{ fontFamily: "'Fraunces',serif", fontSize: 26, letterSpacing: '-0.02em', color: KATEGORI_MEDIS_COLOR[k] }}>
+              {stats[k] ?? 0}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <KostaCard className="overflow-hidden">
+        <div className="px-5 py-3 flex flex-wrap items-center gap-x-3 gap-y-2 border-b" style={{ borderColor: palette.border }}>
+          <Search size={13} style={{ opacity: 0.4 }} />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Cari tag, diagnosis, dokter..."
+            className="flex-1 min-w-[160px] bg-transparent outline-none"
+            style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}
+          />
+          {filterKategori !== 'ALL' && (
+            <button
+              type="button"
+              className="relative flex items-center gap-1 px-2 py-1 rounded-full text-xs cursor-pointer after:absolute after:-inset-2"
+              onClick={() => setFilterKategori('ALL')}
+              aria-label={`Hapus filter ${KATEGORI_MEDIS_LABEL[filterKategori]}`}
+              style={{ background: `${KATEGORI_MEDIS_COLOR[filterKategori]}15`, color: KATEGORI_MEDIS_COLOR[filterKategori] }}
+            >
+              {KATEGORI_MEDIS_LABEL[filterKategori]} ✕
+            </button>
+          )}
+          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.4 }}>{filtered.length} rekaman</span>
+        </div>
+
+        {/* ── MOBILE: card list ── */}
+        {filtered.length === 0 ? <NoResults /> : (
+          <div className="flex flex-col divide-y md:hidden" style={{ borderColor: palette.border }}>
+            {medisP.paged.map((m: any) => (
+              <Link key={m.id} href={`/hewan/${m.hewanId}`} className="block px-4 py-3.5 active:bg-black/[0.03] transition-colors">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    {/* Kategori + Tanggal */}
+                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                      <span
+                        className="flex items-center gap-1 px-2 py-0.5 rounded-full"
+                        style={{
+                          background: `${KATEGORI_MEDIS_COLOR[m.kategori]}15`,
+                          color: KATEGORI_MEDIS_COLOR[m.kategori],
+                          fontFamily: "'Inter',sans-serif", fontSize: 11,
+                        }}
+                      >
+                        {KATEGORI_MEDIS_ICON[m.kategori]}
+                        {KATEGORI_MEDIS_LABEL[m.kategori]}
+                      </span>
+                      <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.5 }}>
+                        {formatDate(m.tanggal)}
+                      </span>
+                    </div>
+                    {/* Hewan */}
+                    <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{m.hewanTag}</div>
+                    {m.hewanNama && <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, opacity: 0.55 }}>{m.hewanNama}</div>}
+                    {/* Diagnosis */}
+                    <div className="mt-2" style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}>{m.diagnosis}</div>
+                    {m.notes && <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, opacity: 0.5, marginTop: 2 }}>{m.notes}</div>}
+                  </div>
+                </div>
+                {/* Obat + Dokter */}
+                {(m.obat || m.namaDokter) && (
+                  <div className="flex flex-wrap gap-x-4 mt-2" style={{ borderTop: `1px solid rgba(13,20,15,0.05)`, paddingTop: 8 }}>
+                    {m.obat && <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, opacity: 0.7 }}>💊 {m.obat}</span>}
+                    {m.namaDokter && <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, opacity: 0.7 }}>👤 {m.namaDokter}</span>}
+                    {m.tanggalLanjut && <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, opacity: 0.6 }}>Kontrol: {formatDate(m.tanggalLanjut)}</span>}
+                  </div>
+                )}
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {/* ── DESKTOP: horizontal-scroll table ── */}
+        <div className="overflow-x-auto hidden md:block">
+        <TableHeader
+          cols={['TANGGAL', 'TAG', 'KATEGORI', 'DIAGNOSIS / TINDAKAN', 'OBAT / VAKSIN', 'PETUGAS', 'KONTROL']}
+          grid="0.7fr 0.7fr 0.9fr 1.6fr 1fr 0.9fr 0.7fr"
+        />
+        {filtered.length === 0 ? <NoResults /> : medisP.paged.map((m: any, i: number) => (
+          <TableRow key={m.id} i={i} grid="0.7fr 0.7fr 0.9fr 1.6fr 1fr 0.9fr 0.7fr" cells={[
+            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(m.tanggal)}</span>,
+            <Link href={`/hewan/${m.hewanId}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}>
+              <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{m.hewanTag}</div>
+              {m.hewanNama && <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, opacity: 0.5 }}>{m.hewanNama}</div>}
+            </Link>,
+            <span
+              className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs"
+              style={{
+                background: `${KATEGORI_MEDIS_COLOR[m.kategori]}15`,
+                color: KATEGORI_MEDIS_COLOR[m.kategori],
+                fontFamily: "'Inter',sans-serif", fontSize: 11,
+              }}
+            >
+              {KATEGORI_MEDIS_ICON[m.kategori]}
+              {KATEGORI_MEDIS_LABEL[m.kategori]}
+            </span>,
+            <div>
+              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{m.diagnosis}</div>
+              {m.notes && <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, opacity: 0.5, marginTop: 2 }}>{m.notes}</div>}
+            </div>,
+            <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{m.obat || <span style={{ opacity: 0.35 }}>—</span>}</span>,
+            <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, opacity: 0.7 }}>{m.namaDokter || '—'}</span>,
+            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.6 }}>
+              {m.tanggalLanjut ? formatDate(m.tanggalLanjut) : '—'}
+            </span>,
+          ]} />
+        ))}
+        </div>
+      </KostaCard>
+      {filtered.length > 0 && (
+        <div className="px-5 pb-4">
+          <PaginationControl page={medisP.page} totalPages={medisP.totalPages} onPrev={medisP.onPrev} onNext={medisP.onNext} totalItems={filtered.length} perPage={20} />
+        </div>
+      )}
+    </motion.div>
+  )
+}
+
+
+// ─── LAPORAN 3: BREEDING ────────────────────────────────────
+function LaporanBreeding({ data }: { data: any[] }) {
+  const [filterStatus, setFilterStatus] = useState<string>('ALL')
+  const [search, setSearch] = useState('')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+
+  const filtered = useMemo(() => {
+    return (data ?? []).filter((r: any) => {
+      const matchStatus = filterStatus === 'ALL' || (filterStatus === 'inbreeding' ? r.inbreedingWarning : r.status === filterStatus)
+      const q = search.toLowerCase()
+      const matchSearch = !q || r.indukTag?.toLowerCase().includes(q) ||
+        r.pejantanTag?.toLowerCase().includes(q) || r.indukNama?.toLowerCase().includes(q) ||
+        r.pejantanNama?.toLowerCase().includes(q)
+      return matchStatus && matchSearch
+    })
+  }, [data, filterStatus, search])
+
+  const breedingP = usePagination(filtered, 15)
+
+  const stats = useMemo(() => ({
+    HAMIL: (data ?? []).filter((r: any) => r.status === 'HAMIL').length,
+    LAHIR: (data ?? []).filter((r: any) => r.status === 'LAHIR').length,
+    GAGAL: (data ?? []).filter((r: any) => r.status === 'GAGAL').length,
+    inbreeding: (data ?? []).filter((r: any) => r.inbreedingWarning).length,
+  }), [data])
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+        {[
+          { key: 'HAMIL', label: 'Sedang Hamil', color: palette.amber },
+          { key: 'LAHIR', label: 'Berhasil Lahir', color: palette.moss },
+          { key: 'GAGAL', label: 'Gagal / Keguguran', color: palette.rose },
+          { key: 'inbreeding', label: 'Alert Kawin Sedarah', color: '#8B5CF6' },
+        ].map(s => (
+          <div
+            key={s.key}
+            className="p-4 sm:p-5 cursor-pointer transition-all rounded-2xl"
+            onClick={() => setFilterStatus(filterStatus === s.key ? 'ALL' : s.key)}
+            style={{
+              background: '#fff',
+              border: filterStatus === s.key ? `2px solid ${s.color}` : `1px solid ${palette.border}`,
+            }}
+          >
+            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, opacity: 0.5, marginBottom: 6 }}>{s.label}</div>
+            <div style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(26px, 7vw, 32px)', letterSpacing: '-0.025em', color: s.color }}>
+              {stats[s.key as keyof typeof stats]}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <KostaCard className="overflow-hidden">
+        <div className="px-5 py-3 flex items-center gap-3 border-b" style={{ borderColor: palette.border }}>
+          <Search size={13} style={{ opacity: 0.4 }} />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Cari tag induk atau pejantan..."
+            className="flex-1 min-w-0 bg-transparent outline-none"
+            style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}
+          />
+          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.4 }}>{filtered.length} kartu</span>
+        </div>
+
+        {/* Breeding cards */}
+        <div className="divide-y" style={{ borderColor: palette.border }}>
+          {filtered.length === 0 ? <NoResults /> : breedingP.paged.map((r: any, i: number) => {
+            const isExpanded = expandedId === r.id
+            const daysToLahir = Math.ceil((new Date(r.estimasiLahir).getTime() - Date.now()) / 86400000)
+            const isOverdue = daysToLahir < 0 && r.status === 'HAMIL'
+
+            return (
+              <motion.div key={r.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: Math.min(i * 0.02, 0.3) }}>
+                <div
+                  className="px-5 py-4 cursor-pointer hover:bg-black/[0.02] transition-colors"
+                  onClick={() => setExpandedId(isExpanded ? null : r.id)}
+                >
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+                    {/* Status dot */}
+                    <div
+                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                      style={{ background: r.status === 'HAMIL' ? palette.amber : r.status === 'LAHIR' ? palette.moss : palette.rose }}
+                    />
+
+                    {/* Induk + Pejantan */}
+                    <div className="flex-1 min-w-[200px] grid grid-cols-2 lg:grid-cols-4 gap-3 items-center">
+                      <div>
+                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.5, marginBottom: 2 }}>INDUK</div>
+                        <Link href={`/hewan/${r.indukId}`} onClick={(e) => e.stopPropagation()} className="hover:underline hover:text-moss transition-colors">
+                          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12 }}>{r.indukTag}</div>
+                          {r.indukNama && <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, opacity: 0.55 }}>{r.indukNama}</div>}
+                        </Link>
+                      </div>
+                      <div>
+                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.5, marginBottom: 2 }}>PEJANTAN</div>
+                        <Link href={`/hewan/${r.pejantanId}`} onClick={(e) => e.stopPropagation()} className="hover:underline hover:text-moss transition-colors">
+                          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12 }}>{r.pejantanTag}</div>
+                          {r.pejantanNama && <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, opacity: 0.55 }}>{r.pejantanNama}</div>}
+                        </Link>
+                      </div>
+                      <div>
+                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.5, marginBottom: 2 }}>TGL KAWIN</div>
+                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12 }}>{formatDate(r.tanggalKawin)}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.5, marginBottom: 2 }}>EST. LAHIR</div>
+                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12 }}>{formatDate(r.estimasiLahir)}</div>
+                        {r.status === 'HAMIL' && (
+                          <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, color: isOverdue ? palette.rose : palette.amber }}>
+                            {isOverdue ? `Lewat ${Math.abs(daysToLahir)} hari` : `${daysToLahir} hari lagi`}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right side */}
+                    <div className="flex items-center gap-3 flex-shrink-0 ml-auto">
+                      <Badge variant={r.status === 'HAMIL' ? 'amber' : r.status === 'LAHIR' ? 'emerald' : 'rose'}>{r.status}</Badge>
+                      {r.inbreedingWarning && <Badge variant="rose">KAWIN SEDARAH</Badge>}
+                      {isExpanded ? <ChevronUp size={14} style={{ opacity: 0.4 }} /> : <ChevronDown size={14} style={{ opacity: 0.4 }} />}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Expanded detail — height dan opacity dipisah: FM v12 crash 'frame.join' bila digabung */}
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: 'auto' }}
+                      exit={{ height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                      >
+                      <div className="px-5 pb-5 pt-2 grid grid-cols-2 lg:grid-cols-4 gap-4"
+                        style={{ background: 'rgba(13,20,15,0.02)', borderTop: `1px solid ${palette.border}` }}
+                      >
+                        <DetailItem label="Berat Induk" value={r.indukBerat ? `${r.indukBerat} kg` : '—'} />
+                        <DetailItem label="Berat Pejantan" value={r.pejantanBerat ? `${r.pejantanBerat} kg` : '—'} />
+                        <DetailItem label="Farm" value={r.farm || '—'} />
+                        <DetailItem label="Risiko Kawin Sedarah" value={r.inbreedingWarning ? 'YA — Waspadai!' : 'Tidak'} />
+                        {r.anak && (
+                          <>
+                            <DetailItem label="Tag Anak" value={r.anak.tag} />
+                            <DetailItem label="Nama Anak" value={r.anak.nama || '—'} />
+                            <DetailItem label="Kelamin Anak" value={r.anak.kelamin === 'JANTAN' ? '♂ Jantan' : '♀ Betina'} />
+                            <DetailItem label="Berat Lahir" value={r.anak.berat ? `${r.anak.berat} kg` : '—'} />
+                          </>
+                        )}
+                        {r.anakTag && !r.anak && (
+                          <DetailItem label="Ref. Anak" value={r.anakTag} />
+                        )}
+                      </div>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )
+          })}
+        </div>
+      </KostaCard>
+      {filtered.length > 0 && (
+        <PaginationControl page={breedingP.page} totalPages={breedingP.totalPages} onPrev={breedingP.onPrev} onNext={breedingP.onNext} totalItems={filtered.length} perPage={15} />
+      )}
+    </motion.div>
+  )
+}
+
+// ─── LAPORAN 4: PERTUMBUHAN BOBOT ──────────────────────────
+function LaporanPertumbuhan({ data }: { data: any[] }) {
+  const [search, setSearch] = useState('')
+  const [sortBy, setSortBy] = useState<'adg' | 'selisih' | 'beratAkhir'>('adg')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+
+  const sorted = useMemo(() => {
+    const q = search.toLowerCase()
+    return (data ?? [])
+      .filter((d: any) =>
+        !q || d.hewan?.tag?.toLowerCase().includes(q) || d.hewan?.nama?.toLowerCase().includes(q)
+      )
+      .sort((a: any, b: any) => {
+        const diff = a[sortBy] - b[sortBy]
+        return sortDir === 'desc' ? -diff : diff
+      })
+  }, [data, search, sortBy, sortDir])
+
+  const pertumbuhanP = usePagination(sorted, 15)
+
+  const toggleSort = (key: typeof sortBy) => {
+    if (sortBy === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortBy(key); setSortDir('desc') }
+  }
+
+  const SortIcon = ({ field }: { field: typeof sortBy }) => {
+    if (sortBy !== field) return <ArrowUpDown size={11} style={{ opacity: 0.3 }} />
+    return sortDir === 'desc' ? <ArrowDown size={11} /> : <ArrowUp size={11} />
+  }
+
+  // Summary stats
+  const avgAdg = data?.length ? Math.round(data.reduce((a: number, d: any) => a + d.adg, 0) / data.length * 1000) / 1000 : 0
+  const avgBerat = data?.length ? Math.round(data.reduce((a: number, d: any) => a + d.beratAkhir, 0) / data.length * 10) / 10 : 0
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+      {/* Summary */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+        {[
+          { label: 'Total Ternak Dipantau', value: String(data?.length ?? 0), sub: 'dengan data penimbangan', color: palette.moss },
+          { label: 'Rata-rata Berat Saat Ini', value: `${avgBerat} kg`, sub: 'berat terakhir tercatat', color: palette.ochre },
+          { label: 'Rata-rata ADG', value: `${avgAdg} kg/hr`, sub: 'Average Daily Gain', color: palette.ink },
+          { label: 'Total Pengukuran', value: String(data?.reduce((a: number, d: any) => a + d.totalPengukuran, 0) ?? 0), sub: 'rekaman berat badan', color: '#5B7FA6' },
+        ].map(s => (
+          <KostaCard key={s.label} className="p-4 sm:p-5">
+            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, opacity: 0.5, marginBottom: 6 }}>{s.label}</div>
+            <div style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(20px, 5.6vw, 26px)', letterSpacing: '-0.025em', color: s.color }}>{s.value}</div>
+            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, opacity: 0.45, marginTop: 4 }}>{s.sub}</div>
+          </KostaCard>
+        ))}
+      </div>
+
+      <KostaCard className="overflow-hidden">
+        <div className="px-5 py-3 flex items-center gap-3 border-b" style={{ borderColor: palette.border }}>
+          <Search size={13} style={{ opacity: 0.4 }} />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Cari tag atau nama ternak..."
+            className="flex-1 min-w-0 bg-transparent outline-none"
+            style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}
+          />
+          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.4 }}>{sorted.length} ternak</span>
+        </div>
+
+        {/* ── MOBILE: card list with expand ── */}
+        <div className="flex flex-col divide-y md:hidden" style={{ borderColor: palette.border }}>
+          {sorted.length === 0 ? <NoResults /> : pertumbuhanP.paged.map((d: any, i: number) => {
+            const isExpanded = expandedId === d.hewan?.tag
+            const trendUp = d.selisih > 0
+            const trendFlat = d.selisih === 0
+
+            return (
+              <motion.div key={d.hewan?.tag} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: Math.min(i * 0.015, 0.3) }}>
+                <div
+                  className="px-4 py-3.5 cursor-pointer active:bg-black/[0.02] transition-colors"
+                  onClick={() => setExpandedId(isExpanded ? null : d.hewan?.tag)}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <Link
+                        href={`/hewan/${d.hewan?.id}`}
+                        className="hover:underline hover:text-moss transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12 }}>{d.hewan?.tag}</div>
+                        {d.hewan?.nama && <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, opacity: 0.55 }}>{d.hewan.nama}</div>}
+                      </Link>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+                        <div>
+                          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, opacity: 0.45, letterSpacing: '0.08em' }}>BERAT</div>
+                          <div style={{ fontFamily: "'Fraunces',serif", fontSize: 14 }}>
+                            {d.beratAwal} → {d.beratAkhir}
+                            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, opacity: 0.55 }}> kg</span>
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, opacity: 0.45, letterSpacing: '0.08em' }}>SELISIH</div>
+                          <div
+                            className="flex items-center gap-1"
+                            style={{
+                              fontFamily: "'Fraunces',serif", fontSize: 14,
+                              color: trendFlat ? palette.ink : trendUp ? palette.moss : palette.rose,
+                            }}
+                          >
+                            {trendFlat ? <Minus size={11} /> : trendUp ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                            {trendUp ? '+' : ''}{d.selisih} kg
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, opacity: 0.45, letterSpacing: '0.08em' }}>ADG</div>
+                          <div style={{
+                            fontFamily: "'JetBrains Mono',monospace", fontSize: 12,
+                            color: d.adg > 0.05 ? palette.moss : d.adg < 0 ? palette.rose : palette.ink,
+                          }}>
+                            {d.adg > 0 ? '+' : ''}{d.adg} kg/hr
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, opacity: 0.45, letterSpacing: '0.08em' }}>REKAM</div>
+                          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, opacity: 0.6 }}>{d.totalPengukuran}×</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ opacity: 0.3, flexShrink: 0, marginTop: 4 }}>
+                      {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    </div>
+                  </div>
+                </div>
+
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: 'auto' }}
+                      exit={{ height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <div className="px-4 py-4" style={{ background: 'rgba(13,20,15,0.02)', borderTop: `1px solid ${palette.border}` }}>
+                          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.14em', opacity: 0.5, marginBottom: 10 }}>
+                            RIWAYAT PENIMBANGAN
+                          </div>
+                          <div className="grid gap-2">
+                            {d.records.map((rec: any, ri: number) => (
+                              <div key={ri} className="flex items-center gap-3">
+                                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, opacity: 0.6, minWidth: 70 }}>
+                                  {formatDate(rec.tanggal)}
+                                </span>
+                                <div
+                                  className="h-1.5 rounded-full flex-1"
+                                  style={{
+                                    background: palette.moss, opacity: 0.5,
+                                    maxWidth: `${Math.min((rec.berat / (d.beratAkhir * 1.2)) * 100, 100)}%`,
+                                    minWidth: 4,
+                                  }}
+                                />
+                                <span style={{ fontFamily: "'Fraunces',serif", fontSize: 13 }}>{rec.berat} kg</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )
+          })}
+        </div>
+
+        {/* ── DESKTOP: horizontal-scroll table ── */}
+        <div className="overflow-x-auto hidden md:block">
+        {/* Header dengan sort */}
+        <div className="px-5 py-3 min-w-[700px] lg:min-w-0" style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 0.7fr 0.7fr 0.7fr 0.7fr 1fr 0.6fr',
+          gap: 12,
+          background: 'rgba(13,20,15,0.03)',
+          borderBottom: `1px solid ${palette.border}`,
+        }}>
+          {[
+            { label: 'TERNAK', key: null },
+            { label: 'BERAT AWAL', key: null },
+            { label: 'BERAT AKHIR', key: 'beratAkhir' as const },
+            { label: 'SELISIH', key: 'selisih' as const },
+            { label: 'ADG (KG/HR)', key: 'adg' as const },
+            { label: 'GRAFIK BERAT', key: null },
+            { label: 'REKAM', key: null },
+          ].map((col, i) => (
+            <div
+              key={i}
+              className={col.key ? 'cursor-pointer flex items-center gap-1 select-none py-3 -my-3' : 'flex items-center'}
+              onClick={() => col.key && toggleSort(col.key)}
+              style={{
+                fontFamily: "'JetBrains Mono',monospace", fontSize: 10,
+                letterSpacing: '0.12em', color: 'rgba(13,20,15,0.55)',
+              }}
+            >
+              {col.label}
+              {col.key && <SortIcon field={col.key} />}
+            </div>
+          ))}
+        </div>
+
+        <div className={`divide-y ${sorted.length ? 'min-w-[700px] lg:min-w-0' : ''}`} style={{ borderColor: palette.border }}>
+          {sorted.length === 0 ? <NoResults /> : pertumbuhanP.paged.map((d: any, i: number) => {
+            const isExpanded = expandedId === d.hewan?.tag
+            const trendUp = d.selisih > 0
+            const trendFlat = d.selisih === 0
+
+            return (
+              <motion.div key={d.hewan?.tag} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: Math.min(i * 0.015, 0.3) }}>
+                <div
+                  className="px-5 py-3 cursor-pointer hover:bg-black/[0.02] transition-colors"
+                  style={{ display: 'grid', gridTemplateColumns: '1fr 0.7fr 0.7fr 0.7fr 0.7fr 1fr 0.6fr', gap: 12, alignItems: 'center' }}
+                  onClick={() => setExpandedId(isExpanded ? null : d.hewan?.tag)}
+                >
+                  <Link href={`/hewan/${d.hewan?.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}>
+                    <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12 }}>{d.hewan?.tag}</div>
+                    {d.hewan?.nama && <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, opacity: 0.5 }}>{d.hewan.nama}</div>}
+                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, opacity: 0.4 }}>{d.hewan?.kategori?.replace('_', ' ')}</div>
+                  </Link>
+                  <span style={{ fontFamily: "'Fraunces',serif", fontSize: 15 }}>{d.beratAwal} kg</span>
+                  <span style={{ fontFamily: "'Fraunces',serif", fontSize: 15 }}>{d.beratAkhir} kg</span>
+                  <span className="flex items-center gap-1" style={{
+                    fontFamily: "'Fraunces',serif", fontSize: 15,
+                    color: trendFlat ? palette.ink : trendUp ? palette.moss : palette.rose,
+                  }}>
+                    {trendFlat ? <Minus size={11} /> : trendUp ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                    {trendUp ? '+' : ''}{d.selisih} kg
+                  </span>
+                  <span style={{
+                    fontFamily: "'JetBrains Mono',monospace", fontSize: 11,
+                    color: d.adg > 0.05 ? palette.moss : d.adg < 0 ? palette.rose : palette.ink,
+                  }}>
+                    {d.adg > 0 ? '+' : ''}{d.adg}
+                  </span>
+                  {/* Mini sparkline */}
+                  <div style={{ height: 32 }}>
+                    {d.records.length > 1 ? (
+                      <ResponsiveContainer width="100%" height={32}>
+                        <LineChart data={d.records} margin={{ top: 4, bottom: 4, left: 0, right: 0 }}>
+                          <Line
+                            type="monotone" dataKey="berat" dot={false}
+                            stroke={trendUp ? palette.moss : trendFlat ? palette.ink : palette.rose}
+                            strokeWidth={1.5}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, opacity: 0.35 }}>1 data</span>
+                    )}
+                  </div>
+                  <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, opacity: 0.6, textAlign: 'center' }}>
+                    {d.totalPengukuran}×
+                  </span>
+                </div>
+
+                {/* Expanded detail — height dan opacity dipisah: FM v12 crash 'frame.join' bila digabung */}
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: 'auto' }}
+                      exit={{ height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                      >
+                      <div className="px-5 py-4" style={{ background: 'rgba(13,20,15,0.02)', borderTop: `1px solid ${palette.border}` }}>
+                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.14em', opacity: 0.5, marginBottom: 12 }}>
+                          RIWAYAT PENIMBANGAN
+                        </div>
+                        <div className="grid gap-1.5">
+                          {d.records.map((rec: any, ri: number) => (
+                            <div key={ri} className="flex items-center gap-4">
+                              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, opacity: 0.6, minWidth: 80 }}>
+                                {formatDate(rec.tanggal)}
+                              </span>
+                              <div
+                                className="h-1.5 rounded-full order-1 md:order-none"
+                                style={{
+                                  width: `${Math.min((rec.berat / (d.beratAkhir * 1.2)) * 100, 100)}%`,
+                                  background: palette.moss, opacity: 0.6,
+                                  minWidth: 4,
+                                }}
+                              />
+                              <span style={{ fontFamily: "'Fraunces',serif", fontSize: 14 }}>{rec.berat} kg</span>
+                              {rec.catatan && (
+                                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, opacity: 0.5 }}>{rec.catatan}</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )
+          })}
+        </div>
+        </div>
+      </KostaCard>
+      {sorted.length > 0 && (
+        <PaginationControl page={pertumbuhanP.page} totalPages={pertumbuhanP.totalPages} onPrev={pertumbuhanP.onPrev} onNext={pertumbuhanP.onNext} totalItems={sorted.length} perPage={15} />
+      )}
+    </motion.div>
+  )
+}
+
+// ─── SHARED HELPERS ─────────────────────────────────────────
 function TableHeader({ cols, grid }: { cols: string[]; grid: string }) {
   return (
-    <div
-      className="px-5 py-3"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: grid,
-        gap: 12,
-        background: 'rgba(13,20,15,0.03)',
-        borderBottom: `1px solid ${palette.border}`,
-        fontFamily: "'JetBrains Mono',monospace",
-        fontSize: 10,
-        letterSpacing: '0.12em',
-        color: 'rgba(13,20,15,0.55)',
-      }}
-    >
-      {cols.map((c) => <div key={c}>{c}</div>)}
+    <div className="px-5 py-3 min-w-[700px] lg:min-w-0" style={{
+      display: 'grid', gridTemplateColumns: grid, gap: 12,
+      background: 'rgba(13,20,15,0.03)', borderBottom: `1px solid ${palette.border}`,
+      fontFamily: "'JetBrains Mono',monospace", fontSize: 10,
+      letterSpacing: '0.12em', color: 'rgba(13,20,15,0.55)',
+    }}>
+      {cols.map(c => <div key={c}>{c}</div>)}
     </div>
   )
 }
@@ -268,16 +1085,36 @@ function TableRow({ cells, grid, i }: { cells: React.ReactNode[]; grid: string; 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: Math.min(i * 0.015, 0.3) }}
-      className="px-5 py-3"
+      className="px-5 py-3 min-w-[700px] lg:min-w-0"
       style={{
-        display: 'grid',
-        gridTemplateColumns: grid,
-        gap: 12,
-        alignItems: 'center',
-        borderBottom: `1px solid ${palette.border}`,
+        display: 'grid', gridTemplateColumns: grid, gap: 12,
+        alignItems: 'center', borderBottom: `1px solid ${palette.border}`,
       }}
     >
       {cells.map((c, k) => <div key={k}>{c}</div>)}
     </motion.div>
   )
+}
+
+function DetailItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.12em', opacity: 0.5, marginBottom: 3 }}>
+        {label.toUpperCase()}
+      </div>
+      <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}>{value}</div>
+    </div>
+  )
+}
+
+function NoResults() {
+  return (
+    <div className="py-14 text-center" style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, opacity: 0.4, fontStyle: 'italic' }}>
+      Tidak ada data yang cocok
+    </div>
+  )
+}
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
 }

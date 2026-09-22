@@ -8,14 +8,14 @@ export default async function BeratPage(props: { searchParams: Promise<{ [key: s
   const session = await getSession()
   if (!session) redirect('/login')
 
-  let farmId = session.farmId as string | null
+  let farmId = session.activeFarmId as string | null
   if (session.role === 'SUPER_ADMIN' && searchParams.farmId) {
     farmId = searchParams.farmId
   }
   const farmFilter = farmId ? { farmId } : {}
 
   const hewan = await prisma.hewan.findMany({
-    where: { status: 'AKTIF', ...farmFilter },
+    where: { kematian: { is: null }, ...farmFilter },
     include: {
       beratHistory: {
         orderBy: { tanggal: 'desc' },
@@ -25,6 +25,7 @@ export default async function BeratPage(props: { searchParams: Promise<{ [key: s
     },
     orderBy: { nama: 'asc' }
   })
+
 
   const serialized = hewan.map(h => ({
     ...h,

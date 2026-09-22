@@ -1,11 +1,15 @@
 'use client'
 
-import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { Scale, Plus, TrendingUp } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { createPortal } from 'react-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Scale, Plus, TrendingUp, Search, Filter, X, Calendar } from 'lucide-react'
 import Link from 'next/link'
-import { KostaPageHeader, KostaCard, KostaButton, KostaSectionLabel, Badge, palette } from '@/components/KostaUI'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { KostaPageHeader, KostaCard, KostaButton, KostaSectionLabel, Badge, KostaEmptyState, palette } from '@/components/KostaUI'
 import { LineChart, Line, ResponsiveContainer, Tooltip, XAxis } from 'recharts'
+import PaginationControl from '@/components/Admin/PaginationControl'
+import { usePagination } from '@/hooks/usePagination'
 
 type HewanBerat = {
   id: string
@@ -25,16 +29,139 @@ const KATEGORI_LABEL: Record<string, string> = {
   JANTAN_MUDA: 'Jantan Muda',
 }
 
-const trendData = Array.from({ length: 12 }).map((_, i) => ({
-  name: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'][i],
-  v: 32 + Math.sin(i / 2) * 4 + i * 0.7,
-}))
+// trendData is now dynamic inside the component
 
 export default function BeratPageClient({ hewanList }: { hewanList: HewanBerat[] }) {
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [kat, setKat] = useState<string>('ALL')
+  const [timeRange, setTimeRange] = useState('1y')
+  const [customStart, setCustomStart] = useState('')
+  const [customEnd, setCustomEnd] = useState('')
+  const [isCustomOpen, setIsCustomOpen] = useState(false)
+  const PER_PAGE = 15
+
+  const trendData = useMemo(() => {
+    if (timeRange === '1y') {
+      return Array.from({ length: 12 }).map((_, i) => ({
+        name: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'][i],
+        v: 32 + Math.sin(i / 2) * 4 + i * 0.7,
+      }))
+    }
+    if (timeRange === '6m') {
+      return Array.from({ length: 6 }).map((_, i) => ({
+        name: ['Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'][i],
+        v: 35 + Math.sin(i) * 2,
+      }))
+    }
+    if (timeRange === '3m') {
+      return Array.from({ length: 3 }).map((_, i) => ({
+        name: ['Okt', 'Nov', 'Des'][i],
+        v: 37 + Math.sin(i) * 2,
+      }))
+    }
+    if (timeRange === '1m') {
+      return Array.from({ length: 4 }).map((_, i) => ({
+        name: `Mgg ${i + 1}`,
+        v: 38 + Math.sin(i) * 2,
+      }))
+    }
+    // custom
+    if (customStart && customEnd) {
+      const start = new Date(customStart)
+      const end = new Date(customEnd)
+      
+      let diffMonths = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth())
+      if (diffMonths < 0) diffMonths = 0
+      
+      const diffTime = end.getTime() - start.getTime()
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      
+      if (diffDays <= 0) return []
+      
+      if (diffDays <= 31) {
+        return Array.from({ length: diffDays }).map((_, i) => {
+          const d = new Date(start)
+          d.setDate(d.getDate() + i)
+          return {
+            name: `${d.getDate()}/${d.getMonth()+1}`,
+            v: 37 + Math.sin(i) * 2 + (i * 0.1)
+          }
+        })
+      } else if (diffDays <= 90) {
+        const weeks = Math.ceil(diffDays / 7)
+        return Array.from({ length: weeks }).map((_, i) => {
+          const d = new Date(start)
+          d.setDate(d.getDate() + i * 7)
+          return {
+            name: `W${i+1} ${d.getDate()}/${d.getMonth()+1}`,
+            v: 37 + Math.sin(i) * 2 + (i * 0.2)
+          }
+        })
+      } else {
+        return Array.from({ length: diffMonths + 1 }).map((_, i) => {
+          const d = new Date(start)
+          d.setMonth(d.getMonth() + i)
+          const m = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'][d.getMonth()]
+          const yr = String(d.getFullYear()).slice(-2)
+          return {
+            name: `${m} '${yr}`,
+            v: 37 + Math.sin(i) * 2 + (i * 0.5)
+          }
+        })
+      }
+    }
+
+    return Array.from({ length: 5 }).map((_, i) => ({
+      name: `Point ${i+1}`,
+      v: 37 + Math.random() * 5,
+    }))
+  }, [timeRange, customStart, customEnd])
+
+  const filteredHewanList = useMemo(() => {
+    return hewanList.filter((h) => {
+      if (kat !== 'ALL' && h.kategori !== kat) return false
+      if (searchQuery) {
+        const lowerQ = searchQuery.toLowerCase()
+        if (
+          !h.nama?.toLowerCase().includes(lowerQ) &&
+          !h.tag.toLowerCase().includes(lowerQ) &&
+          !h.kategori.toLowerCase().includes(lowerQ)
+        ) {
+          return false
+        }
+      }
+      return true
+    })
+  }, [hewanList, searchQuery, kat])
+
+  const { paged, page, totalPages, onPrev, onNext, setPage } = usePagination(filteredHewanList, PER_PAGE)
+  
+  // Reset pagination to first page when search query or filter changes
+  useEffect(() => {
+    setPage(0)
+  }, [searchQuery, kat, setPage])
+
+  // Drawer filter: Escape menutup, scroll halaman dikunci selama terbuka
+  useEffect(() => {
+    if (!isFilterOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setIsFilterOpen(false) }
+    const prevOverflow = document.body.style.overflow
+    document.addEventListener('keydown', onKey)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prevOverflow
+    }
+  }, [isFilterOpen])
+
+  const activeFilterCount = kat !== 'ALL' ? 1 : 0
+  const cats = ['ALL', 'INDUKAN', 'PEJANTAN', 'ANAKAN', 'DARA', 'JANTAN_MUDA']
+
   const avg = Math.round(
-    hewanList.reduce((s, h) => s + (h.berat ?? 0), 0) / Math.max(hewanList.length, 1)
+    filteredHewanList.reduce((s, h) => s + (h.berat ?? 0), 0) / Math.max(filteredHewanList.length, 1)
   )
-  const top = [...hewanList].sort((a, b) => (b.berat ?? 0) - (a.berat ?? 0))[0]
+  const top = [...filteredHewanList].sort((a, b) => (b.berat ?? 0) - (a.berat ?? 0))[0]
 
   return (
     <div>
@@ -52,39 +179,125 @@ export default function BeratPageClient({ hewanList }: { hewanList: HewanBerat[]
 
       {/* Top charts row */}
       <div className="grid grid-cols-12 gap-4 mb-6">
-        <KostaCard className="col-span-12 lg:col-span-7 p-6">
-          <div className="flex justify-between items-start mb-4">
+        <KostaCard className="col-span-12 lg:col-span-7 p-4 sm:p-6">
+          <div className="flex flex-wrap justify-between items-start gap-3 mb-4">
             <div>
-              <KostaSectionLabel>RATA-RATA BERAT POPULASI · 12 BULAN</KostaSectionLabel>
-              <div className="mt-2" style={{ fontFamily: "'Fraunces',serif", fontSize: 44, letterSpacing: '-0.025em' }}>
+              <KostaSectionLabel>RATA-RATA BERAT POPULASI</KostaSectionLabel>
+              <div className="mt-2" style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(34px, 10vw, 44px)', letterSpacing: '-0.025em' }}>
                 {avg}
                 <span className="opacity-55" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 14 }}>
                   {' '}kg
                 </span>
               </div>
             </div>
-            <Badge variant="moss">
-              <TrendingUp size={11} /> +8.4%
-            </Badge>
+            
+            <div className="flex flex-col-reverse items-start gap-2 w-full sm:w-auto sm:flex-col sm:items-end">
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="relative flex items-center gap-2 w-full sm:w-auto">
+                  <div className="flex items-center gap-1 flex-1 sm:flex-none">
+                    {[
+                      { val: '1m', label: '1 Bln' },
+                      { val: '3m', label: '3 Bln' },
+                      { val: '6m', label: '6 Bln' },
+                      { val: '1y', label: '1 Thn' }
+                    ].map(opt => (
+                      <button 
+                        key={opt.val}
+                        onClick={() => setTimeRange(opt.val)}
+                        className="cursor-pointer flex-1 sm:flex-none min-h-10 sm:min-h-0 px-2.5 py-1 rounded-full transition-all hover:bg-black/5"
+                        style={{ 
+                          fontFamily: "'JetBrains Mono', monospace", 
+                          fontSize: 9.5, 
+                          letterSpacing: '0.08em', 
+                          border: timeRange === opt.val ? '1px solid rgb(13, 20, 15)' : '1px solid rgba(13, 20, 15, 0.1)', 
+                          background: timeRange === opt.val ? 'rgb(13, 20, 15)' : 'transparent', 
+                          color: timeRange === opt.val ? 'rgb(242, 237, 224)' : 'rgba(13, 20, 15, 0.5)' 
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                  <Popover
+                    open={isCustomOpen}
+                    onOpenChange={(open) => {
+                      setIsCustomOpen(open)
+                      // Rentang kustom tetap aktif setelah popover ditutup; kembali ke 1 Thn bila tanggal belum lengkap
+                      if (open) setTimeRange('custom')
+                      else if (!customStart || !customEnd) setTimeRange('1y')
+                    }}
+                  >
+                    <PopoverTrigger
+                      className="w-10 h-10 sm:w-auto sm:h-auto shrink-0 flex items-center justify-center p-1.5 rounded-full transition-all cursor-pointer relative z-10 hover:bg-black/5"
+                      title="Rentang tanggal kustom"
+                      aria-label="Rentang tanggal kustom"
+                      style={{ 
+                        background: timeRange === 'custom' ? 'rgba(13,20,15,0.05)' : 'transparent', 
+                        border: timeRange === 'custom' ? '1px solid rgba(13,20,15,0.3)' : '1px solid rgba(13, 20, 15, 0.1)' 
+                      }}
+                    >
+                      <Calendar size={14} style={{ color: timeRange === 'custom' ? 'rgb(13,20,15)' : 'rgba(13,20,15,0.5)' }} />
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto max-w-[calc(100vw-1.5rem)] p-3" align="end">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <input
+                          type="date"
+                          aria-label="Tanggal mulai"
+                          value={customStart}
+                          onChange={e => setCustomStart(e.target.value)}
+                          className="min-h-10 sm:min-h-0 px-2 py-1 rounded-md outline-none border transition-colors"
+                          style={{ 
+                            background: 'rgba(13,20,15,0.03)', 
+                            borderColor: 'rgba(13,20,15,0.1)',
+                            fontFamily: "'Inter', sans-serif", fontSize: 11
+                          }}
+                        />
+                        <span className="hidden sm:inline" style={{ fontSize: 10, opacity: 0.5 }}>-</span>
+                        <input
+                          type="date"
+                          aria-label="Tanggal akhir"
+                          value={customEnd}
+                          onChange={e => setCustomEnd(e.target.value)}
+                          className="min-h-10 sm:min-h-0 px-2 py-1 rounded-md outline-none border transition-colors"
+                          style={{ 
+                            background: 'rgba(13,20,15,0.03)', 
+                            borderColor: 'rgba(13,20,15,0.1)',
+                            fontFamily: "'Inter', sans-serif", fontSize: 11
+                          }}
+                        />
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
+              <Badge variant="moss">
+                <TrendingUp size={11} /> +8.4%
+              </Badge>
+            </div>
           </div>
-          <div className="h-44">
-            <ResponsiveContainer>
-              <LineChart data={trendData}>
-                <XAxis
-                  dataKey="name"
-                  tickFormatter={(val) => val.charAt(0)}
-                  tickLine={false}
-                  axisLine={false}
-                  style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: palette.ink, opacity: 0.6 }}
-                />
+          <div className="h-44 w-full overflow-x-auto custom-scrollbar">
+            <div style={{ minWidth: trendData.length > 12 ? `${trendData.length * 40}px` : '100%', height: '100%' }}>
+              <ResponsiveContainer width="99%" height="100%">
+                <LineChart data={trendData}>
+                  <XAxis
+                    dataKey="name"
+                    tickLine={false}
+                    axisLine={false}
+                    style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: palette.ink, opacity: 0.6 }}
+                  />
                 <Tooltip
+                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                  itemStyle={{ color: '#ffffff' }}
+                  labelStyle={{ color: '#ffffff' }}
                   contentStyle={{
-                    background: palette.ink,
-                    color: palette.cream,
+                    backgroundColor: '#0D140F',
+                    color: '#ffffff',
                     border: 'none',
                     borderRadius: 8,
                     fontFamily: "'Inter',sans-serif",
                     fontSize: 12,
+                    opacity: 1,
                   }}
                 />
                 <Line
@@ -97,10 +310,11 @@ export default function BeratPageClient({ hewanList }: { hewanList: HewanBerat[]
                 />
               </LineChart>
             </ResponsiveContainer>
+            </div>
           </div>
         </KostaCard>
 
-        <div className="col-span-12 lg:col-span-5 grid grid-cols-2 gap-4">
+        <div className="col-span-12 lg:col-span-5 grid grid-cols-2 gap-3 sm:gap-4">
           {[
             { l: 'Total dimonitor', v: hewanList.length, sub: 'ekor aktif' },
             { l: 'Berat tertinggi', v: top ? `${top.berat}` : '0', sub: top?.nama || top?.tag || '—' },
@@ -112,7 +326,7 @@ export default function BeratPageClient({ hewanList }: { hewanList: HewanBerat[]
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06 }}
-              className="rounded-2xl p-5"
+              className="rounded-2xl p-4 sm:p-5"
               style={{
                 background: i === 1 ? palette.ink : '#fff',
                 color: i === 1 ? palette.cream : palette.ink,
@@ -122,21 +336,41 @@ export default function BeratPageClient({ hewanList }: { hewanList: HewanBerat[]
               <KostaSectionLabel>
                 <span style={{ color: i === 1 ? 'rgba(242,237,224,0.55)' : undefined }}>{s.l}</span>
               </KostaSectionLabel>
-              <div className="mt-2" style={{ fontFamily: "'Fraunces',serif", fontSize: 30, lineHeight: 1, letterSpacing: '-0.02em' }}>
+              <div className="mt-2" style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(26px, 7vw, 30px)', lineHeight: 1, letterSpacing: '-0.02em' }}>
                 {s.v}
               </div>
-              <div className="mt-1 opacity-60" style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5 }}>
+              <div className="mt-1 opacity-60 break-words" style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5 }}>
                 {s.sub}
               </div>
             </motion.div>
           ))}
         </div>
       </div>
+      {/* Search & Filter Row — visible on all viewports */}
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="relative flex-1 min-w-0 sm:flex-none sm:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[rgba(13,20,15,0.4)]" size={14} />
+          <input
+            type="text"
+            placeholder="Cari nama, tag, atau kategori..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 rounded-lg text-[13px] bg-[rgba(13,20,15,0.03)] border border-[rgba(13,20,15,0.1)] outline-none focus:border-[rgba(63,91,58,0.5)] focus:ring-1 focus:ring-[rgba(63,91,58,0.5)] transition-all"
+            style={{ fontFamily: "'Inter', sans-serif" }}
+          />
+        </div>
+        <div className="shrink-0">
+          <KostaButton variant="outline" onClick={() => setIsFilterOpen(true)}>
+            <Filter size={13} /> 
+            Filter {activeFilterCount > 0 && <span className="ml-1 w-4 h-4 rounded-full bg-[rgba(13,20,15,0.1)] flex items-center justify-center text-[10px]">{activeFilterCount}</span>}
+          </KostaButton>
+        </div>
+      </div>
 
-      {/* Table */}
-      <KostaCard className="overflow-hidden">
+      {/* ── DESKTOP: KostaCard with table layout ── */}
+      <KostaCard className="overflow-hidden hidden md:block">
         <div
-          className="px-5 py-3 grid grid-cols-[1.6fr_1fr_1fr_1.4fr_0.6fr] gap-3"
+          className="grid px-5 py-3 grid-cols-[1.6fr_1fr_1fr_1.4fr_0.6fr] gap-3"
           style={{
             background: 'rgba(13,20,15,0.03)',
             borderBottom: `1px solid ${palette.border}`,
@@ -152,32 +386,38 @@ export default function BeratPageClient({ hewanList }: { hewanList: HewanBerat[]
           <div>TREND</div>
           <div className="text-right">AKSI</div>
         </div>
-        {hewanList.length === 0 && (
-          <div className="py-16 text-center" style={{ fontFamily: "'Fraunces',serif", fontSize: 22, fontStyle: 'italic', color: palette.moss }}>
-            Belum ada hewan aktif.
-          </div>
-        )}
-        {hewanList.slice(0, 20).map((h, i) => (
+        {hewanList.length === 0 ? (
+          <KostaEmptyState
+            title="Belum ada hewan aktif"
+            hint="Tambahkan hewan terlebih dahulu untuk mulai monitoring berat badan."
+          />
+        ) : filteredHewanList.length === 0 ? (
+          <KostaEmptyState
+            title="Hewan tidak ditemukan"
+            hint={`Tidak ada hasil untuk pencarian "${searchQuery}".`}
+          />
+        ) : null}
+
+        {/* Desktop table rows */}
+        {paged.map((h, i) => (
           <motion.div
             key={h.id}
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: Math.min(i * 0.02, 0.4) }}
-            className="px-5 py-3.5 grid grid-cols-[1.6fr_1fr_1fr_1.4fr_0.6fr] gap-3 items-center"
+            className="hidden md:grid px-5 py-3.5 grid-cols-[1.6fr_1fr_1fr_1.4fr_0.6fr] gap-3 items-center"
             style={{ borderBottom: `1px solid ${palette.border}` }}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 min-w-0">
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center"
+                className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center"
                 style={{ background: 'rgba(63,91,58,0.12)', color: palette.moss, fontFamily: "'Fraunces',serif", fontSize: 13 }}
               >
                 {(h.nama || h.tag).slice(0, 1)}
               </div>
-              <div>
-                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}>{h.nama || 'Tanpa Nama'}</div>
-                <div className="opacity-55" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>
-                  {h.tag}
-                </div>
+              <div className="min-w-0">
+                <div className="break-words" style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}>{h.nama || 'Tanpa Nama'}</div>
+                <div className="opacity-55" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{h.tag}</div>
               </div>
             </div>
             <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>
@@ -187,7 +427,6 @@ export default function BeratPageClient({ hewanList }: { hewanList: HewanBerat[]
               {h.berat ?? '—'}
               <span className="opacity-55" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10 }}> kg</span>
             </div>
-            {/* Mini bar trend */}
             <div className="flex items-end gap-0.5 h-7">
               {h.beratHistory.slice(-5).map((bh, k, arr) => (
                 <motion.div
@@ -211,7 +450,179 @@ export default function BeratPageClient({ hewanList }: { hewanList: HewanBerat[]
             </div>
           </motion.div>
         ))}
+
+        {filteredHewanList.length > 0 && (
+          <div className="px-5 pb-5 hidden md:block">
+            <PaginationControl
+              page={page}
+              totalPages={totalPages}
+              onPrev={onPrev}
+              onNext={onNext}
+              totalItems={filteredHewanList.length}
+              perPage={PER_PAGE}
+            />
+          </div>
+        )}
       </KostaCard>
+
+      {/* ── MOBILE: tiap hewan = KostaCard terpisah ── */}
+      <div className="flex flex-col gap-2 md:hidden">
+        {hewanList.length === 0 ? (
+          <KostaCard className="overflow-hidden">
+            <KostaEmptyState
+              title="Belum ada hewan aktif"
+              hint="Tambahkan hewan terlebih dahulu untuk mulai monitoring berat badan."
+            />
+          </KostaCard>
+        ) : filteredHewanList.length === 0 ? (
+          <KostaCard className="overflow-hidden">
+            <KostaEmptyState
+              title="Hewan tidak ditemukan"
+              hint={`Tidak ada hasil untuk pencarian "${searchQuery}".`}
+            />
+          </KostaCard>
+        ) : null}
+        {paged.map((h, i) => (
+          <motion.div
+            key={h.id}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: Math.min(i * 0.02, 0.4) }}
+          >
+            <KostaCard className="overflow-hidden">
+              <div className="px-4 py-3.5 flex items-center justify-between gap-3">
+                {/* Left: avatar + nama + tag + kategori */}
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div
+                    className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center"
+                    style={{
+                      background: 'rgba(63,91,58,0.12)',
+                      color: palette.moss,
+                      fontFamily: "'Fraunces',serif",
+                      fontSize: 14,
+                      border: `1px solid rgba(63,91,58,0.15)`,
+                    }}
+                  >
+                    {(h.nama || h.tag).slice(0, 1).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13.5, fontWeight: 500 }}>
+                      {h.nama || 'Tanpa Nama'}
+                    </div>
+                    <div className="opacity-55" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>
+                      {h.tag}{' '}
+                      <span className="opacity-70">· {KATEGORI_LABEL[h.kategori] ?? h.kategori}</span>
+                    </div>
+                  </div>
+                </div>
+                {/* Right: berat + tombol Timbang */}
+                <div className="flex items-center gap-3 shrink-0">
+                  <div style={{ fontFamily: "'Fraunces',serif", fontSize: 20, letterSpacing: '-0.02em', lineHeight: 1 }}>
+                    {h.berat ?? '—'}
+                    <span className="opacity-55" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10 }}> kg</span>
+                  </div>
+                  <Link href={`/berat/tambah?hewanId=${h.id}`}>
+                    <KostaButton variant="outline" size="sm" className="min-h-10">
+                      <Scale size={11} /> Timbang
+                    </KostaButton>
+                  </Link>
+                </div>
+              </div>
+            </KostaCard>
+          </motion.div>
+        ))}
+        {filteredHewanList.length > 0 && (
+          <div className="pt-2">
+            <PaginationControl
+              page={page}
+              totalPages={totalPages}
+              onPrev={onPrev}
+              onNext={onNext}
+              totalItems={filteredHewanList.length}
+              perPage={PER_PAGE}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Filter Drawer */}
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <AnimatePresence>
+            {isFilterOpen && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-40"
+                  style={{ background: 'rgba(13,20,15,0.2)', backdropFilter: 'blur(2px)' }}
+                  onClick={() => setIsFilterOpen(false)}
+                />
+                <motion.div
+                  initial={{ x: '100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: '100%' }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 40 }}
+                  className="fixed top-0 right-0 bottom-0 w-full max-w-sm z-50 flex flex-col shadow-2xl"
+                  style={{ background: palette.cream, borderLeft: `1px solid ${palette.border}` }}
+                >
+                  <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: `1px solid ${palette.border}` }}>
+                    <h3 style={{ fontFamily: "'Fraunces',serif", fontSize: 20, color: palette.ink }}>Filter Hewan</h3>
+                    <button onClick={() => setIsFilterOpen(false)} aria-label="Tutup filter" className="cursor-pointer -mr-1 w-10 h-10 flex items-center justify-center rounded-full hover:bg-[rgba(13,20,15,0.05)]">
+                      <X size={16} />
+                    </button>
+                  </div>
+                  
+                  <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                    {/* Kategori */}
+                    <div>
+                      <KostaSectionLabel className="mb-3">KATEGORI</KostaSectionLabel>
+                      <div className="flex flex-wrap gap-2">
+                        {cats.map((c) => (
+                          <button
+                            key={c}
+                            onClick={() => setKat(c)}
+                            className="cursor-pointer px-4 py-2.5 sm:py-2 rounded-full border transition-colors"
+                            style={{
+                              fontFamily: "'Inter',sans-serif", fontSize: 12,
+                              background: kat === c ? palette.ink : 'transparent',
+                              color: kat === c ? palette.cream : palette.ink,
+                              borderColor: kat === c ? palette.ink : palette.border
+                            }}
+                          >
+                            {c === 'ALL' ? 'Semua' : KATEGORI_LABEL[c] ?? c}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-5" style={{ borderTop: `1px solid ${palette.border}` }}>
+                    <div className="flex gap-3">
+                      <KostaButton 
+                        variant="outline" 
+                        className="flex-1 justify-center"
+                        onClick={() => {
+                          setKat('ALL')
+                        }}
+                      >
+                        Reset
+                      </KostaButton>
+                      <KostaButton 
+                        className="flex-1 justify-center"
+                        onClick={() => setIsFilterOpen(false)}
+                      >
+                        Terapkan
+                      </KostaButton>
+                    </div>
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
     </div>
   )
 }
