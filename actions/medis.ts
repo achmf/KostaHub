@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { withAuth } from '@/lib/auth'
+import { invalidateMedis } from '@/lib/cache-invalidation'
 
 export const tambahRekamMedis = withAuth(async (session, formData: FormData) => {
   const hewanId = formData.get('hewanId') as string
@@ -44,5 +45,6 @@ export const tambahRekamMedis = withAuth(async (session, formData: FormData) => 
     }
   })
 
+  invalidateMedis()
   redirect('/medis')
 })
