@@ -15,26 +15,23 @@ export default async function DashboardPage(props: { searchParams: Promise<{ [ke
   const farmFilter = farmId ? { farmId } : {}
   const medisFarmFilter = farmId ? { hewan: { farmId } } : {}
   const reproduksiFarmFilter = farmId ? { induk: { farmId } } : {}
+  const kematianFarmFilter = farmId ? { hewan: { farmId } } : {}
 
-  // ─── BASE STATS (snapshot saat ini, tidak difilter tanggal) ──────────
+  // ─── BASE STATS (snapshot saat ini) ──────────────────────────
   const [
     totalHewan,
     indukan,
     pejantan,
-    sedangSakit,
     mati,
-    terjual,
     reproduksiHamil,
     notifikasiMedis,
     kategoriStats,
     farmCount,
   ] = await Promise.all([
-    prisma.hewan.count({ where: { status: 'AKTIF', ...farmFilter } }),
-    prisma.hewan.count({ where: { status: 'AKTIF', kategori: 'INDUKAN', ...farmFilter } }),
-    prisma.hewan.count({ where: { status: 'AKTIF', kategori: 'PEJANTAN', ...farmFilter } }),
-    prisma.hewan.count({ where: { status: 'AKTIF', ...farmFilter } }),
-    prisma.hewan.count({ where: { status: 'MATI', ...farmFilter } }),
-    prisma.hewan.count({ where: { status: 'TERJUAL', ...farmFilter } }),
+    prisma.hewan.count({ where: farmFilter }),
+    prisma.hewan.count({ where: { kategori: 'INDUKAN', ...farmFilter } }),
+    prisma.hewan.count({ where: { kategori: 'PEJANTAN', ...farmFilter } }),
+    prisma.kematianHewan.count({ where: kematianFarmFilter }),
     prisma.reproduksi.findMany({
       where: {
         status: 'HAMIL',
@@ -56,14 +53,15 @@ export default async function DashboardPage(props: { searchParams: Promise<{ [ke
     prisma.hewan.groupBy({
       by: ['kategori'],
       _count: true,
-      where: { status: 'AKTIF', ...farmFilter },
+      where: farmFilter,
     }),
     session.role === 'SUPER_ADMIN' ? prisma.farm.count() : Promise.resolve(1),
   ])
 
   // ─── OVERVIEW METRICS ─────────────────────────────────────
-  const totalSemua = totalHewan + mati + terjual
+  const totalSemua = totalHewan
   const mortalityRate = totalSemua > 0 ? Math.round((mati / totalSemua) * 100) : 0
+  const totalHidup = totalHewan - mati
 
   const [totalLahir, totalGagal] = await Promise.all([
     prisma.reproduksi.count({ where: { status: 'LAHIR', ...reproduksiFarmFilter } }),
@@ -79,11 +77,19 @@ export default async function DashboardPage(props: { searchParams: Promise<{ [ke
   twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2)
   twoYearsAgo.setHours(0, 0, 0, 0)
 
-  const [trendRaw, beratRaw, diagnosisRaw] = await Promise.all([
-    // Populasi trend
+  const [trendRaw, kematianTrendRaw, beratRaw, diagnosisRaw] = await Promise.all([
+    // Hewan masuk (terdaftar) trend
     prisma.hewan.findMany({
       where: { createdAt: { gte: twoYearsAgo }, ...farmFilter },
-      select: { createdAt: true, status: true },
+      select: { createdAt: true },
+    }),
+    // Kematian trend
+    prisma.kematianHewan.findMany({
+      where: {
+        tanggalMati: { gte: twoYearsAgo },
+        ...kematianFarmFilter,
+      },
+      select: { tanggalMati: true },
     }),
     // Berat trend
     prisma.beratBadan.findMany({
@@ -99,15 +105,23 @@ export default async function DashboardPage(props: { searchParams: Promise<{ [ke
     }),
   ])
 
-  // ─── DISTRIBUSI UMUR (snapshot populasi aktif) ─────────────
-  const allHewanAktif = await prisma.hewan.findMany({
-    where: { status: 'AKTIF', ...farmFilter },
-    select: { tanggalLahir: true },
+  // ─── DISTRIBUSI UMUR (snapshot semua hewan hidup) ─────────────
+  // Hewan hidup = hewan yang tidak punya kematian record
+  const hewanMatiIds = await prisma.kematianHewan.findMany({
+    where: kematianFarmFilter,
+    select: { hewanId: true },
   })
+  const matiIdSet = new Set(hewanMatiIds.map(k => k.hewanId))
+
+  const allHewan = await prisma.hewan.findMany({
+    where: farmFilter,
+    select: { id: true, tanggalLahir: true },
+  })
+  const allHewanHidup = allHewan.filter(h => !matiIdSet.has(h.id))
 
   const now = new Date()
   const ageGroups = { '0-6 bln': 0, '6-12 bln': 0, '1-2 thn': 0, '2-3 thn': 0, '3+ thn': 0 }
-  allHewanAktif.forEach(h => {
+  allHewanHidup.forEach(h => {
     const months = (now.getTime() - h.tanggalLahir.getTime()) / (1000 * 60 * 60 * 24 * 30.44)
     if (months < 6) ageGroups['0-6 bln']++
     else if (months < 12) ageGroups['6-12 bln']++
@@ -119,22 +133,22 @@ export default async function DashboardPage(props: { searchParams: Promise<{ [ke
     .map(([name, value]) => ({ name, value }))
     .filter(d => d.value > 0)
 
-  // ─── RATA-RATA BERAT (populasi aktif, snapshot) ─────────────
+  // ─── RATA-RATA BERAT (populasi hidup, snapshot) ─────────────
   const allWeights = await prisma.hewan.findMany({
-    where: { status: 'AKTIF', berat: { not: null }, ...farmFilter },
+    where: { berat: { not: null }, id: { notIn: [...matiIdSet] }, ...farmFilter },
     select: { berat: true },
   })
   const avgBerat = allWeights.length > 0
     ? Math.round((allWeights.reduce((a, h) => a + (h.berat || 0), 0) / allWeights.length) * 10) / 10
     : 0
 
-  // ─── KATEGORI DATA (snapshot populasi aktif) ─────────────
+  // ─── KATEGORI DATA (snapshot populasi hidup) ─────────────
   const [totalIndukan, totalPejantan, totalAnakan, totalDara, totalJantanMuda] = await Promise.all([
-    prisma.hewan.count({ where: { kategori: 'INDUKAN', status: 'AKTIF', ...farmFilter } }),
-    prisma.hewan.count({ where: { kategori: 'PEJANTAN', status: 'AKTIF', ...farmFilter } }),
-    prisma.hewan.count({ where: { kategori: 'ANAKAN', status: 'AKTIF', ...farmFilter } }),
-    prisma.hewan.count({ where: { kategori: 'DARA', status: 'AKTIF', ...farmFilter } }),
-    prisma.hewan.count({ where: { kategori: 'JANTAN_MUDA', status: 'AKTIF', ...farmFilter } }),
+    prisma.hewan.count({ where: { kategori: 'INDUKAN', id: { notIn: [...matiIdSet] }, ...farmFilter } }),
+    prisma.hewan.count({ where: { kategori: 'PEJANTAN', id: { notIn: [...matiIdSet] }, ...farmFilter } }),
+    prisma.hewan.count({ where: { kategori: 'ANAKAN', id: { notIn: [...matiIdSet] }, ...farmFilter } }),
+    prisma.hewan.count({ where: { kategori: 'DARA', id: { notIn: [...matiIdSet] }, ...farmFilter } }),
+    prisma.hewan.count({ where: { kategori: 'JANTAN_MUDA', id: { notIn: [...matiIdSet] }, ...farmFilter } }),
   ])
   const kategoriData = [
     { name: 'Indukan', value: totalIndukan },
@@ -146,7 +160,7 @@ export default async function DashboardPage(props: { searchParams: Promise<{ [ke
 
   return (
     <DashboardClient
-      stats={{ totalHewan, indukan, pejantan, sedangSakit, mati, terjual }}
+      stats={{ totalHewan: totalHidup, indukan, pejantan, sedangSakit: totalHidup, mati, terjual: 0 }}
       reproduksiHamil={reproduksiHamil.map(r => ({
         ...r,
         tanggalKawin: r.tanggalKawin.toISOString(),
@@ -181,7 +195,10 @@ export default async function DashboardPage(props: { searchParams: Promise<{ [ke
       }}
       trendRaw={trendRaw.map(h => ({
         createdAt: h.createdAt.toISOString(),
-        status: h.status,
+        status: 'AKTIF', // legacy compat - semua hewan terdaftar dianggap masuk
+      }))}
+      kematianTrendRaw={kematianTrendRaw.map(k => ({
+        tanggalMati: k.tanggalMati.toISOString(),
       }))}
       beratRaw={beratRaw.map(b => ({
         tanggal: b.tanggal.toISOString(),

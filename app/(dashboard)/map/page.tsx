@@ -10,7 +10,8 @@ export default async function MapPage(props: { searchParams: Promise<{ [key: str
   if (session.role === 'PETUGAS') redirect('/')
 
   let rawFarms: Awaited<ReturnType<typeof prisma.farm.findMany>>
-  let hewanByFarm: Record<string, { status: string; kategori: string }[]> = {}
+  const hewanByFarm: Record<string, { kematian: { hewanId: string } | null; kategori: string }[]> = {}
+
 
   if (session.role === 'SUPER_ADMIN') {
     // Super admin: lihat semua farm atau filter by farmId query param
@@ -35,11 +36,11 @@ export default async function MapPage(props: { searchParams: Promise<{ [key: str
     const farmIds = rawFarms.map(f => f.id)
     const hewanList = await prisma.hewan.findMany({
       where: { farmId: { in: farmIds } },
-      select: { farmId: true, status: true, kategori: true },
+      select: { farmId: true, kematian: { select: { hewanId: true } }, kategori: true },
     })
     for (const h of hewanList) {
       if (!hewanByFarm[h.farmId]) hewanByFarm[h.farmId] = []
-      hewanByFarm[h.farmId].push({ status: h.status, kategori: h.kategori })
+      hewanByFarm[h.farmId].push({ kematian: h.kematian, kategori: h.kategori })
     }
   }
 
@@ -55,8 +56,8 @@ export default async function MapPage(props: { searchParams: Promise<{ [key: str
       deskripsi: f.deskripsi,
       status: f.status as string,
       _count: { hewan: hewan.length },
-      hewanAktif: hewan.filter(h => h.status === 'AKTIF').length,
-      hewanMati: hewan.filter(h => h.status === 'MATI').length,
+      hewanAktif: hewan.filter(h => !h.kematian).length,
+      hewanMati: hewan.filter(h => !!h.kematian).length,
       hewanIndukan: hewan.filter(h => h.kategori === 'INDUKAN').length,
       hewanPejantan: hewan.filter(h => h.kategori === 'PEJANTAN').length,
     }

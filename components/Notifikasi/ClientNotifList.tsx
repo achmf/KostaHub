@@ -9,7 +9,6 @@ import {
 import Link from 'next/link'
 import { useNotifikasi } from '@/hooks/useNotifikasi'
 import { KostaPageHeader, KostaButton, Badge, palette } from '@/components/KostaUI'
-import { Toaster } from 'sonner'
 import PaginationControl from '@/components/Admin/PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
 
@@ -57,8 +56,6 @@ export function ClientNotifList() {
 
   return (
     <>
-      <Toaster position="top-right" richColors />
-
       <div>
         <KostaPageHeader
           title="Notifikasi Operasional"
@@ -73,9 +70,10 @@ export function ClientNotifList() {
               <button
                 onClick={refetch}
                 disabled={loading}
-                className="cursor-pointer w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+                className="cursor-pointer w-10 h-10 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-colors"
                 style={{ border: `1px solid ${palette.border}` }}
                 title="Refresh"
+                aria-label="Muat ulang notifikasi"
               >
                 {loading
                   ? <Loader2 size={14} className="animate-spin" style={{ opacity: 0.5 }} />
@@ -86,12 +84,13 @@ export function ClientNotifList() {
               {/* Push toggle */}
               <button
                 onClick={requestPushPermission}
-                className="cursor-pointer w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+                className="cursor-pointer w-10 h-10 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-colors"
                 style={{
                   border: `1px solid ${palette.border}`,
                   color: pushEnabled ? palette.moss : 'rgba(13,20,15,0.45)',
                 }}
                 title={pushEnabled ? 'Push aktif' : 'Aktifkan push notification'}
+                aria-label={pushEnabled ? 'Push aktif' : 'Aktifkan push notification'}
               >
                 {pushEnabled ? <BellRing size={14} /> : <BellOff size={14} />}
               </button>
@@ -111,14 +110,14 @@ export function ClientNotifList() {
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-4 flex items-center gap-4 px-5 py-4 rounded-2xl"
+            className="mb-4 flex flex-wrap items-center gap-3 sm:gap-4 px-4 sm:px-5 py-4 rounded-2xl"
             style={{
               background: 'rgba(63,122,78,0.06)',
               border: '1px solid rgba(63,122,78,0.2)',
             }}
           >
             <BellRing size={16} style={{ color: palette.moss, flexShrink: 0 }} />
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, fontWeight: 500 }}>
                 Aktifkan Push Notification
               </div>
@@ -126,14 +125,14 @@ export function ClientNotifList() {
                 Terima peringatan otomatis di browser walau halaman tidak terbuka.
               </div>
             </div>
-            <KostaButton onClick={requestPushPermission}>
+            <KostaButton onClick={requestPushPermission} className="w-full sm:w-auto justify-center">
               <BellRing size={12} /> Aktifkan
             </KostaButton>
           </motion.div>
         )}
 
         {/* Filter chips */}
-        <div className="flex flex-wrap gap-2 mb-5">
+        <div className="flex gap-2 mb-5 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
           {(['ALL', 'MEDIS', 'LAHIR', 'BERAT'] as FilterType[]).map((f) => {
             const count = f === 'ALL' ? list.length : list.filter((n) => n.type === f).length
             const unread = f === 'ALL'
@@ -143,7 +142,7 @@ export function ClientNotifList() {
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className="cursor-pointer relative px-4 py-2 rounded-full flex items-center gap-2"
+                className="cursor-pointer relative shrink-0 whitespace-nowrap min-h-10 sm:min-h-0 px-4 py-2 rounded-full flex items-center gap-2"
                 style={{
                   fontFamily: "'JetBrains Mono',monospace",
                   fontSize: 10.5,
@@ -213,7 +212,7 @@ export function ClientNotifList() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 8, height: 0, marginBottom: 0 }}
                   transition={{ delay: i * 0.03 }}
-                  className="rounded-2xl p-4 flex items-center gap-4 group hover:-translate-y-0.5"
+                  className="rounded-2xl p-4 flex items-center gap-3 sm:gap-4 group hover:-translate-y-0.5"
                   style={{
                     background: n.isRead ? 'rgba(255,255,255,0.5)' : '#fff',
                     border: `1px solid ${n.isRead ? palette.border : 'rgba(13,20,15,0.12)'}`,
@@ -241,7 +240,7 @@ export function ClientNotifList() {
                       )}
                     </div>
                     <div
-                      className="mt-1.5"
+                      className="mt-1.5 wrap-anywhere"
                       style={{
                         fontFamily: "'Inter',sans-serif",
                         fontSize: 14,
@@ -251,7 +250,7 @@ export function ClientNotifList() {
                       {n.title}
                     </div>
                     <div
-                      className="mt-0.5 line-clamp-2"
+                      className="mt-0.5 line-clamp-4 sm:line-clamp-2 wrap-anywhere"
                       style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5, opacity: 0.65 }}
                     >
                       {/* Strip internal ref key from message */}
@@ -271,8 +270,9 @@ export function ClientNotifList() {
                   <button
                     onClick={() => handleMarkRead(n.id)}
                     disabled={isPending}
-                    className="cursor-pointer w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all"
+                    className="cursor-pointer w-10 h-10 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shrink-0 transition-all"
                     title={n.isRead ? 'Tandai belum dibaca' : 'Tandai sudah dibaca'}
+                    aria-label={n.isRead ? 'Tandai belum dibaca' : 'Tandai sudah dibaca'}
                     style={{
                       border: `1px solid ${n.isRead ? palette.border : 'rgba(63,122,78,0.3)'}`,
                       background: n.isRead ? 'transparent' : 'rgba(63,122,78,0.08)',

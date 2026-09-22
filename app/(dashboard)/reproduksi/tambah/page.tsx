@@ -16,11 +16,11 @@ export default async function TambahReproduksiPage(props: { searchParams: Promis
 
   const [indukan, pejantan] = await Promise.all([
     prisma.hewan.findMany({
-      where: { status: 'AKTIF', kategori: 'INDUKAN', ...farmFilter },
+      where: { kematian: { is: null }, kategori: 'INDUKAN', ...farmFilter },
       select: { id: true, tag: true, nama: true },
     }),
     prisma.hewan.findMany({
-      where: { status: 'AKTIF', kategori: 'PEJANTAN', ...farmFilter },
+      where: { kematian: { is: null }, kategori: 'PEJANTAN', ...farmFilter },
       select: { id: true, tag: true, nama: true },
     }),
   ])

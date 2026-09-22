@@ -251,7 +251,8 @@ export async function GET(request: Request) {
       orderBy: { createdAt: 'desc' },
       select: {
         tag: true, nama: true, kelamin: true, kategori: true,
-        status: true, berat: true, createdAt: true, updatedAt: true,
+        kematian: { select: { tanggalMati: true } },
+        berat: true, createdAt: true, updatedAt: true,
       },
     }),
     prisma.rekamMedis.findMany({
@@ -294,9 +295,8 @@ export async function GET(request: Request) {
   ])
 
   // Aggregate
-  const hewanAktif   = hewanAll.filter(h => h.status === 'AKTIF').length
-  const hewanMati    = hewanAll.filter(h => h.status === 'MATI').length
-  const hewanTerjual = hewanAll.filter(h => h.status === 'TERJUAL').length
+  const hewanMati    = hewanAll.filter(h => !!h.kematian).length
+  const hewanAktif   = hewanAll.length - hewanMati
   const hewanHamil   = breedingAll.filter(b => b.status === 'HAMIL').length
   const totalMedis   = medisAll.length
   const totalBreeding= breedingAll.length
@@ -349,11 +349,11 @@ export async function GET(request: Request) {
   cols1.forEach((c, i) => { ws1.getColumn(i + 1).width = c.w })
 
   const start1 = buildSheetHeader(ws1, 'Laporan Keluar-Masuk Ternak', `${hewanAll.length} ekor tercatat`, cols1.length, FN, [
-    { label: 'Hewan Aktif',  value: hewanAktif,   argb: C.moss  },
+    { label: 'Hewan Hidup',  value: hewanAktif,   argb: C.moss  },
     { label: 'Kematian',     value: hewanMati,    argb: C.red   },
-    { label: 'Terjual',      value: hewanTerjual, argb: C.blue  },
     { label: 'Total Mutasi', value: mutasiAll.length, argb: C.amber },
   ])
+
 
   buildTableHeader(ws1, start1, cols1.map(c => c.label))
   ws1.autoFilter = { from: { row: start1, column: 1 }, to: { row: start1, column: cols1.length } }
@@ -372,10 +372,11 @@ export async function GET(request: Request) {
       fill: rf, align: CTR, border: thinBorder(),
     })
 
-    // Status badge
-    const ss = statusFont(h.status)
+    // Status badge based on kematian
+    const statusText = h.kematian ? 'Mati' : 'Hidup'
+    const ss = statusFont(h.kematian ? 'MATI' : 'AKTIF')
     const statusCell = ws1.getRow(rn).getCell(6)
-    statusCell.value     = h.status
+    statusCell.value     = statusText
     statusCell.font      = { name: 'Calibri', size: 9, bold: true, color: { argb: ss.argb } }
     statusCell.fill      = solid(ss.fill)
     statusCell.alignment = CTR

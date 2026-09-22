@@ -46,6 +46,7 @@ function InfoRow({
       <div className="flex-1 min-w-0">
         <KostaSectionLabel className="mb-0.5">{label}</KostaSectionLabel>
         <div
+          className="wrap-anywhere"
           style={{
             fontFamily: "'Inter',sans-serif",
             fontSize: 14,
@@ -102,6 +103,7 @@ export function ProfileInfoCard({ name, email, phone, role, createdAt }: Profile
           </div>
           <div>
             <div
+              className="wrap-anywhere"
               style={{
                 fontFamily: "'Fraunces',serif",
                 fontSize: 20,

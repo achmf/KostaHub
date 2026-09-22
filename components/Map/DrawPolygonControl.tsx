@@ -230,8 +230,8 @@ export default function DrawPolygonControl({ farm, onSave, onClose }: Props) {
   return (
     <div
       ref={panelRef}
-      className="absolute bottom-5 left-1/2 -translate-x-1/2 z-[2000]"
-      style={{ ...base, borderRadius: 16, minWidth: 340 }}
+      className="absolute bottom-3 left-3 right-3 sm:bottom-5 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:min-w-[340px] z-[2000] [&_button]:min-h-10 lg:[&_button]:min-h-0"
+      style={{ ...base, borderRadius: 16 }}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-3 pb-2" style={{ borderBottom: '1px solid rgba(242,237,224,0.1)' }}>
@@ -243,6 +243,8 @@ export default function DrawPolygonControl({ farm, onSave, onClose }: Props) {
         </div>
         <button
           onClick={handleClose}
+          aria-label="Tutup mode gambar"
+          className="min-w-10 lg:min-w-0"
           style={{ background: 'none', border: 'none', color: 'rgba(242,237,224,0.4)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 4 }}
         >
           <X size={16} />
@@ -258,7 +260,7 @@ export default function DrawPolygonControl({ farm, onSave, onClose }: Props) {
                 ? 'Farm ini sudah memiliki area kandang. Klik "Gambar Ulang" untuk menggambar baru.'
                 : 'Klik "Mulai Gambar" lalu klik pada peta untuk menambahkan titik polygon area kandang.'}
             </p>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap sm:flex-nowrap gap-2">
               <button style={btn('#C7873E', '#1B2A1F', { fontWeight: 600, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 })} onClick={startDrawing}>
                 <PenLine size={13} />
                 {farm.geojson ? 'Gambar Ulang' : 'Mulai Gambar'}
@@ -284,7 +286,7 @@ export default function DrawPolygonControl({ farm, onSave, onClose }: Props) {
                   : ' Klik "Selesai" atau double-click untuk menutup polygon.'}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap sm:flex-nowrap gap-2">
               {pointCount >= 3 && (
                 <button style={btn('#3F5B3A', '#F2EDE0', { fontWeight: 600, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 })} onClick={finishDrawing}>
                   <Check size={13} />
@@ -314,7 +316,7 @@ export default function DrawPolygonControl({ farm, onSave, onClose }: Props) {
                 Klik "Simpan" untuk menyimpan ke database.
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap sm:flex-nowrap gap-2">
               <button style={btn('#C7873E', '#1B2A1F', { fontWeight: 600, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 })} onClick={handleSave}>
                 <Save size={13} />
                 Simpan Area Kandang

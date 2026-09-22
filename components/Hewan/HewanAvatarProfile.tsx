@@ -67,6 +67,8 @@ export function HewanAvatarProfile({ hewanId, fotoUrl, nama, tag }: HewanAvatarP
           border: '1px dashed rgba(242,237,224,0.2)' 
         }}
         onClick={() => !isPending && fileInputRef.current?.click()}
+        role="button"
+        aria-label={preview ? 'Ubah foto hewan' : 'Tambah foto hewan'}
       >
         <input 
           type="file" 
@@ -95,13 +97,17 @@ export function HewanAvatarProfile({ hewanId, fotoUrl, nama, tag }: HewanAvatarP
                 Ubah Foto
               </span>
             </div>
+            {/* Layar sentuh tidak punya hover: tampilkan penanda kamera */}
+            <div className="pointer-fine:hidden absolute bottom-2 right-2 w-8 h-8 rounded-full bg-black/60 flex items-center justify-center">
+              <Camera size={14} style={{ color: palette.cream }} />
+            </div>
           </>
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-80 group-hover:opacity-100 transition-all duration-300 group-hover:scale-105">
             <span style={{ fontFamily: "'Fraunces',serif", fontSize: 56, color: palette.cream, lineHeight: 1 }}>
               {nama ? nama.charAt(0).toUpperCase() : tag ? tag.charAt(0).toUpperCase() : 'H'}
             </span>
-            <span className="absolute bottom-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: palette.cream, fontWeight: 500 }}>
+            <span className="absolute bottom-3 pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 transition-opacity duration-300" style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: palette.cream, fontWeight: 500 }}>
               Tambah Foto
             </span>
           </div>

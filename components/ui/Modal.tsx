@@ -28,6 +28,18 @@ export function Modal({ open, onClose, title, description, maxWidth = 'md', chil
     setMounted(true)
   }, [])
 
+  // Kunci scroll halaman & tutup dengan Escape selama modal terbuka
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    document.addEventListener('keydown', onKey)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = ''
+    }
+  }, [open, onClose])
+
   const content = (
     <AnimatePresence>
       {open && (
@@ -36,7 +48,7 @@ export function Modal({ open, onClose, title, description, maxWidth = 'md', chil
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
-          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[9999] flex overflow-y-auto overscroll-contain p-3 sm:p-4"
           onClick={(e) => e.target === e.currentTarget && onClose()}
         >
           <motion.div
@@ -44,12 +56,14 @@ export function Modal({ open, onClose, title, description, maxWidth = 'md', chil
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.97, opacity: 0, y: 6 }}
             transition={{ type: 'spring' as const, stiffness: 420, damping: 32 }}
-            className={`bg-[#FDFCF7] rounded-2xl shadow-[0_20px_40px_-15px_rgba(13,20,15,0.2)] border border-[rgba(13,20,15,0.06)] w-full overflow-hidden ${MAX_W[maxWidth]}`}
+            role="dialog"
+            aria-modal="true"
+            className={`m-auto bg-[#FDFCF7] rounded-2xl shadow-[0_20px_40px_-15px_rgba(13,20,15,0.2)] border border-[rgba(13,20,15,0.06)] w-full overflow-hidden ${MAX_W[maxWidth]}`}
           >
             {/* Header */}
-            <div className="flex justify-between items-start px-6 py-5 border-b border-[rgba(13,20,15,0.06)] bg-[#FDFCF7]">
-              <div>
-                <h2 className="text-xl font-medium tracking-tight" style={{ fontFamily: "'Fraunces',serif", color: '#0D140F' }}>
+            <div className="flex justify-between items-start px-5 sm:px-6 py-4 sm:py-5 border-b border-[rgba(13,20,15,0.06)] bg-[#FDFCF7]">
+              <div className="min-w-0">
+                <h2 className="text-lg sm:text-xl font-medium tracking-tight" style={{ fontFamily: "'Fraunces',serif", color: '#0D140F' }}>
                   {title}
                 </h2>
                 {description && (
@@ -58,7 +72,7 @@ export function Modal({ open, onClose, title, description, maxWidth = 'md', chil
                   </p>
                 )}
               </div>
-              <Button variant="ghost" size="icon" onClick={onClose} aria-label="Tutup" className="ml-4 shrink-0 text-[rgba(13,20,15,0.5)] hover:bg-[rgba(13,20,15,0.04)] hover:text-[#0D140F]">
+              <Button variant="ghost" size="icon" onClick={onClose} aria-label="Tutup" className="ml-4 -mr-2 size-10 shrink-0 text-[rgba(13,20,15,0.5)] hover:bg-[rgba(13,20,15,0.04)] hover:text-[#0D140F]">
                 <X size={16} />
               </Button>
             </div>
@@ -73,9 +87,9 @@ export function Modal({ open, onClose, title, description, maxWidth = 'md', chil
 }
 
 export function ModalBody({ className = '', children }: { className?: string; children: React.ReactNode }) {
-  return <div className={`px-6 py-6 space-y-5 bg-[#FDFCF7] ${className}`}>{children}</div>
+  return <div className={`px-5 sm:px-6 py-5 sm:py-6 space-y-5 bg-[#FDFCF7] ${className}`}>{children}</div>
 }
 
 export function ModalFooter({ className = '', children }: { className?: string; children: React.ReactNode }) {
-  return <div className={`flex gap-3 px-6 py-5 border-t border-[rgba(13,20,15,0.06)] bg-[rgba(13,20,15,0.02)] justify-end ${className}`}>{children}</div>
+  return <div className={`flex flex-wrap gap-3 px-5 sm:px-6 py-4 sm:py-5 border-t border-[rgba(13,20,15,0.06)] bg-[rgba(13,20,15,0.02)] justify-end ${className}`}>{children}</div>
 }

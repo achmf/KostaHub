@@ -99,6 +99,9 @@ export default function AddressAutocomplete({ value, onChange, onSelect, placeho
           onChange={handleChange}
           placeholder={placeholder ?? 'Ketik nama jalan, desa, atau kota…'}
           autoComplete="off"
+          enterKeyHint="search"
+          // Enter/"Go" di keyboard HP tidak boleh men-submit seluruh form saat mencari alamat
+          onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault() }}
           className="w-full px-4 py-3 rounded-xl transition-all"
           style={{
             paddingRight: (value || isLoading) ? 68 : 16,
@@ -131,8 +134,9 @@ export default function AddressAutocomplete({ value, onChange, onSelect, placeho
           {value && !isLoading && (
             <button
               type="button"
-              onMouseDown={handleClear}
-              className="cursor-pointer w-5 h-5 flex items-center justify-center rounded-full transition-colors"
+              onMouseDown={(e) => { e.preventDefault(); handleClear() }}
+              aria-label="Hapus alamat"
+              className="cursor-pointer w-10 h-10 sm:w-5 sm:h-5 flex items-center justify-center rounded-full transition-colors"
               style={{ color: 'rgba(13,20,15,0.35)' }}
               onMouseEnter={(e) => { e.currentTarget.style.color = 'rgba(13,20,15,0.7)' }}
               onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(13,20,15,0.35)' }}

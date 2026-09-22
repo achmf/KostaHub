@@ -112,16 +112,17 @@ async function generatePenimbanganTerlambat(
 ) {
   const tiga_puluh_hari_lalu = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
 
-  // Cari hewan aktif yang beratnya belum diupdate 30+ hari
+  // Cari hewan hidup yang beratnya belum diupdate 30+ hari
   const hewan = await prisma.hewan.findMany({
     where: {
-      status: 'AKTIF',
+      kematian: { is: null }, // hanya hewan yang masih hidup
       updatedAt: { lte: tiga_puluh_hari_lalu },
       ...filter,
     },
     select: { id: true, tag: true, nama: true, updatedAt: true },
     take: 10,
   })
+
 
   for (const h of hewan) {
     const key = `BERAT-${h.id}-${tiga_puluh_hari_lalu.toISOString().split('T')[0]}`

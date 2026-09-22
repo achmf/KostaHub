@@ -39,7 +39,7 @@ interface ActivityItem {
   timestamp: string
 }
 
-const TYPE_CONFIG: Record<ActivityType, { label: string; color: string; bg: string; icon: React.FC<{ size?: number; style?: React.CSSProperties }> }> = {
+const TYPE_CONFIG: Record<ActivityType, { label: string; color: string; bg: string; icon: React.FC<{ size?: number; style?: React.CSSProperties; className?: string }> }> = {
   hewan: { label: 'Hewan', color: palette.ochre, bg: 'rgba(199,135,62,0.12)', icon: Activity },
   medis: { label: 'Rekam Medis', color: palette.danger, bg: 'rgba(181,68,59,0.12)', icon: Heart },
   farm: { label: 'Farm', color: palette.moss, bg: 'rgba(63,91,58,0.12)', icon: Building2 },
@@ -92,10 +92,10 @@ export default function AdminActivityClient({ activities }: { activities: Activi
       </motion.div>
 
       {/* Filter Tabs */}
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div className="flex gap-2 mb-6 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible">
         <button
           onClick={() => setActiveFilter('all')}
-          className="cursor-pointer flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all"
+          className="cursor-pointer shrink-0 whitespace-nowrap flex items-center gap-1.5 px-4 py-2.5 sm:py-2 rounded-xl transition-all"
           style={{
             fontFamily: "'Inter',sans-serif",
             fontSize: 12.5,
@@ -115,7 +115,7 @@ export default function AdminActivityClient({ activities }: { activities: Activi
             <button
               key={t}
               onClick={() => setActiveFilter(t)}
-              className="cursor-pointer flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all"
+              className="cursor-pointer shrink-0 whitespace-nowrap flex items-center gap-1.5 px-4 py-2.5 sm:py-2 rounded-xl transition-all"
               style={{
                 fontFamily: "'Inter',sans-serif",
                 fontSize: 12.5,
@@ -142,7 +142,7 @@ export default function AdminActivityClient({ activities }: { activities: Activi
         <div className="space-y-1">
           {filtered.length === 0 ? (
             <div
-              className="rounded-2xl p-8 text-center"
+              className="rounded-2xl p-6 sm:p-8 text-center"
               style={{ background: '#fff', border: `1px solid ${palette.border}` }}
             >
               <Clock size={24} style={{ color: palette.muted, margin: '0 auto 8px' }} />
@@ -164,23 +164,25 @@ export default function AdminActivityClient({ activities }: { activities: Activi
                 >
                   {/* Icon dot on timeline */}
                   <div
-                    className="w-[46px] h-[46px] rounded-xl flex items-center justify-center shrink-0 relative z-10"
-                    style={{ background: cfg.bg }}
+                    className="w-[46px] h-[46px] rounded-xl flex items-center justify-center shrink-0 relative z-10 overflow-hidden"
+                    style={{ backgroundColor: '#F2EDE0' }}
                   >
-                    <Icon size={16} style={{ color: cfg.color }} />
+                    <div className="absolute inset-0" style={{ background: cfg.bg }} />
+                    <Icon size={16} style={{ color: cfg.color }} className="relative z-10" />
                   </div>
 
                   {/* Card */}
                   <div
-                    className="flex-1 rounded-xl px-4 py-3 group hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 ease-out"
+                    className="flex-1 min-w-0 rounded-xl px-4 py-3 group hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 ease-out"
                     style={{ background: '#fff', border: `1px solid ${palette.border}` }}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, fontWeight: 500, color: palette.ink }}>
+                    {/* Ponsel: badge & link farm turun ke bawah teks agar judul tidak terjepit */}
+                    <div className="flex flex-wrap sm:flex-nowrap items-start justify-between gap-2">
+                      <div className="min-w-0 w-full sm:w-auto">
+                        <div className="break-words" style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, fontWeight: 500, color: palette.ink }}>
                           {item.title}
                         </div>
-                        <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: palette.muted, marginTop: 2 }}>
+                        <div className="break-words" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: palette.muted, marginTop: 2 }}>
                           {item.subtitle}
                         </div>
                       </div>
@@ -192,17 +194,22 @@ export default function AdminActivityClient({ activities }: { activities: Activi
                           {cfg.label.toUpperCase()}
                         </span>
                         {item.farmId && (
-                          <Link href={`/admin/farms/${item.farmId}`} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          // Perangkat sentuh: selalu terlihat, area sentuh 40px (margin negatif agar tinggi baris tetap)
+                          <Link
+                            href={`/admin/farms/${item.farmId}`}
+                            aria-label={`Lihat farm ${item.farmNama ?? ''}`}
+                            className="flex items-center justify-center w-10 h-10 -my-3 pointer-fine:w-auto pointer-fine:h-auto pointer-fine:my-0 pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 pointer-fine:focus-visible:opacity-100 transition-opacity"
+                          >
                             <ArrowUpRight size={13} style={{ color: palette.ochre }} />
                           </Link>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 mt-2" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: 'rgba(13,20,15,0.35)', letterSpacing: '0.05em' }}>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-2" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: 'rgba(13,20,15,0.35)', letterSpacing: '0.05em' }}>
                       <Clock size={9} />
                       {timeAgo(item.timestamp)}
                       {item.farmNama && (
-                        <span style={{ color: 'rgba(13,20,15,0.25)' }}> · {item.farmNama}</span>
+                        <span className="min-w-0 break-words" style={{ color: 'rgba(13,20,15,0.25)' }}> · {item.farmNama}</span>
                       )}
                     </div>
                   </div>

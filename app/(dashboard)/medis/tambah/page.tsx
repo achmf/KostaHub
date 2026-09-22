@@ -15,9 +15,10 @@ export default async function TambahMedisPage(props: { searchParams: Promise<{ [
   const farmFilter = farmId ? { farmId } : {}
 
   const hewan = await prisma.hewan.findMany({
-    where: { status: 'AKTIF', ...farmFilter },
+    where: { kematian: { is: null }, ...farmFilter },
     select: { id: true, tag: true, nama: true }
   })
+
 
   return <TambahMedisForm hewan={hewan} />
 }

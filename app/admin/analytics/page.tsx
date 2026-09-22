@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import AdminAnalyticsClient from '@/components/Admin/AdminAnalyticsClient'
+import { countKematianPerFarm } from '@/services/kematian.service'
 
 export default async function AdminAnalyticsPage() {
   // ─── FARM DATA ────────────────────────────────────────────────
@@ -8,20 +9,22 @@ export default async function AdminAnalyticsPage() {
     orderBy: { createdAt: 'asc' },
   })
 
+  const farmIds = farms.map(f => f.id)
+  const kematianMap = await countKematianPerFarm(farmIds)
+
   // ─── HEWAN PER FARM (KATEGORI) ───────────────────────────────
   const hewanPerFarm = await Promise.all(
     farms.map(async (farm) => {
-      const [indukan, pejantan, anakan, dara, jantanMuda, mati, terjual] = await Promise.all([
-        prisma.hewan.count({ where: { farmId: farm.id, kategori: 'INDUKAN', status: 'AKTIF' } }),
-        prisma.hewan.count({ where: { farmId: farm.id, kategori: 'PEJANTAN', status: 'AKTIF' } }),
-        prisma.hewan.count({ where: { farmId: farm.id, kategori: 'ANAKAN', status: 'AKTIF' } }),
-        prisma.hewan.count({ where: { farmId: farm.id, kategori: 'DARA', status: 'AKTIF' } }),
-        prisma.hewan.count({ where: { farmId: farm.id, kategori: 'JANTAN_MUDA', status: 'AKTIF' } }),
-        prisma.hewan.count({ where: { farmId: farm.id, status: 'MATI' } }),
-        prisma.hewan.count({ where: { farmId: farm.id, status: 'TERJUAL' } }),
+      const [indukan, pejantan, anakan, dara, jantanMuda, totalHewan] = await Promise.all([
+        prisma.hewan.count({ where: { farmId: farm.id, kategori: 'INDUKAN' } }),
+        prisma.hewan.count({ where: { farmId: farm.id, kategori: 'PEJANTAN' } }),
+        prisma.hewan.count({ where: { farmId: farm.id, kategori: 'ANAKAN' } }),
+        prisma.hewan.count({ where: { farmId: farm.id, kategori: 'DARA' } }),
+        prisma.hewan.count({ where: { farmId: farm.id, kategori: 'JANTAN_MUDA' } }),
+        prisma.hewan.count({ where: { farmId: farm.id } }),
       ])
-      const total = indukan + pejantan + anakan + dara + jantanMuda
-      const totalSemua = total + mati + terjual
+      const mati = kematianMap.get(farm.id) ?? 0
+      const total = totalHewan - mati // hewan hidup
       return {
         id: farm.id,
         nama: farm.nama.length > 14 ? farm.nama.slice(0, 14) + '…' : farm.nama,
@@ -34,8 +37,8 @@ export default async function AdminAnalyticsPage() {
         jantanMuda,
         total,
         mati,
-        terjual,
-        mortalityRate: totalSemua > 0 ? Math.round((mati / totalSemua) * 100) : 0,
+        terjual: 0, // dihapus
+        mortalityRate: totalHewan > 0 ? Math.round((mati / totalHewan) * 100) : 0,
       }
     })
   )
@@ -61,13 +64,17 @@ export default async function AdminAnalyticsPage() {
   )
 
   // ─── DISTRIBUSI UMUR REGIONAL ─────────────────────────────────
-  const allHewanAktif = await prisma.hewan.findMany({
-    where: { status: 'AKTIF' },
-    select: { tanggalLahir: true },
+  // Hewan hidup = tidak punya record di KematianHewan
+  const hewanMatiIds = await prisma.kematianHewan.findMany({ select: { hewanId: true } })
+  const matiIdSet = new Set(hewanMatiIds.map(k => k.hewanId))
+  const allHewan = await prisma.hewan.findMany({
+    select: { id: true, tanggalLahir: true },
   })
+  const allHewanHidup = allHewan.filter(h => !matiIdSet.has(h.id))
+
   const now = new Date()
   const ageGroups = { '0–6 bln': 0, '6–12 bln': 0, '1–2 thn': 0, '2–3 thn': 0, '3+ thn': 0 }
-  allHewanAktif.forEach((h) => {
+  allHewanHidup.forEach((h) => {
     const months = (now.getTime() - h.tanggalLahir.getTime()) / (1000 * 60 * 60 * 24 * 30.44)
     if (months < 6) ageGroups['0–6 bln']++
     else if (months < 12) ageGroups['6–12 bln']++
@@ -97,7 +104,7 @@ export default async function AdminAnalyticsPage() {
   // ─── KATEGORI MEDIS ───────────────────────────────────────────
   const kategoriMedisMap = new Map<string, number>()
   allMedis.forEach((m) => {
-    let name = m.kategori
+    let name: string = m.kategori as string
     if (name === 'VAKSINASI') name = 'Vaksinasi'
     else if (name === 'PENGOBATAN') name = 'Pengobatan'
     else if (name === 'PEMERIKSAAN') name = 'Pemeriksaan'
@@ -107,6 +114,7 @@ export default async function AdminAnalyticsPage() {
     
     kategoriMedisMap.set(name, (kategoriMedisMap.get(name) || 0) + 1)
   })
+
   
   const kategoriMedisData = Array.from(kategoriMedisMap.entries())
     .sort((a, b) => b[1] - a[1])

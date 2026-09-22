@@ -2,17 +2,14 @@
 
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { encrypt, getSession } from '@/lib/auth'
+import { encrypt, withAuth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 /**
  * Mengganti farm yang sedang aktif di session user.
  * Memvalidasi bahwa user memang memiliki akses ke farm tersebut.
  */
-export async function switchFarm(farmId: string) {
-  const session = await getSession()
-  if (!session) redirect('/login')
-
+export const switchFarm = withAuth(async (session, farmId: string) => {
   // Super Admin boleh akses semua farm
   if (session.role !== 'SUPER_ADMIN') {
     // Validasi: apakah user punya akses ke farm ini?
@@ -43,4 +40,4 @@ export async function switchFarm(farmId: string) {
   })
 
   redirect('/')
-}
+})

@@ -14,11 +14,12 @@ export default async function TambahHewanPage() {
       ? prisma.farm.findMany({ where: { status: 'AKTIF' }, select: { id: true, nama: true } })
       : Promise.resolve([]),
     prisma.hewan.findMany({
-      where: { status: 'AKTIF', ...farmFilter },
+      where: { kematian: { is: null }, ...farmFilter },
       select: { id: true, tag: true, nama: true, kelamin: true },
       orderBy: { tag: 'asc' },
     }),
   ])
+
 
   return (
     <TambahHewanForm

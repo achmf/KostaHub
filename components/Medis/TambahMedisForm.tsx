@@ -36,20 +36,20 @@ export function TambahMedisForm({ hewan }: { hewan: { id: string; tag: string; n
     <div className="max-w-2xl mx-auto">
       <Link
         href="/medis"
-        className="flex items-center gap-2 mb-8 opacity-70 hover:opacity-100 transition-opacity"
+        className="flex w-fit items-center gap-2 min-h-10 mb-4 md:min-h-0 md:mb-8 opacity-70 hover:opacity-100 transition-opacity"
         style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: palette.ink }}
       >
         <ArrowLeft size={14} /> Kembali ke Rekam Medis
       </Link>
 
       <div className="rounded-3xl overflow-hidden shadow-sm" style={{ background: '#fff', border: `1px solid ${palette.border}` }}>
-        <div className="px-8 pt-8 pb-6" style={{ background: palette.forest, color: palette.cream }}>
+        <div className="px-5 pt-6 pb-5 sm:px-8 sm:pt-8 sm:pb-6" style={{ background: palette.forest, color: palette.cream }}>
           <KostaSectionLabel>
             <span style={{ color: 'rgba(242,237,224,0.55)' }}>REKAM MEDIS · TAMBAH</span>
           </KostaSectionLabel>
           <h1
             className="mt-2"
-            style={{ fontFamily: "'Fraunces',serif", fontSize: 32, letterSpacing: '-0.025em', lineHeight: 1.05 }}
+            style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(26px, 7vw, 32px)', letterSpacing: '-0.025em', lineHeight: 1.05 }}
           >
             Tambah Rekam Medis
           </h1>
@@ -58,7 +58,7 @@ export function TambahMedisForm({ hewan }: { hewan: { id: string; tag: string; n
           </p>
         </div>
 
-        <form action={formAction} className="px-8 py-8 space-y-6">
+        <form action={formAction} className="px-5 py-6 sm:px-8 sm:py-8 space-y-5 sm:space-y-6">
           {(state as any)?.error && (
             <div className="px-4 py-3 rounded-xl" style={{ background: 'rgba(181,68,59,0.10)', color: '#B5443B', fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
               {(state as any).error}
@@ -76,7 +76,7 @@ export function TambahMedisForm({ hewan }: { hewan: { id: string; tag: string; n
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label style={labelStyle}>TANGGAL *</label>
               <DatePickerField
@@ -180,24 +180,25 @@ export function TambahMedisForm({ hewan }: { hewan: { id: string; tag: string; n
             )}
           </div>
 
-          <div className="p-5 rounded-xl space-y-4" style={{ background: 'rgba(0,0,0,0.02)', border: `1px solid ${palette.border}80` }}>
-            <div className="flex items-center justify-between">
+          <div className="p-4 sm:p-5 rounded-xl space-y-4" style={{ background: 'rgba(0,0,0,0.02)', border: `1px solid ${palette.border}80` }}>
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <label style={{ ...labelStyle, marginBottom: 4, color: palette.ink }}>PENGINGAT KONTROL MEDIS</label>
+                <label htmlFor="butuhNotifikasi" className="cursor-pointer" style={{ ...labelStyle, marginBottom: 4, color: palette.ink }}>PENGINGAT KONTROL MEDIS</label>
                 <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.7)' }}>
                   Aktifkan notifikasi pengingat jika hewan butuh perawatan atau vaksin lanjutan.
                 </p>
               </div>
-              <div>
-                <input 
-                  type="checkbox" 
+              <label className="shrink-0 w-10 h-10 -mr-2.5 flex items-center justify-center cursor-pointer">
+                <input
+                  id="butuhNotifikasi"
+                  type="checkbox"
                   name="butuhNotifikasi"
                   checked={butuhNotifikasi}
                   onChange={(e) => setButuhNotifikasi(e.target.checked)}
-                  className="w-5 h-5 rounded cursor-pointer" 
+                  className="w-5 h-5 rounded cursor-pointer"
                   style={{ accentColor: palette.forest }}
                 />
-              </div>
+              </label>
             </div>
 
             {butuhNotifikasi && (
@@ -223,11 +224,11 @@ export function TambahMedisForm({ hewan }: { hewan: { id: string; tag: string; n
             />
           </div>
 
-          <div className="flex gap-3 pt-4 border-t border-border/50">
+          <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 border-t border-border/50">
             <Link href="/medis">
-              <KostaButton variant="outline" type="button">Batal</KostaButton>
+              <KostaButton variant="outline" type="button" className="w-full sm:w-auto justify-center">Batal</KostaButton>
             </Link>
-            <KostaButton type="submit" disabled={isPending}>
+            <KostaButton type="submit" disabled={isPending} className="w-full sm:w-auto justify-center">
               {isPending ? 'Menyimpan…' : 'Simpan Rekam Medis'}
             </KostaButton>
           </div>

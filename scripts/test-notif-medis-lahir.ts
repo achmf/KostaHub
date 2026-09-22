@@ -41,10 +41,10 @@ async function main() {
   info(`Using farm: ${farm.nama} (${farm.id})`)
 
   const hewanBetina = await prisma.hewan.findFirst({
-    where: { farmId: farm.id, status: 'AKTIF', kelamin: 'BETINA' },
+    where: { farmId: farm.id, kematian: { is: null }, kelamin: 'BETINA' },
   })
   const hewanJantan = await prisma.hewan.findFirst({
-    where: { farmId: farm.id, status: 'AKTIF', kelamin: 'JANTAN' },
+    where: { farmId: farm.id, kematian: { is: null }, kelamin: 'JANTAN' },
   })
 
   if (!hewanBetina || !hewanJantan) {

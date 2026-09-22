@@ -15,7 +15,7 @@ export default async function BeratPage(props: { searchParams: Promise<{ [key: s
   const farmFilter = farmId ? { farmId } : {}
 
   const hewan = await prisma.hewan.findMany({
-    where: { status: 'AKTIF', ...farmFilter },
+    where: { kematian: { is: null }, ...farmFilter },
     include: {
       beratHistory: {
         orderBy: { tanggal: 'desc' },
@@ -25,6 +25,7 @@ export default async function BeratPage(props: { searchParams: Promise<{ [key: s
     },
     orderBy: { nama: 'asc' }
   })
+
 
   const serialized = hewan.map(h => ({
     ...h,

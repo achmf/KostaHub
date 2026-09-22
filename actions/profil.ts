@@ -2,30 +2,22 @@
 
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
-import { getSession, encrypt } from '@/lib/auth'
+import { withAuth, encrypt } from '@/lib/auth'
 import bcrypt from 'bcryptjs'
+import { updateProfileSchema, changePasswordSchema } from '@/lib/validations/auth.schema'
 
 export type ProfileActionState = { error?: string; success?: string }
 
 // ─── Update Profile (nama + telepon) ──────────────────────────────────────────
 
-export async function updateProfile(_prevState: ProfileActionState, formData: FormData): Promise<ProfileActionState> {
-  const session = await getSession()
-  if (!session) return { error: 'Sesi tidak valid. Silakan login ulang.' }
+export const updateProfile = withAuth(async (session, _prevState: ProfileActionState, formData: FormData): Promise<ProfileActionState> => {
+  const parsed = updateProfileSchema.safeParse(Object.fromEntries(formData))
 
-  const name = (formData.get('name') as string)?.trim()
-  const phone = (formData.get('phone') as string)?.trim() || null
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
+  }
 
-  // Validasi input
-  if (!name || name.length < 2) {
-    return { error: 'Nama minimal 2 karakter.' }
-  }
-  if (name.length > 100) {
-    return { error: 'Nama terlalu panjang (maksimal 100 karakter).' }
-  }
-  if (phone && !/^(\+62|62|0)[0-9]{8,13}$/.test(phone.replace(/\s/g, ''))) {
-    return { error: 'Format nomor telepon tidak valid.' }
-  }
+  const { name, phone } = parsed.data
 
   try {
     await prisma.user.update({
@@ -51,28 +43,19 @@ export async function updateProfile(_prevState: ProfileActionState, formData: Fo
   } catch {
     return { error: 'Gagal memperbarui profil. Coba lagi.' }
   }
-}
+})
 
 // ─── Change Password ───────────────────────────────────────────────────────────
 
-export async function changePassword(_prevState: ProfileActionState, formData: FormData): Promise<ProfileActionState> {
-  const session = await getSession()
-  if (!session) return { error: 'Sesi tidak valid. Silakan login ulang.' }
+export const changePassword = withAuth(async (session, _prevState: ProfileActionState, formData: FormData): Promise<ProfileActionState> => {
+  const parsed = changePasswordSchema.safeParse(Object.fromEntries(formData))
 
-  const currentPassword = formData.get('currentPassword') as string
-  const newPassword = formData.get('newPassword') as string
-  const confirmPassword = formData.get('confirmPassword') as string
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
+  }
 
-  // Validasi input
-  if (!currentPassword || !newPassword || !confirmPassword) {
-    return { error: 'Semua field password wajib diisi.' }
-  }
-  if (newPassword.length < 8) {
-    return { error: 'Password baru minimal 8 karakter.' }
-  }
-  if (newPassword !== confirmPassword) {
-    return { error: 'Konfirmasi password tidak cocok.' }
-  }
+  const { currentPassword, newPassword } = parsed.data
+
   if (currentPassword === newPassword) {
     return { error: 'Password baru tidak boleh sama dengan password lama.' }
   }
@@ -106,4 +89,4 @@ export async function changePassword(_prevState: ProfileActionState, formData: F
   } catch {
     return { error: 'Gagal mengubah password. Coba lagi.' }
   }
-}
+})

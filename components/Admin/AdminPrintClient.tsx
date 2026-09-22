@@ -10,7 +10,6 @@ interface PrintClientProps {
     totalUser: number
     totalHewan: number
     totalMati: number
-    totalTerjual: number
     mortalityRate: number
     pendingApprovals: number
     farmBulanIni: number
@@ -46,7 +45,7 @@ export default function AdminPrintClient({ reportDate, stats, farms, kategoriDat
   return (
     <div>
       {/* Print button — hidden in print mode */}
-      <div className="print:hidden mb-6 flex items-center gap-3">
+      <div className="print:hidden mb-6 flex flex-wrap items-center gap-x-3 gap-y-2">
         <button
           onClick={() => window.print()}
           className="cursor-pointer flex items-center gap-2 px-5 py-2.5 rounded-full transition-all hover:opacity-90"
@@ -68,13 +67,12 @@ export default function AdminPrintClient({ reportDate, stats, farms, kategoriDat
       {/* Print Body */}
       <div
         id="print-report"
-        className="bg-white"
+        className="bg-white p-4 sm:p-6"
         style={{
           fontFamily: "'Inter',sans-serif",
           color: '#0D140F',
           maxWidth: 900,
           margin: '0 auto',
-          padding: '24px',
         }}
       >
         {/* Header */}
@@ -95,7 +93,7 @@ export default function AdminPrintClient({ reportDate, stats, farms, kategoriDat
           <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.2em', opacity: 0.5, marginBottom: 12 }}>
             RINGKASAN UTAMA
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+          <div className="grid grid-cols-2 sm:grid-cols-4 print:grid-cols-4" style={{ gap: 12 }}>
             {[
               { label: 'Total Farm', value: stats.totalFarm, sub: `${stats.farmAktif} aktif` },
               { label: 'Total Hewan', value: stats.totalHewan, sub: 'hewan aktif' },
@@ -145,7 +143,8 @@ export default function AdminPrintClient({ reportDate, stats, farms, kategoriDat
           <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.2em', opacity: 0.5, marginBottom: 12 }}>
             DAFTAR FARM ({farms.length})
           </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+          <div className="overflow-x-auto print:overflow-visible">
+          <table className="min-w-[600px] print:min-w-0" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
               <tr style={{ borderBottom: '2px solid rgba(13,20,15,0.15)' }}>
                 {['No', 'Nama Farm', 'Status', 'Alamat', 'Hewan', 'Member', 'Terdaftar'].map((h) => (
@@ -192,6 +191,7 @@ export default function AdminPrintClient({ reportDate, stats, farms, kategoriDat
               ))}
             </tbody>
           </table>
+          </div>
         </div>
 
         {/* Footer */}

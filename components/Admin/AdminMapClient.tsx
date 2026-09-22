@@ -110,26 +110,34 @@ function FarmCard({ farm, selected, onSelect }: { farm: AdminFarm; selected: boo
         </div>
       </div>
 
+      {/* height dan opacity dipisah — FM v12 crash "frame.join" bila keduanya di motion.div yang sama */}
       <AnimatePresence>
         {selected && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mt-3 pt-3 grid grid-cols-2 gap-1.5"
-            style={{ borderTop: '1px solid rgba(242,237,224,0.15)' }}
+            initial={{ height: 0 }}
+            animate={{ height: 'auto' }}
+            exit={{ height: 0 }}
+            style={{ overflow: 'hidden' }}
           >
-            {[
-              { label: 'AKTIF', val: farm.hewanAktif },
-              { label: 'INDUKAN', val: farm.hewanIndukan },
-              { label: 'PEJANTAN', val: farm.hewanPejantan },
-              { label: 'MATI', val: farm.hewanMati },
-            ].map((s) => (
-              <div key={s.label} className="text-center rounded-lg py-1.5" style={{ background: 'rgba(242,237,224,0.08)' }}>
-                <div style={{ fontFamily: "'Fraunces',serif", fontSize: 16 }}>{s.val}</div>
-                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8, letterSpacing: '0.15em', opacity: 0.55 }}>{s.label}</div>
-              </div>
-            ))}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="mt-3 pt-3 grid grid-cols-2 gap-1.5"
+              style={{ borderTop: '1px solid rgba(242,237,224,0.15)' }}
+            >
+              {[
+                { label: 'AKTIF', val: farm.hewanAktif },
+                { label: 'INDUKAN', val: farm.hewanIndukan },
+                { label: 'PEJANTAN', val: farm.hewanPejantan },
+                { label: 'MATI', val: farm.hewanMati },
+              ].map((s) => (
+                <div key={s.label} className="text-center rounded-lg py-1.5" style={{ background: 'rgba(242,237,224,0.08)' }}>
+                  <div style={{ fontFamily: "'Fraunces',serif", fontSize: 16 }}>{s.val}</div>
+                  <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8, letterSpacing: '0.15em', opacity: 0.55 }}>{s.label}</div>
+                </div>
+              ))}
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -153,7 +161,7 @@ function RadiusPanel({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 8 }}
-      className="mx-3 mb-3 rounded-xl overflow-hidden"
+      className="mx-3 mb-3 mt-3 lg:mt-0 max-lg:order-first rounded-xl overflow-hidden"
       style={{ border: '1px solid rgba(199,135,62,0.3)', background: 'rgba(199,135,62,0.06)' }}
     >
       <div className="px-4 pt-3 pb-2">
@@ -171,7 +179,7 @@ function RadiusPanel({
         <input
           type="range" min={5} max={300} step={5} value={radiusKm}
           onChange={(e) => onRadiusChange(Number(e.target.value))}
-          className="w-full" style={{ accentColor: palette.ochre }}
+          className="w-full h-10 lg:h-auto" style={{ accentColor: palette.ochre }}
         />
         <div className="flex justify-between mt-1">
           <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: palette.muted }}>5 km</span>
@@ -203,9 +211,11 @@ function RadiusPanel({
 export default function AdminMapClient({
   farms: initialFarms,
   owners,
+  canEdit = true,
 }: {
   farms: AdminFarm[]
   owners: string[]
+  canEdit?: boolean
 }) {
   const [farms, setFarms] = useState<AdminFarm[]>(initialFarms)
   const [selectedFarm, setSelectedFarm] = useState<AdminFarm | null>(null)
@@ -257,16 +267,36 @@ export default function AdminMapClient({
     setShowRadius((p) => !p)
   }
 
+  // Di bawah lg peta ditumpuk di atas daftar farm — gulir ke peta agar hasil aksi terlihat
+  function revealMap() {
+    if (!window.matchMedia('(min-width: 1024px)').matches) {
+      document.getElementById('farm-map')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
   function startDraw() {
     if (!selectedFarm) return
     setDrawMode(true)
     setSidebarOpen(false)
+    revealMap()
   }
 
-  const toolbarButtons = [
+  type ToolbarButton = {
+    key: string;
+    icon: React.ReactNode;
+    label: string;
+    active: boolean;
+    onClick?: () => void;
+    color: string;
+    disabled?: boolean;
+  };
+
+  const toolbarButtons: ToolbarButton[] = [
     { key: 'heatmap', icon: <Flame size={13} />, label: 'Heatmap', active: showHeatmap, onClick: () => setShowHeatmap((p) => !p), color: '#C7873E' },
     { key: 'radius', icon: <CircleDot size={13} />, label: 'Radius', active: showRadius, onClick: toggleRadius, color: '#3F5B3A' },
-    {
+  ]
+  if (canEdit) {
+    toolbarButtons.push({
       key: 'draw',
       icon: <PenLine size={13} />,
       label: selectedFarm ? 'Gambar Kandang' : 'Pilih Farm',
@@ -274,11 +304,11 @@ export default function AdminMapClient({
       onClick: selectedFarm ? startDraw : undefined,
       disabled: !selectedFarm,
       color: '#1B2A1F',
-    },
-  ]
+    })
+  }
 
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100vh - 73px)', overflow: 'hidden' }}>
+    <div className="flex flex-col lg:h-[calc(100vh-73px)] lg:overflow-hidden">
       {/* Header */}
       <div className="mb-5">
         <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, letterSpacing: '0.2em', color: palette.muted, marginBottom: 6 }}>
@@ -294,13 +324,13 @@ export default function AdminMapClient({
             </p>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
             {toolbarButtons.map((btn) => (
               <button
                 key={btn.key}
                 onClick={btn.onClick}
                 disabled={btn.disabled}
-                className="cursor-pointer flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all"
+                className="cursor-pointer flex flex-auto sm:flex-none items-center justify-center gap-1.5 px-3 py-2 min-h-10 lg:min-h-0 rounded-xl transition-all"
                 style={{
                   fontFamily: "'Inter',sans-serif",
                   fontSize: 12,
@@ -318,12 +348,12 @@ export default function AdminMapClient({
               </button>
             ))}
 
-            <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: '#fff', border: `1px solid ${palette.border}` }}>
+            <div className="flex w-full sm:w-auto items-center gap-1 p-1 rounded-xl" style={{ background: '#fff', border: `1px solid ${palette.border}` }}>
               {(['street', 'satellite', 'terrain'] as const).map((l) => (
                 <button
                   key={l}
                   onClick={() => setLayer(l)}
-                  className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all"
+                  className="cursor-pointer flex flex-1 sm:flex-none items-center justify-center gap-1.5 px-3 py-1.5 min-h-10 lg:min-h-0 rounded-lg transition-all"
                   style={{
                     fontFamily: "'Inter',sans-serif",
                     fontSize: 12,
@@ -349,7 +379,7 @@ export default function AdminMapClient({
       </div>
 
       {/* Map + sidebar */}
-      <div className="flex gap-4 flex-1 min-h-0">
+      <div className="flex flex-col-reverse lg:flex-row gap-4 flex-1 min-h-0">
         {/* Sidebar */}
         <AnimatePresence initial={false}>
           {sidebarOpen && (
@@ -358,13 +388,13 @@ export default function AdminMapClient({
               animate={{ width: 290, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-              className="shrink-0 flex flex-col rounded-2xl overflow-hidden min-h-0"
+              className="shrink-0 flex flex-col rounded-2xl overflow-hidden min-h-0 max-lg:w-full!"
               style={{ background: '#fff', border: `1px solid ${palette.border}` }}
             >
               {/* Filters */}
               <div className="p-3 space-y-2" style={{ borderBottom: `1px solid ${palette.border}` }}>
                 {/* Search */}
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg"
+                <label className="flex items-center gap-2 px-3 py-2 rounded-lg"
                   style={{ background: 'rgba(13,20,15,0.04)', border: `1px solid ${palette.border}` }}>
                   <Search size={13} style={{ color: palette.muted }} />
                   <input
@@ -374,13 +404,13 @@ export default function AdminMapClient({
                     className="flex-1 bg-transparent outline-none text-sm"
                     style={{ fontFamily: "'Inter',sans-serif", color: palette.ink }}
                   />
-                </div>
+                </label>
 
                 {/* Status filter */}
                 <div className="flex gap-1.5">
                   {(['ALL', 'AKTIF', 'NONAKTIF'] as const).map((s) => (
                     <button key={s} onClick={() => setFilterStatus(s)}
-                      className="cursor-pointer flex-1 py-1.5 rounded-lg transition-all"
+                      className="cursor-pointer flex-1 py-1.5 min-h-10 lg:min-h-0 rounded-lg transition-all"
                       style={{
                         fontFamily: "'JetBrains Mono',monospace",
                         fontSize: 9,
@@ -399,7 +429,7 @@ export default function AdminMapClient({
                   <select
                     value={filterOwner}
                     onChange={(e) => setFilterOwner(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg outline-none"
+                    className="w-full px-3 py-2 min-h-10 lg:min-h-0 rounded-lg outline-none"
                     style={{
                       fontFamily: "'Inter',sans-serif",
                       fontSize: 12,
@@ -430,7 +460,11 @@ export default function AdminMapClient({
                         key={farm.id}
                         farm={farm}
                         selected={selectedFarm?.id === farm.id}
-                        onSelect={() => setSelectedFarm((prev) => prev?.id === farm.id ? null : farm)}
+                        onSelect={() => {
+                          const deselect = selectedFarm?.id === farm.id
+                          setSelectedFarm(deselect ? null : farm)
+                          if (!deselect && farm.lat && farm.lng) revealMap()
+                        }}
                       />
                     ))}
                     {filteredFarms.length > 0 && (
@@ -476,11 +510,16 @@ export default function AdminMapClient({
         </AnimatePresence>
 
         {/* Map */}
-        <div className="flex-1 relative rounded-2xl overflow-hidden" style={{ border: `1px solid ${palette.border}` }}>
+        {/* isolate: z-index pane Leaflet (400–1000) tidak menembus header sticky & drawer menu */}
+        <div
+          id="farm-map"
+          className={`relative isolate rounded-2xl overflow-hidden scroll-mt-20 min-h-[320px] lg:min-h-0 lg:h-auto lg:flex-1 ${drawMode ? 'h-[75dvh]' : 'h-[55dvh]'}`}
+          style={{ border: `1px solid ${palette.border}` }}
+        >
           {/* Sidebar toggle */}
           <button
             onClick={() => setSidebarOpen((p) => !p)}
-            className="cursor-pointer absolute top-3 left-3 z-[1000] flex items-center gap-1.5 px-3 py-2 rounded-xl shadow-sm transition-all hover:shadow-md"
+            className="cursor-pointer absolute top-3 left-3 z-[1000] flex items-center gap-1.5 px-3 py-2 min-h-10 lg:min-h-0 rounded-xl shadow-sm transition-all hover:shadow-md"
             style={{
               background: '#fff',
               border: `1px solid ${palette.border}`,
@@ -496,7 +535,7 @@ export default function AdminMapClient({
 
           {/* Active badges */}
           {(showHeatmap || showRadius || drawMode) && (
-            <div className="absolute top-3 right-3 z-[1000] flex items-center gap-1.5">
+            <div className="absolute top-3 right-3 z-[1000] flex flex-wrap items-center justify-end gap-1.5 max-w-[calc(100%-7rem)] whitespace-nowrap pointer-events-none">
               {showHeatmap && (
                 <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
                   style={{ background: palette.ochre, color: '#fff', fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.1em' }}>
@@ -537,7 +576,7 @@ export default function AdminMapClient({
       </div>
 
       {/* Legend */}
-      <div className="mt-4 flex items-center gap-6 flex-wrap">
+      <div className="mt-4 flex items-center gap-x-4 gap-y-2 sm:gap-6 flex-wrap">
         {[
           { color: '#4ade80', label: 'Farm Aktif' },
           { color: 'rgba(13,20,15,0.3)', label: 'Farm Nonaktif' },

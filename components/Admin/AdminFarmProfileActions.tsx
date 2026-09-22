@@ -16,17 +16,21 @@ interface AdminFarmProfileActionsProps {
     lng: number | null
     status: string
   }
+  canEdit?: boolean
 }
 
-export default function AdminFarmProfileActions({ farm }: AdminFarmProfileActionsProps) {
+export default function AdminFarmProfileActions({ farm, canEdit = true }: AdminFarmProfileActionsProps) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
+  if (!canEdit) return null
+
   return (
-    <div className="flex flex-col gap-3 items-end">
-      <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-col gap-3 sm:items-end">
+      {/* Mobile: grid 2 kolom — "Buka Dashboard" penuh di atas, Edit & Hapus berdampingan */}
+      <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center">
         <button
           onClick={() => setIsEditModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all hover:-translate-y-0.5 active:translate-y-0"
+          className="flex items-center justify-center gap-2 min-h-10 sm:min-h-0 px-4 py-2 rounded-xl transition-all hover:-translate-y-0.5 active:translate-y-0"
           style={{
             background: 'rgba(13,20,15,0.06)',
             color: palette.ink,

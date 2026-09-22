@@ -28,12 +28,15 @@ const palette = {
 
 import AdminFarmProfileActions from '@/components/Admin/AdminFarmProfileActions'
 
+import { getSession } from '@/lib/auth'
+
 export default async function AdminFarmDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
+  const session = await getSession()
 
   const farm = await prisma.farm.findUnique({
     where: { id },
@@ -47,7 +50,6 @@ export default async function AdminFarmDetailPage({
         },
       },
       hewan: {
-        where: { status: 'AKTIF' },
         select: {
           id: true,
           tag: true,
@@ -56,7 +58,7 @@ export default async function AdminFarmDetailPage({
           kelamin: true,
           tanggalLahir: true,
           berat: true,
-          status: true,
+          kematian: { select: { tanggalMati: true } },
         },
         orderBy: { createdAt: 'desc' },
         take: 10,
@@ -73,14 +75,13 @@ export default async function AdminFarmDetailPage({
   if (!farm) notFound()
 
   // Extra stats
-  const [mati, terjual, hamil, rekamMedisCount] = await Promise.all([
-    prisma.hewan.count({ where: { farmId: id, status: 'MATI' } }),
-    prisma.hewan.count({ where: { farmId: id, status: 'TERJUAL' } }),
+  const [mati, hamil, rekamMedisCount] = await Promise.all([
+    prisma.kematianHewan.count({ where: { hewan: { farmId: id } } }),
     prisma.reproduksi.count({ where: { induk: { farmId: id }, status: 'HAMIL' } }),
     prisma.rekamMedis.count({ where: { hewan: { farmId: id } } }),
   ])
 
-  const totalSemua = farm._count.hewan + mati + terjual
+  const totalSemua = farm._count.hewan
   const mortalityRate = totalSemua > 0 ? Math.round((mati / totalSemua) * 100) : 0
 
   const roleBadge: Record<string, { label: string; color: string; bg: string }> = {
@@ -103,7 +104,7 @@ export default async function AdminFarmDetailPage({
       <div className="mb-8">
         <Link
           href="/admin/farms"
-          className="inline-flex items-center gap-1.5 mb-5 transition-opacity hover:opacity-70"
+          className="inline-flex items-center gap-1.5 min-h-10 sm:min-h-0 mb-3 sm:mb-5 transition-opacity hover:opacity-70"
           style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.55)' }}
         >
           <ArrowLeft size={13} /> Kembali ke Semua Farm
@@ -114,14 +115,14 @@ export default async function AdminFarmDetailPage({
         </div>
 
         <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
+          <div className="min-w-0">
             <h1 style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 400, letterSpacing: '-0.025em' }}>
               {farm.nama}
             </h1>
             <div className="flex items-center gap-3 mt-2 flex-wrap">
               {farm.alamat && (
-                <div className="flex items-center gap-1.5" style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.5)' }}>
-                  <MapPin size={12} /> {farm.alamat}
+                <div className="flex items-start gap-1.5" style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.5)' }}>
+                  <MapPin size={12} className="shrink-0 mt-1" /> {farm.alamat}
                 </div>
               )}
               <div className="flex items-center gap-1.5" style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.5)' }}>
@@ -129,9 +130,9 @@ export default async function AdminFarmDetailPage({
               </div>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-3">
+          <div className="w-full sm:w-auto flex flex-col sm:items-end gap-3">
             <span
-              className="px-3 py-1.5 rounded-full"
+              className="self-start sm:self-auto px-3 py-1.5 rounded-full"
               style={{
                 background: farm.status === 'AKTIF' ? 'rgba(63,91,58,0.12)' : 'rgba(181,68,59,0.09)',
                 color: farm.status === 'AKTIF' ? palette.moss : palette.danger,
@@ -142,7 +143,7 @@ export default async function AdminFarmDetailPage({
             >
               {farm.status === 'AKTIF' ? 'Aktif' : farm.status === 'NONAKTIF' ? 'Nonaktif' : farm.status}
             </span>
-            <AdminFarmProfileActions farm={{
+            <AdminFarmProfileActions canEdit={session?.role === 'SUPER_ADMIN'} farm={{
               id: farm.id,
               nama: farm.nama,
               alamat: farm.alamat,
@@ -158,11 +159,11 @@ export default async function AdminFarmDetailPage({
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
         {[
-          { label: 'Hewan Aktif', value: farm._count.hewan, icon: Activity, color: palette.ochre, bg: 'rgba(199,135,62,0.10)' },
+          { label: 'Hewan Hidup', value: farm._count.hewan - mati, icon: Activity, color: palette.ochre, bg: 'rgba(199,135,62,0.10)' },
           { label: 'Hewan Mati', value: mati, icon: Heart, color: palette.danger, bg: 'rgba(181,68,59,0.08)' },
-          { label: 'Terjual', value: terjual, icon: TrendingUp, color: palette.moss, bg: 'rgba(63,91,58,0.10)' },
           { label: 'Sedang Hamil', value: hamil, icon: Baby, color: palette.ochre, bg: 'rgba(199,135,62,0.08)' },
           { label: 'Rekam Medis', value: rekamMedisCount, icon: FileText, color: palette.info, bg: 'rgba(44,95,138,0.10)' },
+          { label: 'Total Hewan', value: farm._count.hewan, icon: Activity, color: palette.moss, bg: 'rgba(63,91,58,0.10)' },
           { label: 'Mortality Rate', value: `${mortalityRate}%`, icon: Heart, color: mortalityRate > 10 ? palette.danger : palette.moss, bg: mortalityRate > 10 ? 'rgba(181,68,59,0.08)' : 'rgba(63,91,58,0.10)' },
         ].map((stat) => {
           const Icon = stat.icon
@@ -188,7 +189,7 @@ export default async function AdminFarmDetailPage({
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Daftar Hewan (preview) */}
-        <div className="rounded-2xl p-6" style={{ background: '#fff', border: `1px solid ${palette.border}` }}>
+        <div className="rounded-2xl p-4 sm:p-6" style={{ background: '#fff', border: `1px solid ${palette.border}` }}>
           <div className="flex items-center justify-between mb-5">
             <div>
               <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.2em', color: 'rgba(13,20,15,0.4)', marginBottom: 4 }}>
@@ -208,30 +209,31 @@ export default async function AdminFarmDetailPage({
               {farm.hewan.map((h) => (
                 <div
                   key={h.id}
-                  className="flex items-center justify-between py-2.5 px-3 rounded-xl"
+                  className="flex items-center justify-between gap-3 py-2.5 px-3 rounded-xl"
                   style={{ border: `1px solid ${palette.border}` }}
                 >
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2.5 min-w-0">
                     <div
-                      className="w-7 h-7 rounded-lg flex items-center justify-center"
+                      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                       style={{ background: 'rgba(199,135,62,0.10)' }}
                     >
                       <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: palette.ochre }}>
                         {h.kelamin === 'JANTAN' ? '♂' : '♀'}
                       </span>
                     </div>
-                    <div>
-                      <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5, fontWeight: 500 }}>
+                    <div className="min-w-0">
+                      <div className="break-words" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5, fontWeight: 500 }}>
                         {h.nama || h.tag}
                       </div>
-                      <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: 'rgba(13,20,15,0.45)' }}>
+                      <div className="break-words" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: 'rgba(13,20,15,0.45)' }}>
                         #{h.tag}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  {/* Mobile: kategori & berat bertumpuk agar nama hewan tetap lega */}
+                  <div className="shrink-0 flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-2">
                     <span
-                      className="px-2 py-0.5 rounded-full"
+                      className="px-2 py-0.5 rounded-full whitespace-nowrap"
                       style={{
                         background: 'rgba(199,135,62,0.10)',
                         color: palette.ochre,
@@ -243,7 +245,7 @@ export default async function AdminFarmDetailPage({
                       {kategoriLabel[h.kategori] || h.kategori}
                     </span>
                     {h.berat && (
-                      <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'rgba(13,20,15,0.45)' }}>
+                      <span className="whitespace-nowrap" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'rgba(13,20,15,0.45)' }}>
                         {h.berat} kg
                       </span>
                     )}
@@ -260,7 +262,7 @@ export default async function AdminFarmDetailPage({
         </div>
 
         {/* Daftar User/Staf */}
-        <div className="rounded-2xl p-6" style={{ background: '#fff', border: `1px solid ${palette.border}` }}>
+        <div className="rounded-2xl p-4 sm:p-6" style={{ background: '#fff', border: `1px solid ${palette.border}` }}>
           <div className="flex items-center justify-between mb-5">
             <div>
               <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.2em', color: 'rgba(13,20,15,0.4)', marginBottom: 4 }}>
@@ -283,23 +285,23 @@ export default async function AdminFarmDetailPage({
                 return (
                   <div
                     key={u.id}
-                    className="flex items-center justify-between py-2.5 px-3 rounded-xl"
+                    className="flex items-center justify-between gap-3 py-2.5 px-3 rounded-xl"
                     style={{ border: `1px solid ${palette.border}` }}
                   >
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
                       <div
-                        className="w-7 h-7 rounded-full flex items-center justify-center"
+                        className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
                         style={{ background: badge.bg, color: badge.color, fontFamily: "'Fraunces',serif", fontSize: 12, fontWeight: 600 }}
                       >
                         {u.name.charAt(0).toUpperCase()}
                       </div>
-                      <div>
-                        <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5, fontWeight: 500 }}>{u.name}</div>
-                        <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: 'rgba(13,20,15,0.45)' }}>{u.email}</div>
+                      <div className="min-w-0">
+                        <div className="break-words" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5, fontWeight: 500 }}>{u.name}</div>
+                        <div className="break-all" style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: 'rgba(13,20,15,0.45)' }}>{u.email}</div>
                       </div>
                     </div>
                     <span
-                      className="px-2 py-0.5 rounded-full"
+                      className="shrink-0 whitespace-nowrap px-2 py-0.5 rounded-full"
                       style={{ background: badge.bg, color: badge.color, fontFamily: "'JetBrains Mono',monospace", fontSize: 8, letterSpacing: '0.08em' }}
                     >
                       {badge.label}
@@ -314,11 +316,11 @@ export default async function AdminFarmDetailPage({
 
       {/* Deskripsi farm */}
       {farm.deskripsi && (
-        <div className="mt-6 rounded-2xl p-6" style={{ background: '#fff', border: `1px solid ${palette.border}` }}>
+        <div className="mt-6 rounded-2xl p-4 sm:p-6" style={{ background: '#fff', border: `1px solid ${palette.border}` }}>
           <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.2em', color: 'rgba(13,20,15,0.4)', marginBottom: 10 }}>
             DESKRIPSI FARM
           </div>
-          <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, color: 'rgba(13,20,15,0.7)', lineHeight: 1.6 }}>
+          <p className="break-words" style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, color: 'rgba(13,20,15,0.7)', lineHeight: 1.6 }}>
             {farm.deskripsi}
           </p>
         </div>

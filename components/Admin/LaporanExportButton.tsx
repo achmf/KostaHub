@@ -31,6 +31,8 @@ export default function LaporanExportButton() {
       onClick={handleExport}
       disabled={loading}
       id="btn-export-laporan-excel"
+      aria-label={loading ? 'Membuat file...' : 'Export Laporan (.xlsx)'}
+      className="min-h-10 md:min-h-0"
       style={{
         display:       'inline-flex',
         alignItems:    'center',
@@ -57,7 +59,7 @@ export default function LaporanExportButton() {
       {loading ? (
         <>
           <svg
-            width="15" height="15" viewBox="0 0 24 24"
+            width="16" height="16" className="md:w-[15px] md:h-[15px]" viewBox="0 0 24 24"
             fill="none" stroke="currentColor" strokeWidth="2"
             strokeLinecap="round" strokeLinejoin="round"
             style={{ animation: 'spin 1s linear infinite', opacity: 0.7 }}
@@ -68,9 +70,10 @@ export default function LaporanExportButton() {
         </>
       ) : (
         <>
-          <FileSpreadsheet size={15} style={{ color: '#C7873E' }} />
-          <span>Export Laporan</span>
+          <FileSpreadsheet size={16} className="md:w-[15px] md:h-[15px]" style={{ color: '#C7873E' }} />
+          <span>Export<span className="hidden md:inline"> Laporan</span></span>
           <span
+            className="hidden md:inline"
             style={{
               fontFamily:  "'JetBrains Mono', monospace",
               fontSize:    9,
@@ -80,7 +83,7 @@ export default function LaporanExportButton() {
           >
             .xlsx
           </span>
-          <Download size={12} style={{ opacity: 0.5, marginLeft: 2 }} />
+          <Download size={14} className="md:w-[12px] md:h-[12px]" style={{ opacity: 0.5, marginLeft: 2 }} />
         </>
       )}
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>

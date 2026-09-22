@@ -58,7 +58,7 @@ function PasswordInput({
           type="button"
           onClick={() => setVisible((v) => !v)}
           aria-label={visible ? 'Sembunyikan password' : 'Tampilkan password'}
-          className="cursor-pointer absolute right-3 top-1/2 -translate-y-1/2"
+          className="cursor-pointer absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center"
           style={{ color: 'rgba(13,20,15,0.4)', transition: 'color 0.15s ease' }}
           onMouseEnter={(e) => (e.currentTarget.style.color = palette.ink)}
           onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(13,20,15,0.4)')}
@@ -158,7 +158,7 @@ export function ChangePasswordForm() {
             )}
           </AnimatePresence>
 
-          <KostaButton type="submit" variant="primary" disabled={isPending} className="self-start">
+          <KostaButton type="submit" variant="primary" disabled={isPending} className="self-stretch sm:self-start justify-center">
             {isPending ? <Loader2 size={14} className="animate-spin" /> : <Lock size={14} />}
             {isPending ? 'Memproses...' : 'Ubah Password'}
           </KostaButton>

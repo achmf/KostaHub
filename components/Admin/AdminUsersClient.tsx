@@ -34,11 +34,69 @@ export default function AdminUsersClient({ users }: { users: any[] }) {
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${palette.border}`, background: '#fff' }}>
-      <div className="overflow-x-auto">
+      {/* Mobile: kartu per user (tabel tampil mulai md) */}
+      <div className="md:hidden">
+        {currentUsers.map((user, i) => {
+          const rb = roleBadge[user.role] || { label: user.role, color: palette.ink, bg: 'rgba(13,20,15,0.06)' }
+          return (
+            <div
+              key={user.id}
+              className="flex items-start gap-3 px-4 py-4"
+              style={{ borderBottom: i < currentUsers.length - 1 ? `1px solid ${palette.border}` : 'none' }}
+            >
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                style={{ background: rb.bg, color: rb.color, fontFamily: "'Fraunces',serif", fontSize: 13, fontWeight: 600 }}
+              >
+                {user.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="break-words" style={{ fontFamily: "'Inter',sans-serif", fontSize: 13.5, fontWeight: 500, color: palette.ink }}>
+                      {user.name}
+                    </div>
+                    <div className="break-all" style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, color: 'rgba(13,20,15,0.5)' }}>
+                      {user.email}
+                    </div>
+                  </div>
+                  <span
+                    className="shrink-0 whitespace-nowrap px-2.5 py-1 rounded-full"
+                    style={{ background: rb.bg, color: rb.color, fontFamily: "'JetBrains Mono',monospace", fontSize: 8, letterSpacing: '0.10em' }}
+                  >
+                    {rb.label}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
+                  {user.farms.length > 0 ? (
+                    <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: palette.ink }}>
+                      {user.farms[0].farm.nama}
+                      {user.farms.length > 1 && (
+                        <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: 'rgba(13,20,15,0.4)', marginLeft: 4 }}>
+                          +{user.farms.length - 1} lagi
+                        </span>
+                      )}
+                    </span>
+                  ) : (
+                    <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: 'rgba(13,20,15,0.35)' }}>
+                      — semua farm
+                    </span>
+                  )}
+                  <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'rgba(13,20,15,0.45)' }}>
+                    Bergabung {new Date(user.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr style={{ borderBottom: `1px solid ${palette.border}`, background: 'rgba(13,20,15,0.02)' }}>
-              {['User', 'Role', 'Farm', 'Status', 'Bergabung'].map((col) => (
+              {['User', 'Role', 'Farm', 'Bergabung'].map((col) => (
                 <th
                   key={col}
                   className="text-left px-5 py-3.5"
@@ -52,8 +110,6 @@ export default function AdminUsersClient({ users }: { users: any[] }) {
           <tbody>
             {currentUsers.map((user, i) => {
               const rb = roleBadge[user.role] || { label: user.role, color: palette.ink, bg: 'rgba(13,20,15,0.06)' }
-              const ab = approvalBadge[user.approvalStatus] || approvalBadge.PENDING
-              const ApprovalIcon = ab.icon
               return (
                 <tr
                   key={user.id}
@@ -108,18 +164,6 @@ export default function AdminUsersClient({ users }: { users: any[] }) {
                         — semua farm
                       </span>
                     )}
-                  </td>
-
-                  {/* Status */}
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-1.5">
-                      <ApprovalIcon size={11} style={{ color: ab.color }} />
-                      <span
-                        style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: ab.color, letterSpacing: '0.08em' }}
-                      >
-                        {ab.label}
-                      </span>
-                    </div>
                   </td>
 
                   {/* Bergabung */}

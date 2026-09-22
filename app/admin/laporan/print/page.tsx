@@ -13,7 +13,6 @@ export default async function PrintPage() {
     totalUser,
     totalHewan,
     totalMati,
-    totalTerjual,
     pendingApprovals,
     farmBulanIni,
     hewanBulanIni,
@@ -21,16 +20,14 @@ export default async function PrintPage() {
     prisma.farm.count(),
     prisma.farm.count({ where: { status: 'AKTIF' } }),
     prisma.user.count({ where: { deletedAt: null } }),
-    prisma.hewan.count({ where: { status: 'AKTIF' } }),
-    prisma.hewan.count({ where: { status: 'MATI' } }),
-    prisma.hewan.count({ where: { status: 'TERJUAL' } }),
+    prisma.hewan.count(),
+    prisma.kematianHewan.count(),
     prisma.farm.count({ where: { status: 'NONAKTIF', deletedAt: null, rejectionReason: null } }),
     prisma.farm.count({ where: { createdAt: { gte: thisMonthStart } } }),
     prisma.hewan.count({ where: { createdAt: { gte: thisMonthStart } } }),
   ])
 
-  const totalSemua = totalHewan + totalMati + totalTerjual
-  const mortalityRate = totalSemua > 0 ? Math.round((totalMati / totalSemua) * 100) : 0
+  const mortalityRate = totalHewan > 0 ? Math.round((totalMati / totalHewan) * 100) : 0
 
   const [totalLahir, totalGagal] = await Promise.all([
     prisma.reproduksi.count({ where: { status: 'LAHIR' } }),
@@ -51,7 +48,6 @@ export default async function PrintPage() {
   const kategoriStats = await prisma.hewan.groupBy({
     by: ['kategori'],
     _count: true,
-    where: { status: 'AKTIF' },
   })
 
   return (
@@ -59,7 +55,7 @@ export default async function PrintPage() {
       reportDate={now.toISOString()}
       stats={{
         totalFarm, farmAktif, totalUser, totalHewan,
-        totalMati, totalTerjual, mortalityRate,
+        totalMati, mortalityRate,
         pendingApprovals, farmBulanIni, hewanBulanIni,
         birthSuccessRate,
       }}

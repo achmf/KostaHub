@@ -2,14 +2,11 @@
 
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
-import { getSession } from '@/lib/auth'
+import { withAuth } from '@/lib/auth'
 
 // Legacy action — dipertahankan untuk kompatibilitas,
 // tapi mark-read sekarang pakai /api/notifikasi/read
-export async function tandaiSudahDibaca(id: string) {
-  const session = await getSession()
-  if (!session) throw new Error('Unauthorized')
-
+export const tandaiSudahDibaca = withAuth(async (session, id: string) => {
   const notif = await prisma.notifikasi.findUnique({ where: { id } })
   if (!notif) throw new Error('Notifikasi tidak ditemukan')
 
@@ -22,6 +19,4 @@ export async function tandaiSudahDibaca(id: string) {
     data: { isRead: !notif.isRead },
   })
   // Tidak redirect lagi — return saja
-}
-
-
+})

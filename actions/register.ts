@@ -6,21 +6,18 @@ import { cookies } from 'next/headers'
 import bcrypt from 'bcryptjs'
 import { redirect } from 'next/navigation'
 
+import { registerOwnerSchema } from '@/lib/validations/auth.schema'
+
 type RegisterResult = { error?: string }
 
 export async function registerOwner(formData: FormData): Promise<RegisterResult> {
-  const name     = (formData.get('name') as string)?.trim()
-  const email    = (formData.get('email') as string)?.trim().toLowerCase()
-  const password = formData.get('password') as string
-  const phone    = (formData.get('phone') as string)?.trim()
+  const parsed = registerOwnerSchema.safeParse(Object.fromEntries(formData))
 
-  if (!name || !email || !password) {
-    return { error: 'Nama, email, dan password wajib diisi' }
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
   }
 
-  if (password.length < 6) {
-    return { error: 'Password minimal 6 karakter' }
-  }
+  const { name, email, password, phone } = parsed.data
 
   const existingUser = await prisma.user.findUnique({ where: { email } })
   if (existingUser) {

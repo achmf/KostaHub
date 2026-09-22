@@ -24,12 +24,13 @@ export default async function HewanPage(props: { searchParams: Promise<{ [key: s
       },
       rekamMedis: {
         select: { id: true } // only counting length is needed
-      }
+      },
+      kematian: { select: { tanggalMati: true } }, // for status badge: ada = mati, null = hidup
     },
     orderBy: { createdAt: 'desc' }
   })
 
   const isSuperAdmin = session.role === 'SUPER_ADMIN'
 
-  return <HewanClient hewanList={hewanList} isSuperAdmin={isSuperAdmin} />
+  return <HewanClient hewanList={hewanList as any} isSuperAdmin={isSuperAdmin} />
 }

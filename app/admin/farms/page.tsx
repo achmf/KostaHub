@@ -15,7 +15,10 @@ const palette = {
   danger: '#B5443B',
 }
 
+import { getSession } from '@/lib/auth'
+
 export default async function AdminFarmsPage() {
+  const session = await getSession()
   const farms = await prisma.farm.findMany({
     include: {
       _count: { select: { members: true, hewan: true } },
@@ -41,7 +44,7 @@ export default async function AdminFarmsPage() {
   return (
     <div>
       {/* Header */}
-      <AdminFarmsHeader />
+      <AdminFarmsHeader canCreate={session?.role === 'SUPER_ADMIN'} />
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
@@ -121,8 +124,8 @@ export default async function AdminFarmsPage() {
               </div>
 
               {farm.alamat && (
-                <div className="flex items-center gap-1.5 mt-1.5" style={{ fontSize: 12, color: 'rgba(13,20,15,0.45)', fontFamily: "'Inter',sans-serif" }}>
-                  <MapPin size={11} />{farm.alamat}
+                <div className="flex items-start gap-1.5 mt-1.5" style={{ fontSize: 12, color: 'rgba(13,20,15,0.45)', fontFamily: "'Inter',sans-serif" }}>
+                  <MapPin size={11} className="shrink-0 mt-1" />{farm.alamat}
                 </div>
               )}
 

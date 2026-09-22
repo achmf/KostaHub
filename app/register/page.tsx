@@ -20,7 +20,7 @@ const palette = {
 }
 
 function InputField({
-  id, label, icon: Icon, type = 'text', name, required = false, placeholder,
+  id, label, icon: Icon, type = 'text', name, required = false, placeholder, autoComplete,
 }: {
   id: string
   label: string
@@ -29,6 +29,7 @@ function InputField({
   name: string
   required?: boolean
   placeholder?: string
+  autoComplete?: string
 }) {
   return (
     <div>
@@ -52,6 +53,7 @@ function InputField({
         name={name}
         required={required}
         placeholder={placeholder}
+        autoComplete={autoComplete}
         className="w-full px-4 py-3 rounded-xl transition-all"
         style={{
           background: 'rgba(13,20,15,0.03)',
@@ -103,10 +105,10 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: palette.cream }}>
+    <div className="min-h-dvh flex p-4 sm:p-6" style={{ background: palette.cream }}>
       {/* Background waves */}
       <svg
-        className="fixed inset-0 w-full h-full pointer-events-none"
+        className="fixed inset-0 w-full h-full pointer-events-none overflow-hidden"
         viewBox="0 0 100 100"
         preserveAspectRatio="xMidYMid slice"
         style={{ opacity: 0.06 }}
@@ -122,7 +124,7 @@ export default function RegisterPage() {
         ))}
       </svg>
 
-      <div className="relative z-10 w-full max-w-[480px]">
+      <div className="relative z-10 m-auto w-full max-w-[480px]">
         {/* Brand */}
         <motion.div
           initial={{ y: -20, opacity: 0 }}
@@ -146,7 +148,7 @@ export default function RegisterPage() {
           style={{ background: '#fff', border: `1px solid ${palette.border}` }}
         >
           {/* Header */}
-          <div className="px-8 pt-8 pb-8" style={{ background: palette.forest, color: palette.cream }}>
+          <div className="p-6 sm:p-8" style={{ background: palette.forest, color: palette.cream }}>
             <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, letterSpacing: '0.2em', opacity: 0.6 }}>
               BUAT AKUN OWNER
             </div>
@@ -163,7 +165,7 @@ export default function RegisterPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="px-8 py-8 space-y-4">
+          <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-4">
             {/* Error banner */}
             {error && (
               <motion.div
@@ -187,6 +189,7 @@ export default function RegisterPage() {
               label="NAMA LENGKAP"
               icon={User}
               name="name"
+              autoComplete="name"
               required
               placeholder="John Doe"
             />
@@ -196,6 +199,7 @@ export default function RegisterPage() {
               icon={Mail}
               type="email"
               name="email"
+              autoComplete="email"
               required
               placeholder="you@example.com"
             />
@@ -205,6 +209,7 @@ export default function RegisterPage() {
               icon={Lock}
               type="password"
               name="password"
+              autoComplete="new-password"
               required
               placeholder="Minimal 6 karakter"
             />
@@ -214,6 +219,7 @@ export default function RegisterPage() {
               icon={ShieldCheck}
               type="password"
               name="confirmPassword"
+              autoComplete="new-password"
               required
               placeholder="Ulangi password Anda"
             />
@@ -221,7 +227,9 @@ export default function RegisterPage() {
               id="reg-phone"
               label="NO. TELEPON"
               icon={Phone}
+              type="tel"
               name="phone"
+              autoComplete="tel"
               placeholder="08xxxxxxxxxx"
             />
 
@@ -268,7 +276,7 @@ export default function RegisterPage() {
             {/* Login link */}
             <div className="text-center" style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.5)' }}>
               Sudah punya akun?{' '}
-              <Link href="/login" style={{ color: palette.ochre, fontWeight: 500 }}>
+              <Link href="/login" className="inline-block py-2.5 sm:py-0" style={{ color: palette.ochre, fontWeight: 500 }}>
                 Masuk
               </Link>
             </div>

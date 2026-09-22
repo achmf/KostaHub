@@ -37,3 +37,17 @@ export async function getSession() {
     return null
   }
 }
+
+/**
+ * HOF wrapper untuk Server Actions agar tidak perlu menulis ulang `getSession()`
+ * dan pengecekan otorisasi di setiap file action.
+ */
+export function withAuth<Args extends any[], Return>(
+  handler: (session: SessionPayload, ...args: Args) => Promise<Return>
+) {
+  return async (...args: Args): Promise<Return> => {
+    const session = await getSession()
+    if (!session) throw new Error('Unauthorized')
+    return handler(session, ...args)
+  }
+}

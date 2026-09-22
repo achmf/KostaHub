@@ -83,6 +83,8 @@ export default function LocationPicker({
 
   return (
     <div
+      // Tombol zoom Leaflet (30px) → 40px di perangkat sentuh
+      className="pointer-coarse:[&_.leaflet-bar_a]:size-10! pointer-coarse:[&_.leaflet-bar_a]:leading-10!"
       style={{
         height: 250,
         width: '100%',
@@ -94,6 +96,8 @@ export default function LocationPicker({
       <MapContainer
         center={[defaultLat, defaultLng]}
         zoom={13}
+        // Map berada di dalam form panjang — scroll mouse/trackpad menggulir halaman, bukan zoom peta
+        scrollWheelZoom={false}
         style={{ height: '100%', width: '100%', zIndex: 0 }}
       >
         <TileLayer

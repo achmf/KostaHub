@@ -22,29 +22,29 @@ export default async function AdminLaporanPage() {
 
   const farmDetailList = await Promise.all(
     farms.map(async (farm) => {
-      const [aktif, mati, terjual, hamil, totalMedis, lahir] = await Promise.all([
-        prisma.hewan.count({ where: { farmId: farm.id, status: 'AKTIF' } }),
-        prisma.hewan.count({ where: { farmId: farm.id, status: 'MATI' } }),
-        prisma.hewan.count({ where: { farmId: farm.id, status: 'TERJUAL' } }),
+      const [totalHewan, mati, hamil, totalMedis, lahir] = await Promise.all([
+        prisma.hewan.count({ where: { farmId: farm.id } }),
+        prisma.kematianHewan.count({ where: { hewan: { farmId: farm.id } } }),
         prisma.reproduksi.count({ where: { induk: { farmId: farm.id }, status: 'HAMIL' } }),
         prisma.rekamMedis.count({ where: { hewan: { farmId: farm.id } } }),
         prisma.reproduksi.count({ where: { induk: { farmId: farm.id }, status: 'LAHIR' } }),
       ])
-      const totalSemua = aktif + mati + terjual
-      const mortalityRate = totalSemua > 0 ? Math.round((mati / totalSemua) * 100) : 0
+      const aktif = totalHewan - mati
+      const mortalityRate = totalHewan > 0 ? Math.round((mati / totalHewan) * 100) : 0
       return {
         ...farm,
         aktif,
         mati,
-        terjual,
+        terjual: 0,
         hamil,
         totalMedis,
         lahir,
         mortalityRate,
-        totalHewan: totalSemua,
+        totalHewan,
       }
     })
   )
+
 
   const now = new Date()
   const tanggalLaporan = now.toLocaleDateString('id-ID', {
@@ -116,7 +116,7 @@ export default async function AdminLaporanPage() {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[880px]">
             <thead>
               <tr style={{ borderBottom: `1px solid ${palette.border}`, background: 'rgba(13,20,15,0.02)' }}>
                 {['No', 'Nama Farm', 'Status', 'Hewan Aktif', 'Kematian', 'Terjual', 'Hamil', 'Rekam Medis', 'Mortality %', 'Staf'].map((col) => (

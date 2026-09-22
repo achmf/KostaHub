@@ -112,7 +112,7 @@ export default function AdminFarmsClient({ farms }: { farms: FarmData[] }) {
               <div className="flex items-center gap-2 mt-5">
                 <Link
                   href={`/admin/farms/${farm.id}`}
-                  className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs transition-colors hover:bg-black/5"
+                  className="flex-1 flex items-center justify-center gap-2 min-h-10 sm:min-h-0 py-2 rounded-lg text-xs transition-colors hover:bg-black/5"
                   style={{ background: 'rgba(13,20,15,0.04)', color: palette.ink, fontFamily: "'Inter',sans-serif", fontWeight: 500 }}
                 >
                   Detail Farm
@@ -120,7 +120,7 @@ export default function AdminFarmsClient({ farms }: { farms: FarmData[] }) {
                 <form action={switchFarm.bind(null, farm.id)} className="flex-1 flex">
                   <button
                     type="submit"
-                    className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs transition-opacity hover:opacity-90"
+                    className="w-full flex items-center justify-center gap-2 min-h-10 sm:min-h-0 py-2 rounded-lg text-xs transition-opacity hover:opacity-90"
                     style={{ background: palette.ochre, color: palette.cream, fontFamily: "'Inter',sans-serif", fontWeight: 500 }}
                   >
                     Masuk Dashboard

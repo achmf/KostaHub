@@ -28,7 +28,7 @@ export function RekamMedisHistory({ records }: { records: RekamMedis[] }) {
 
   if (records.length === 0) {
     return (
-      <KostaCard className="p-6">
+      <KostaCard className="p-5 sm:p-6">
         <KostaEmptyState
           title="Belum ada riwayat medis"
           hint="Tambahkan catatan medis pertama untuk hewan ini."
@@ -39,7 +39,7 @@ export function RekamMedisHistory({ records }: { records: RekamMedis[] }) {
 
   return (
     <>
-      <KostaCard className="p-6">
+      <KostaCard className="p-5 sm:p-6">
         <KostaSectionLabel>RIWAYAT REKAM MEDIS</KostaSectionLabel>
         <div className="mt-4 divide-y" style={{ borderColor: palette.border }}>
           {currentRecords.map((m) => (
@@ -109,7 +109,7 @@ export function RekamMedisHistory({ records }: { records: RekamMedis[] }) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 rounded-xl" style={{ background: 'rgba(13,20,15,0.03)' }}>
                 <div className="flex items-center gap-2 opacity-50 mb-1" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, letterSpacing: '0.05em' }}>
                   <User size={12} /> PETUGAS
@@ -144,7 +144,7 @@ export function RekamMedisHistory({ records }: { records: RekamMedis[] }) {
                 <div className="flex items-center gap-2 opacity-50 mb-2" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, letterSpacing: '0.05em' }}>
                   <FileText size={12} /> CATATAN MEDIS
                 </div>
-                <div className="p-4 rounded-xl border leading-relaxed" style={{ borderColor: palette.border, fontFamily: "'Inter',sans-serif", fontSize: 14 }}>
+                <div className="p-4 rounded-xl border leading-relaxed break-words" style={{ borderColor: palette.border, fontFamily: "'Inter',sans-serif", fontSize: 14 }}>
                   {selectedRecord.notes}
                 </div>
               </div>
@@ -168,7 +168,7 @@ export function RekamMedisHistory({ records }: { records: RekamMedis[] }) {
             )}
 
             <div className="flex justify-end pt-4">
-              <KostaButton variant="outline" onClick={() => setSelectedRecord(null)}>Tutup</KostaButton>
+              <KostaButton variant="outline" onClick={() => setSelectedRecord(null)} className="w-full sm:w-auto justify-center">Tutup</KostaButton>
             </div>
           </div>
         )}

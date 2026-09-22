@@ -5,13 +5,13 @@ import { Plus } from 'lucide-react'
 import AddFarmModal from '@/components/Admin/AddFarmModal'
 import { palette } from '@/components/KostaUI'
 
-export default function AdminFarmsHeader() {
+export default function AdminFarmsHeader({ canCreate = true }: { canCreate?: boolean }) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
 
   return (
     <>
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
+      <div className="mb-8 flex items-start sm:items-end justify-between gap-4">
+        <div className="min-w-0">
           <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.2em', color: 'rgba(13,20,15,0.4)', marginBottom: 8 }}>
             MANAJEMEN FARM
           </div>
@@ -23,20 +23,23 @@ export default function AdminFarmsHeader() {
           </p>
         </div>
         
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all hover:-translate-y-0.5 active:translate-y-0"
-          style={{
-            background: palette.forest,
-            color: palette.cream,
-            fontFamily: "'Inter',sans-serif",
-            fontSize: 13,
-            fontWeight: 500,
-          }}
-        >
-          <Plus size={16} />
-          Tambah Farm
-        </button>
+        {canCreate && (
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            aria-label="Tambah Farm"
+            className="shrink-0 flex items-center justify-center gap-2 min-w-10 min-h-10 px-3 md:px-4 py-2.5 rounded-xl transition-all hover:-translate-y-0.5 active:translate-y-0"
+            style={{
+              background: palette.forest,
+              color: palette.cream,
+              fontFamily: "'Inter',sans-serif",
+              fontSize: 13,
+              fontWeight: 500,
+            }}
+          >
+            <Plus size={16} className="md:w-[16px] md:h-[16px]" />
+            <span>Tambah<span className="hidden sm:inline"> Farm</span></span>
+          </button>
+        )}
       </div>
 
       <AddFarmModal open={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />

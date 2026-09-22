@@ -108,14 +108,14 @@ export default function FarmRevisiClient({ farmId, initialData, rejectionReason 
   // ── Success state ──────────────────────────────────────────────────────────
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6" style={{ background: palette.cream }}>
+      <div className="min-h-dvh flex p-4 sm:p-6" style={{ background: palette.cream }}>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="w-full max-w-[480px] rounded-3xl overflow-hidden"
+          className="m-auto w-full max-w-[480px] rounded-3xl overflow-hidden"
           style={{ background: '#fff', border: `1px solid ${palette.border}` }}
         >
-          <div className="px-8 pt-8 pb-10" style={{ background: palette.forest, color: palette.cream }}>
+          <div className="px-6 pt-6 pb-8 sm:px-8 sm:pt-8 sm:pb-10" style={{ background: palette.forest, color: palette.cream }}>
             <div className="flex items-center gap-3 mb-5">
               <GoatMark className="w-7 h-7" />
               <span style={{ fontFamily: "'Fraunces',serif", fontWeight: 600, fontSize: 18 }}>KostaHub</span>
@@ -138,7 +138,7 @@ export default function FarmRevisiClient({ farmId, initialData, rejectionReason 
               Permohonan Anda sudah kami terima dan akan segera ditinjau kembali oleh admin.
             </p>
           </div>
-          <div className="px-8 py-6">
+          <div className="px-6 sm:px-8 py-6">
             <Link
               href="/farms"
               className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-full"
@@ -154,8 +154,8 @@ export default function FarmRevisiClient({ farmId, initialData, rejectionReason 
 
   // ── Revision form ──────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: palette.cream }}>
-      <div className="relative z-10 w-full max-w-[560px]">
+    <div className="min-h-dvh flex p-4 sm:p-6" style={{ background: palette.cream }}>
+      <div className="relative z-10 m-auto w-full max-w-[560px]">
         {/* Brand */}
         <motion.div
           initial={{ y: -16, opacity: 0 }}
@@ -177,7 +177,7 @@ export default function FarmRevisiClient({ farmId, initialData, rejectionReason 
           style={{ background: '#fff', border: `1px solid ${palette.border}` }}
         >
           {/* Header */}
-          <div className="px-8 pt-8 pb-8" style={{ background: palette.forest, color: palette.cream }}>
+          <div className="p-6 sm:p-8" style={{ background: palette.forest, color: palette.cream }}>
             <div className="flex items-center gap-3 mb-4">
               <div
                 className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full"
@@ -199,7 +199,7 @@ export default function FarmRevisiClient({ farmId, initialData, rejectionReason 
             </p>
           </div>
 
-          <div className="px-8 py-8 space-y-6">
+          <div className="p-6 sm:p-8 space-y-6">
             {/* Rejection reason banner */}
             <div
               className="p-4 rounded-xl"
@@ -345,10 +345,10 @@ export default function FarmRevisiClient({ farmId, initialData, rejectionReason 
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-3 pt-2">
+              <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-3 pt-2">
                 <Link
                   href="/farms"
-                  className="flex items-center gap-2 px-5 py-3 rounded-full"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 rounded-full"
                   style={{
                     background: 'rgba(13,20,15,0.06)',
                     color: palette.ink,
@@ -364,7 +364,7 @@ export default function FarmRevisiClient({ farmId, initialData, rejectionReason 
                   id="revisi-submit-btn"
                   type="submit"
                   disabled={isPending}
-                  className="group flex-1 flex items-center justify-center gap-3 px-6 py-3.5 rounded-full"
+                  className="group w-full sm:w-auto sm:flex-1 flex items-center justify-center gap-3 px-6 py-3.5 rounded-full"
                   style={{
                     background: isPending ? 'rgba(13,20,15,0.5)' : palette.ink,
                     color: palette.cream,

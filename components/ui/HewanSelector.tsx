@@ -63,12 +63,14 @@ export function HewanSelector({
           )}
           style={{ fontFamily: "'Inter',sans-serif" }}
         >
-          {selectedHewan
-            ? `${selectedHewan.tag}${selectedHewan.nama ? ` — ${selectedHewan.nama}` : ''}`
-            : placeholder}
+          <span className="truncate text-left">
+            {selectedHewan
+              ? `${selectedHewan.tag}${selectedHewan.nama ? ` — ${selectedHewan.nama}` : ''}`
+              : placeholder}
+          </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </PopoverTrigger>
-        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl border-border shadow-lg" align="start">
+        <PopoverContent className="w-(--anchor-width) max-w-[calc(100vw-1.5rem)] p-0 rounded-xl border-border shadow-lg" align="start">
           <Command>
             <CommandInput placeholder="Cari tag atau nama hewan..." className="text-sm h-11" />
             <CommandList>

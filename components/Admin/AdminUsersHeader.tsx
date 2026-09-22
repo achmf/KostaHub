@@ -23,8 +23,8 @@ export default function AdminUsersHeader({ totalUsers, canCreate }: Props) {
   return (
     <>
       {/* Header section */}
-      <div className="mb-8 flex items-end justify-between gap-4 flex-wrap">
-        <div>
+      <div className="mb-8 flex items-start sm:items-end justify-between gap-4 sm:flex-wrap">
+        <div className="min-w-0">
           <div
             style={{
               fontFamily: "'JetBrains Mono',monospace",
@@ -63,7 +63,8 @@ export default function AdminUsersHeader({ totalUsers, canCreate }: Props) {
           <button
             id="btn-create-user"
             onClick={() => setModalOpen(true)}
-            className="cursor-pointer flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all hover:opacity-90 active:scale-95"
+            aria-label="Buat User"
+            className="cursor-pointer shrink-0 flex items-center justify-center gap-2 min-w-10 min-h-10 px-3 md:px-4 py-2.5 rounded-xl transition-all hover:opacity-90 active:scale-95"
             style={{
               fontFamily: "'Inter',sans-serif",
               fontSize: 13,
@@ -73,8 +74,8 @@ export default function AdminUsersHeader({ totalUsers, canCreate }: Props) {
               border: 'none',
             }}
           >
-            <UserPlus size={14} />
-            Buat User
+            <UserPlus size={16} className="md:w-[14px] md:h-[14px]" />
+            <span className="hidden md:inline">Buat User</span>
           </button>
         )}
       </div>

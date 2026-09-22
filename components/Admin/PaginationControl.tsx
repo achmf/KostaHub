@@ -30,7 +30,7 @@ export default function PaginationControl({
   const end = totalItems && perPage ? Math.min((page + 1) * perPage, totalItems) : null
 
   return (
-    <div className="flex items-center gap-3 mt-4 justify-end">
+    <div className="flex items-center gap-1 sm:gap-3 mt-4 justify-between sm:justify-end">
       {start !== null && (
         <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'rgba(13,20,15,0.5)' }}>
           {start}–{end} dari {totalItems}
@@ -39,7 +39,8 @@ export default function PaginationControl({
       <button 
         onClick={onPrev} 
         disabled={page === 0}
-        className="p-1.5 rounded-md hover:bg-black/5 disabled:opacity-30 transition-all cursor-pointer"
+        aria-label="Halaman sebelumnya"
+        className="w-10 h-10 sm:w-8 sm:h-8 ml-auto sm:ml-0 flex items-center justify-center rounded-md hover:bg-black/5 disabled:opacity-30 transition-all cursor-pointer"
       >
         <ChevronLeft size={16} style={{ color: palette.ink }} />
       </button>
@@ -49,7 +50,8 @@ export default function PaginationControl({
       <button 
         onClick={onNext} 
         disabled={page >= totalPages - 1}
-        className="p-1.5 rounded-md hover:bg-black/5 disabled:opacity-30 transition-all cursor-pointer"
+        aria-label="Halaman berikutnya"
+        className="w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center rounded-md hover:bg-black/5 disabled:opacity-30 transition-all cursor-pointer"
       >
         <ChevronRight size={16} style={{ color: palette.ink }} />
       </button>
