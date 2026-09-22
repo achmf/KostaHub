@@ -7,7 +7,8 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import type { Farm, MapLayer } from './MapPageClient'
 import { saveGeojson } from '@/actions/saveGeojson'
-import { toast } from 'sonner'
+import { useToast } from '@/components/ToastProvider'
+import { escapeHtml } from '@/lib/utils'
 import dynamic from 'next/dynamic'
 
 // Dynamic imports for heavy GIS layers
@@ -150,15 +151,15 @@ function MapResizer() {
 function buildPopupHtml(farm: Farm) {
   const isActive = farm.status === 'AKTIF'
   return `
-    <div style="font-family:'Inter',sans-serif; min-width:220px; padding:4px 0;">
+    <div style="font-family:'Inter',sans-serif; min-width:220px; max-width:240px; overflow-wrap:break-word; padding:4px 0;">
       <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
         <div style="width:8px;height:8px;border-radius:50%;background:${isActive ? '#4ade80' : '#9ca3af'};flex-shrink:0;"></div>
-        <strong style="font-size:14px;color:#0D140F;">${farm.nama}</strong>
+        <strong style="font-size:14px;color:#0D140F;">${escapeHtml(farm.nama)}</strong>
         <span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.1em;color:${isActive ? '#3F5B3A' : '#9ca3af'};padding:2px 8px;border-radius:99px;border:1px solid ${isActive ? 'rgba(63,91,58,0.3)' : 'rgba(13,20,15,0.15)'}">
-          ${farm.status}
+          ${escapeHtml(farm.status)}
         </span>
       </div>
-      ${farm.alamat ? `<div style="font-size:11px;color:rgba(13,20,15,0.55);margin-bottom:10px;line-height:1.5;">${farm.alamat}</div>` : ''}
+      ${farm.alamat ? `<div style="font-size:11px;color:rgba(13,20,15,0.55);margin-bottom:10px;line-height:1.5;">${escapeHtml(farm.alamat)}</div>` : ''}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
         ${[['TOTAL', farm._count.hewan], ['AKTIF', farm.hewanAktif], ['INDUKAN', farm.hewanIndukan], ['PEJANTAN', farm.hewanPejantan]]
           .map(([label, val]) => `
@@ -168,13 +169,13 @@ function buildPopupHtml(farm: Farm) {
             </div>
           `).join('')}
       </div>
-      ${farm.deskripsi ? `<p style="font-size:11px;color:rgba(13,20,15,0.55);margin-bottom:10px;line-height:1.5;">${farm.deskripsi}</p>` : ''}
-      <a href="/farm/${farm.id}" style="display:block;text-align:center;padding:8px 12px;background:#1B2A1F;color:#F2EDE0;border-radius:99px;font-size:12px;font-weight:500;text-decoration:none;">
+      ${farm.deskripsi ? `<p style="font-size:11px;color:rgba(13,20,15,0.55);margin-bottom:10px;line-height:1.5;">${escapeHtml(farm.deskripsi)}</p>` : ''}
+      <a href="/farm/${escapeHtml(farm.id)}" class="min-h-10 lg:min-h-0" style="display:flex;align-items:center;justify-content:center;text-align:center;padding:8px 12px;background:#1B2A1F;color:#F2EDE0;border-radius:99px;font-size:12px;font-weight:500;text-decoration:none;">
         Lihat Detail Farm →
       </a>
       ${farm.lat ? `
-        <a href="https://www.google.com/maps?q=${farm.lat},${farm.lng}" target="_blank"
-          style="display:block;text-align:center;padding:6px;margin-top:6px;border:1px solid rgba(13,20,15,0.12);border-radius:99px;font-size:11px;color:rgba(13,20,15,0.55);text-decoration:none;">
+        <a href="https://www.google.com/maps?q=${farm.lat},${farm.lng}" target="_blank" class="min-h-10 lg:min-h-0"
+          style="display:flex;align-items:center;justify-content:center;text-align:center;padding:6px;margin-top:6px;border:1px solid rgba(13,20,15,0.12);border-radius:99px;font-size:11px;color:rgba(13,20,15,0.55);text-decoration:none;">
           Buka di Google Maps
         </a>
       ` : ''}
@@ -221,6 +222,7 @@ export default function FarmMap({
   const initialCenter = validFarms.length > 0 ? [validFarms[0].lat, validFarms[0].lng] as [number, number] : defaultCenter
 
   const [isSavingPolygon, setIsSavingPolygon] = useState(false)
+  const { showToast } = useToast()
 
   async function handlePolygonSave(geojson: string | null) {
     if (!selectedFarm) return
@@ -228,9 +230,9 @@ export default function FarmMap({
     const result = await saveGeojson(selectedFarm.id, geojson)
     setIsSavingPolygon(false)
     if (result?.error) {
-      toast.error(result.error)
+      showToast({ title: result.error, type: 'error' })
     } else {
-      toast.success(geojson ? 'Area kandang berhasil disimpan!' : 'Area kandang dihapus.')
+      showToast({ title: geojson ? 'Area kandang berhasil disimpan!' : 'Area kandang dihapus.', type: 'success' })
       onDrawSaved(selectedFarm.id, geojson)
       onDrawClose()
     }
@@ -272,6 +274,8 @@ export default function FarmMap({
       {/* Draw polygon control — OWNER only */}
       {drawMode && selectedFarm && role === 'OWNER' && (
         <DrawPolygonControl
+          // Ganti farm saat menggambar → reset titik, supaya poligon tidak tersimpan ke farm yang salah
+          key={selectedFarm.id}
           farm={selectedFarm}
           onSave={handlePolygonSave}
           onClose={onDrawClose}
@@ -309,7 +313,8 @@ export default function FarmMap({
               icon={createFarmIcon(farm, isSelected)}
               zIndexOffset={isSelected ? 1000 : 0}
               eventHandlers={{
-                click: () => onSelectFarm(isSelected ? null : farm),
+                // Saat menggambar, tap marker tidak boleh mengganti/membatalkan farm yang sedang digambar
+                click: () => { if (!drawMode) onSelectFarm(isSelected ? null : farm) },
               }}
             >
               <Popup className="farm-popup-custom" minWidth={240}>

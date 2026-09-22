@@ -119,7 +119,7 @@ export async function createUserByAdmin(formData: FormData): Promise<{ success?:
   const hashed = await bcrypt.hash(password, 12)
 
   await prisma.user.create({
-    data: { name, email, phone: phone || null, role: role as any, password: hashed },
+    data: { name, email, phone: phone || null, role: role as any, password: hashed, approvalStatus: 'APPROVED' },
   })
 
   revalidatePath('/admin/users')

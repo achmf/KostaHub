@@ -6,6 +6,7 @@ import StatusClient from './StatusClient'
 export default async function StatusPage() {
   const session = await getSession()
   if (!session) redirect('/login')
+  if (session.role === 'SUPER_ADMIN' || session.role === 'DINAS') redirect('/admin')
 
   // Ambil semua farm user — diurutkan terbaru dulu
   const userFarms = await prisma.userFarm.findMany({

@@ -54,38 +54,38 @@ export default function FarmPickerClient({ farms, userName, userRole, activeFarm
 
   return (
     <div
-      className="min-h-screen flex flex-col"
+      className="min-h-dvh flex flex-col"
       style={{ background: palette.cream, color: palette.ink }}
     >
       {/* Top bar */}
       <div
-        className="px-6 md:px-10 py-4 flex items-center justify-between"
+        className="px-4 sm:px-6 md:px-10 py-3 sm:py-4 flex items-center justify-between gap-3"
         style={{ borderBottom: `1px solid ${palette.border}` }}
       >
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 shrink-0">
           <GoatMark className="w-7 h-7" />
           <span style={{ fontFamily: "'Fraunces',serif", fontWeight: 600, fontSize: 18 }}>
             KostaHub
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <div
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full min-w-0"
             style={{ background: 'rgba(13,20,15,0.05)', border: `1px solid ${palette.border}` }}
           >
             <div
-              className="w-6 h-6 rounded-full flex items-center justify-center text-xs"
+              className="w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0"
               style={{ background: palette.ochre, color: palette.cream, fontFamily: "'Fraunces',serif" }}
             >
               {userName.charAt(0).toUpperCase()}
             </div>
-            <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}>{userName}</span>
+            <span className="hidden min-[360px]:block truncate" style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}>{userName}</span>
           </div>
           <form action={logout}>
             <button
               type="submit"
-              className="cursor-pointer px-3 py-1.5 rounded-full text-xs"
+              className="cursor-pointer min-h-10 sm:min-h-0 px-3 py-1.5 rounded-full text-xs"
               style={{
                 fontFamily: "'Inter',sans-serif",
                 border: `1px solid ${palette.border}`,
@@ -99,7 +99,7 @@ export default function FarmPickerClient({ farms, userName, userRole, activeFarm
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-16">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-8 sm:py-16">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -107,7 +107,7 @@ export default function FarmPickerClient({ farms, userName, userRole, activeFarm
           className="w-full max-w-2xl"
         >
           {/* Heading */}
-          <div className="mb-10">
+          <div className="mb-6 sm:mb-10">
             <p
               className="mb-2"
               style={{
@@ -122,7 +122,7 @@ export default function FarmPickerClient({ farms, userName, userRole, activeFarm
             <h1
               style={{
                 fontFamily: "'Fraunces',serif",
-                fontSize: 'clamp(28px, 5vw, 40px)',
+                fontSize: 'clamp(24px, 6vw, 40px)',
                 fontWeight: 600,
                 lineHeight: 1.15,
                 letterSpacing: '-0.02em',
@@ -150,7 +150,7 @@ export default function FarmPickerClient({ farms, userName, userRole, activeFarm
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-center py-16"
+                className="text-center py-10 sm:py-16"
               >
                 <Building2 size={40} className="mx-auto mb-4" style={{ color: palette.inkMuted, opacity: 0.4 }} />
                 <p style={{ fontFamily: "'Fraunces',serif", fontSize: 18, color: palette.inkMuted }}>
@@ -176,7 +176,7 @@ export default function FarmPickerClient({ farms, userName, userRole, activeFarm
                   transition={{ delay: i * 0.07, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
                   onClick={() => handleSelectFarm(farm.id)}
                   disabled={isPending}
-                  className="w-full text-left cursor-pointer rounded-2xl p-5 flex items-center gap-4 group hover:-translate-y-1 hover:shadow-lg"
+                  className="w-full text-left cursor-pointer rounded-2xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4 group hover:-translate-y-1 hover:shadow-lg"
                   style={{
                     background: isSelected ? palette.forest : palette.card,
                     border: `1.5px solid ${isSelected ? palette.forest : palette.border}`,
@@ -211,8 +211,9 @@ export default function FarmPickerClient({ farms, userName, userRole, activeFarm
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
+                    <div className="flex flex-wrap items-center gap-2 mb-0.5">
                       <span
+                        className="min-w-0 break-words"
                         style={{
                           fontFamily: "'Fraunces',serif",
                           fontSize: 17,
@@ -287,7 +288,7 @@ export default function FarmPickerClient({ farms, userName, userRole, activeFarm
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: (activeFarms.length + i) * 0.07, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-                className="w-full rounded-2xl p-5 flex items-center gap-4"
+                className="w-full rounded-2xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4"
                 style={{
                   background: palette.card,
                   border: `1.5px dashed ${palette.border}`,
@@ -301,7 +302,7 @@ export default function FarmPickerClient({ farms, userName, userRole, activeFarm
                   <Clock size={20} style={{ color: palette.inkMuted }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span style={{ fontFamily: "'Fraunces',serif", fontSize: 17, fontWeight: 600, color: palette.ink }}>
+                  <span className="break-words" style={{ fontFamily: "'Fraunces',serif", fontSize: 17, fontWeight: 600, color: palette.ink }}>
                     {farm.nama}
                   </span>
                   <div className="flex items-center gap-1.5 mt-0.5">
@@ -321,7 +322,7 @@ export default function FarmPickerClient({ farms, userName, userRole, activeFarm
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: (activeFarms.length + waitingFarms.length + i) * 0.07, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-                className="w-full rounded-2xl p-5 flex items-center gap-4"
+                className="w-full rounded-2xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4"
                 style={{
                   background: 'rgba(181,68,59,0.03)',
                   border: `1.5px solid rgba(181,68,59,0.25)`,
@@ -334,7 +335,7 @@ export default function FarmPickerClient({ farms, userName, userRole, activeFarm
                   <XCircle size={20} style={{ color: '#B5443B' }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span style={{ fontFamily: "'Fraunces',serif", fontSize: 17, fontWeight: 600, color: palette.ink }}>
+                  <span className="break-words" style={{ fontFamily: "'Fraunces',serif", fontSize: 17, fontWeight: 600, color: palette.ink }}>
                     {farm.nama}
                   </span>
                   <div className="flex items-center gap-1.5 mt-0.5">
@@ -350,8 +351,8 @@ export default function FarmPickerClient({ farms, userName, userRole, activeFarm
                   )}
                   <Link
                     href={`/farms/revisi/${farm.id}`}
-                    className="inline-block mt-2"
-                    style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: '#C7873E', textDecoration: 'underline' }}
+                    className="inline-block py-3 text-[13px] sm:py-0 sm:mt-2 sm:text-[11px]"
+                    style={{ fontFamily: "'Inter',sans-serif", color: '#C7873E', textDecoration: 'underline' }}
                   >
                     Revisi &amp; ajukan ulang →
                   </Link>

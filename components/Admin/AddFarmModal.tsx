@@ -53,7 +53,7 @@ export default function AddFarmModal({ open, onClose }: AddFarmModalProps) {
           <FormField label="Alamat">
             <Textarea name="alamat" placeholder="Alamat lengkap farm..." className="min-h-[80px] w-full rounded-[10px] border border-[rgba(13,20,15,0.12)] bg-white p-3 text-[14px] outline-none transition-all focus-visible:border-[#C7873E] focus-visible:ring-4 focus-visible:ring-[rgba(199,135,62,0.12)] shadow-sm" />
           </FormField>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-4">
             <FormField label="Latitude (opsional)">
               <Input name="lat" type="number" step="any" placeholder="-6.200000" className="h-[42px] w-full rounded-[10px] border border-[rgba(13,20,15,0.12)] bg-white px-3 text-[14px] outline-none transition-all focus-visible:border-[#C7873E] focus-visible:ring-4 focus-visible:ring-[rgba(199,135,62,0.12)] shadow-sm" />
             </FormField>
@@ -65,12 +65,12 @@ export default function AddFarmModal({ open, onClose }: AddFarmModalProps) {
             <Textarea name="deskripsi" placeholder="Deskripsi singkat mengenai farm..." className="min-h-[80px] w-full rounded-[10px] border border-[rgba(13,20,15,0.12)] bg-white p-3 text-[14px] outline-none transition-all focus-visible:border-[#C7873E] focus-visible:ring-4 focus-visible:ring-[rgba(199,135,62,0.12)] shadow-sm" />
           </FormField>
         </ModalBody>
-        <ModalFooter>
+        <ModalFooter className="flex-col-reverse sm:flex-row">
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="px-4 py-2 rounded-xl transition-all hover:bg-[rgba(13,20,15,0.06)] active:translate-y-0 disabled:opacity-50"
+            className="min-h-10 sm:min-h-0 px-4 py-2 rounded-xl transition-all hover:bg-[rgba(13,20,15,0.06)] active:translate-y-0 disabled:opacity-50"
             style={{
               color: '#0D140F',
               fontFamily: "'Inter',sans-serif",
@@ -83,7 +83,7 @@ export default function AddFarmModal({ open, onClose }: AddFarmModalProps) {
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
+            className="flex items-center justify-center gap-2 min-h-10 sm:min-h-0 px-4 py-2 rounded-xl transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
             style={{
               background: '#1B2A1F',
               color: '#F2EDE0',

@@ -18,13 +18,17 @@ async function setSessionCookie(payload: Parameters<typeof encrypt>[0]) {
   })
 }
 
-export async function login(_prevState: unknown, formData: FormData) {
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
+import { loginSchema } from '@/lib/validations/auth.schema'
 
-  if (!email || !password) {
-    return { error: 'Email dan password wajib diisi' }
+export async function login(_prevState: unknown, formData: FormData) {
+  const parsed = loginSchema.safeParse(Object.fromEntries(formData))
+  
+  if (!parsed.success) {
+    // Return first validation error for compatibility with existing UI
+    return { error: parsed.error.issues[0].message }
   }
+
+  const { email, password } = parsed.data
 
   const user = await prisma.user.findUnique({ where: { email } })
   if (!user || user.deletedAt) {
@@ -37,8 +41,8 @@ export async function login(_prevState: unknown, formData: FormData) {
   }
 
 
-  // Super Admin — langsung ke /admin
-  if (user.role === 'SUPER_ADMIN') {
+  // Super Admin & Dinas — langsung ke /admin
+  if (user.role === 'SUPER_ADMIN' || user.role === 'DINAS') {
     await setSessionCookie({
       id: user.id,
       name: user.name,

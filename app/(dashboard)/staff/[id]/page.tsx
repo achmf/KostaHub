@@ -32,7 +32,7 @@ export default async function StaffProfilePage({ params }: { params: Promise<{ i
       <div>
         <Link
           href="/staff"
-          className="inline-flex items-center gap-1 text-sm mb-4 transition-opacity hover:opacity-70"
+          className="flex w-fit items-center gap-1 text-sm py-2.5 -mt-2.5 mb-1.5 transition-opacity hover:opacity-70"
           style={{ color: 'rgba(13,20,15,0.6)' }}
         >
           <ChevronLeft size={16} />

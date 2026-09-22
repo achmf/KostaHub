@@ -3,7 +3,7 @@ import { Plus } from 'lucide-react'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { KostaPageHeader, KostaCard, KostaButton, KostaSectionLabel, palette } from '@/components/KostaUI'
+import { KostaPageHeader, KostaButton, KostaSectionLabel, palette } from '@/components/KostaUI'
 import { HewanMedisList } from '@/components/Hewan/HewanMedisList'
 
 
@@ -46,15 +46,15 @@ export default async function MedisPage(props: {
         description={`${medisList.length} catatan medis tersimpan. Semua diagnosis, obat, dan tindakan terlacak per individu.`}
         action={
           <Link href="/medis/tambah">
-            <KostaButton>
-              <Plus size={13} /> Tambah Rekam Medis
+            <KostaButton className="px-3 md:px-4">
+              <Plus size={16} className="md:w-[13px] md:h-[13px]" /> <span>Tambah Rekam Medis</span>
             </KostaButton>
           </Link>
         }
       />
 
       {/* Stat cards */}
-      <div className="grid grid-cols-12 gap-4 mb-6">
+      <div className="grid grid-cols-12 gap-3 sm:gap-4 mb-6">
         {[
           { l: 'Catatan bulan ini', v: medisList.length, tone: palette.moss },
           { l: 'Vaksinasi PMK', v: vaccinCount, tone: palette.ochre },
@@ -63,7 +63,7 @@ export default async function MedisPage(props: {
         ].map((s, i) => (
           <div
             key={s.l}
-            className="col-span-6 md:col-span-3 rounded-2xl p-5"
+            className="col-span-6 md:col-span-3 rounded-2xl p-4 sm:p-5 flex flex-col justify-between"
             style={{ background: '#fff', border: `1px solid ${palette.border}` }}
           >
             <div className="flex items-center justify-between">
@@ -73,7 +73,7 @@ export default async function MedisPage(props: {
               className="mt-2"
               style={{
                 fontFamily: "'Fraunces',serif",
-                fontSize: 36,
+                fontSize: 'clamp(28px, 8vw, 36px)',
                 lineHeight: 1,
                 letterSpacing: '-0.02em',
                 color: s.tone,
@@ -85,27 +85,8 @@ export default async function MedisPage(props: {
         ))}
       </div>
 
-      {/* Table */}
-      <KostaCard className="overflow-hidden">
-        <div
-          className="px-5 py-3 grid grid-cols-[1.5fr_1fr_2fr_auto] gap-4"
-          style={{
-            background: 'rgba(13,20,15,0.03)',
-            borderBottom: `1px solid ${palette.border}`,
-            fontFamily: "'JetBrains Mono',monospace",
-            fontSize: 10,
-            letterSpacing: '0.12em',
-            color: 'rgba(13,20,15,0.55)',
-          }}
-        >
-          <div>HEWAN</div>
-          <div>JUMLAH CATATAN</div>
-          <div>DIAGNOSIS TERAKHIR</div>
-
-          <div className="w-4"></div>
-        </div>
-        <HewanMedisList hewans={hewans} />
-      </KostaCard>
+      {/* HewanMedisList handles mobile (individual cards) + desktop (KostaCard table) internally */}
+      <HewanMedisList hewans={hewans} />
     </div>
   )
 }

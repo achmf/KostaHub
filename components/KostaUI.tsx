@@ -149,6 +149,8 @@ export function KostaButton({
   type = 'button',
   disabled = false,
   className = '',
+  style,
+  id,
 }: {
   children: ReactNode
   variant?: 'primary' | 'outline' | 'ghost'
@@ -157,6 +159,8 @@ export function KostaButton({
   type?: 'button' | 'submit' | 'reset'
   disabled?: boolean
   className?: string
+  style?: React.CSSProperties
+  id?: string
 }) {
   const styles: Record<string, React.CSSProperties> = {
     primary: { background: palette.ink, color: palette.cream, border: '1px solid transparent' },
@@ -166,16 +170,18 @@ export function KostaButton({
   const sz = size === 'sm' ? 'px-3 py-1.5 text-[12px]' : 'px-4 py-2.5 text-[13px]'
   return (
     <button
+      id={id}
       type={type}
       onClick={onClick}
       disabled={disabled}
       className={`rounded-full inline-flex items-center gap-2 transition-transform active:scale-[0.97] hover:-translate-y-px cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${sz} ${className}`}
-      style={{ fontFamily: "'Inter',sans-serif", ...styles[variant] }}
+      style={{ fontFamily: "'Inter',sans-serif", ...styles[variant], ...style }}
     >
       {children}
     </button>
   )
 }
+
 
 export function KostaEmptyState({ title, hint }: { title: string; hint?: string }) {
   return (
@@ -202,7 +208,7 @@ export function KostaEmptyState({ title, hint }: { title: string; hint?: string 
   )
 }
 
-export function KostaSectionLabel({ children, className = '' }: { children: ReactNode; className?: string }) {
+export function KostaSectionLabel({ children, className = '', style }: { children: ReactNode; className?: string; style?: React.CSSProperties }) {
   return (
     <div
       className={className}
@@ -211,12 +217,14 @@ export function KostaSectionLabel({ children, className = '' }: { children: Reac
         fontSize: 10,
         letterSpacing: '0.18em',
         color: 'rgba(13,20,15,0.55)',
+        ...style,
       }}
     >
       {children}
     </div>
   )
 }
+
 
 export function KostaDialog({
   isOpen,
@@ -258,7 +266,7 @@ export function KostaDialog({
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -272,19 +280,22 @@ export function KostaDialog({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className={`relative z-10 w-full ${maxWClass} bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]`}
+            role="dialog"
+            aria-modal="true"
+            className={`relative z-10 w-full ${maxWClass} bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[calc(100dvh-1.5rem)] sm:max-h-[90dvh]`}
             style={{ border: `1px solid ${palette.border}` }}
           >
-        <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: palette.border }}>
-          <h2 style={{ fontFamily: "'Fraunces',serif", fontSize: 20, color: palette.ink }}>{title}</h2>
+        <div className="flex items-center justify-between gap-3 px-5 py-3 sm:py-4 border-b shrink-0" style={{ borderColor: palette.border }}>
+          <h2 className="min-w-0" style={{ fontFamily: "'Fraunces',serif", fontSize: 20, color: palette.ink }}>{title}</h2>
           <button 
             onClick={onClose} 
-            className="cursor-pointer text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="Tutup"
+            className="cursor-pointer -mr-2 w-10 h-10 shrink-0 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-black/5 transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
           </button>
         </div>
-        <div className="p-5 overflow-y-auto max-h-[80vh]">
+        <div className="p-4 sm:p-5 overflow-y-auto overscroll-contain min-h-0 flex-1">
           {children}
         </div>
           </motion.div>

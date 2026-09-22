@@ -1,14 +1,11 @@
 'use server'
 
-import { getSession } from '@/lib/auth'
+import { withAuth } from '@/lib/auth'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { randomUUID } from 'crypto'
 
-export async function uploadFotoHewanLocal(formData: FormData) {
-  const session = await getSession()
-  if (!session) throw new Error('Unauthorized')
-
+export const uploadFotoHewanLocal = withAuth(async (session, formData: FormData) => {
   const file = formData.get('file') as File | null
   if (!file) {
     return { error: 'Tidak ada file yang dipilih' }
@@ -42,4 +39,4 @@ export async function uploadFotoHewanLocal(formData: FormData) {
     console.error('Upload Error:', error)
     return { error: 'Gagal mengunggah gambar' }
   }
-}
+})

@@ -55,3 +55,25 @@ self.addEventListener('notificationclick', (event) => {
     })
   )
 })
+
+const CACHE_NAME = 'kostahub-offline-v1';
+
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+  if (!event.request.url.startsWith('http')) return;
+
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      const fetchPromise = fetch(event.request).then((networkResponse) => {
+        const cacheCopy = networkResponse.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, cacheCopy);
+        });
+        return networkResponse;
+      }).catch(() => {
+        // network failure, return cached if any
+      });
+      return cachedResponse || fetchPromise;
+    })
+  );
+})

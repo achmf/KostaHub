@@ -43,6 +43,7 @@ export default function ClientEditStaffForm({ staff }: { staff: any }) {
         <input
           name="name"
           required
+          autoComplete="off"
           defaultValue={staff.name}
           className="w-full px-4 py-3 rounded-xl bg-gray-50/50 border text-sm outline-none"
           style={{ borderColor: palette.border }}
@@ -55,6 +56,8 @@ export default function ClientEditStaffForm({ staff }: { staff: any }) {
         </label>
         <input
           name="phone"
+          type="tel"
+          autoComplete="off"
           defaultValue={staff.phone || ''}
           className="w-full px-4 py-3 rounded-xl bg-gray-50/50 border text-sm outline-none"
           style={{ borderColor: palette.border }}
@@ -68,6 +71,7 @@ export default function ClientEditStaffForm({ staff }: { staff: any }) {
         <input
           name="password"
           type="password"
+          autoComplete="new-password"
           placeholder="Isi jika ingin mengubah password (min. 6 karakter)"
           className="w-full px-4 py-3 rounded-xl bg-gray-50/50 border text-sm outline-none"
           style={{ borderColor: palette.border }}
@@ -75,7 +79,7 @@ export default function ClientEditStaffForm({ staff }: { staff: any }) {
       </div>
 
       <div className="pt-2">
-        <KostaButton type="submit" disabled={isPending} className="w-full md:w-auto">
+        <KostaButton type="submit" disabled={isPending} className="w-full md:w-auto justify-center">
           {isPending ? 'Menyimpan…' : 'Simpan Perubahan'}
         </KostaButton>
       </div>

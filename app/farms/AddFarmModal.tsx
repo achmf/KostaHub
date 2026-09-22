@@ -27,6 +27,18 @@ export default function AddFarmModal({ onClose }: AddFarmModalProps) {
     null
   )
 
+  // Escape menutup modal + kunci scroll halaman selama modal terbuka
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = prevOverflow
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [onClose])
+
   useEffect(() => {
     if (state?.success) {
       // Refresh halaman untuk menampilkan farm baru yang pending
@@ -39,7 +51,7 @@ export default function AddFarmModal({ onClose }: AddFarmModalProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex overflow-y-auto p-3 sm:p-4"
       style={{ background: 'rgba(13,20,15,0.5)', backdropFilter: 'blur(4px)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
@@ -48,14 +60,14 @@ export default function AddFarmModal({ onClose }: AddFarmModalProps) {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 16 }}
         transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-        className="w-full max-w-md rounded-2xl p-6"
+        className="m-auto w-full max-w-md rounded-2xl p-5 sm:p-6"
         style={{ background: palette.cream, border: `1px solid ${palette.border}` }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <div className="flex items-center gap-3 min-w-0">
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center"
+              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
               style={{ background: 'rgba(199,135,62,0.12)' }}
             >
               <Building2 size={16} style={{ color: palette.ochre }} />
@@ -72,7 +84,8 @@ export default function AddFarmModal({ onClose }: AddFarmModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="cursor-pointer w-8 h-8 rounded-full flex items-center justify-center"
+            aria-label="Tutup"
+            className="cursor-pointer w-10 h-10 sm:w-8 sm:h-8 shrink-0 rounded-full flex items-center justify-center"
             style={{ background: 'rgba(13,20,15,0.06)' }}
           >
             <X size={14} style={{ color: palette.ink }} />
@@ -131,7 +144,7 @@ export default function AddFarmModal({ onClose }: AddFarmModalProps) {
             </p>
           </div>
 
-          <div className="flex gap-3 mt-2">
+          <div className="flex flex-col-reverse sm:flex-row gap-3 mt-2">
             <button
               type="button"
               onClick={onClose}

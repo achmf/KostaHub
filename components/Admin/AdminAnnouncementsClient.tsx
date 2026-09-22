@@ -36,7 +36,7 @@ function timeAgo(ts: string) {
   return new Date(ts).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-export default function AdminAnnouncementsClient({ history }: { history: HistoryItem[] }) {
+export default function AdminAnnouncementsClient({ history, userRole }: { history: HistoryItem[], userRole?: string }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [title, setTitle] = useState('')
@@ -81,6 +81,7 @@ export default function AdminAnnouncementsClient({ history }: { history: History
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
         {/* Compose Form */}
+        {userRole !== 'DINAS' && (
         <motion.div
           className="xl:col-span-2"
           initial={{ opacity: 0, y: 12 }}
@@ -182,10 +183,11 @@ export default function AdminAnnouncementsClient({ history }: { history: History
             </form>
           </div>
         </motion.div>
+        )}
 
-        {/* History */}
+        {/* History List */}
         <motion.div
-          className="xl:col-span-3"
+          className={userRole !== 'DINAS' ? "xl:col-span-3 flex flex-col h-full" : "xl:col-span-5 flex flex-col h-full"}
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}

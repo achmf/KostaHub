@@ -53,21 +53,25 @@ export default async function LaporanPage(props: { searchParams: Promise<{ [key:
 
   // ─── LAPORAN 1: KELUAR-MASUK TERNAK ───────────────────────
   const [hewanMasuk, hewanKeluar, mutasiData] = await Promise.all([
-    // Masuk: hewan terdaftar (semua status, sorted by createdAt)
+    // Masuk: hewan terdaftar (sorted by createdAt)
     prisma.hewan.findMany({
       where: { ...hewanFarmFilter },
       include: { farm: { select: { nama: true } } },
       orderBy: { createdAt: 'desc' },
       take: 100,
     }),
-    // Keluar: hewan MATI atau TERJUAL
-    prisma.hewan.findMany({
-      where: { status: { in: ['MATI', 'TERJUAL'] }, ...hewanFarmFilter },
-      include: { farm: { select: { nama: true } } },
-      orderBy: { updatedAt: 'desc' },
+    // Keluar: hewan yang tercatat mati
+    prisma.kematianHewan.findMany({
+      where: {
+        ...(farmId ? { hewan: { farmId } } : {}),
+      },
+      include: {
+        hewan: { include: { farm: { select: { nama: true } } } },
+      },
+      orderBy: { tanggalMati: 'desc' },
       take: 100,
     }),
-    // Mutasi antar farm
+    // Mutasi antar farm (data tersimpan, UI di-hide sementara)
     prisma.transferHewan.findMany({
       where: farmId ? { OR: [{ fromFarmId: farmId }, { toFarmId: farmId }] } : {},
       include: {
@@ -196,19 +200,23 @@ export default async function LaporanPage(props: { searchParams: Promise<{ [key:
     // Laporan 1: Keluar-Masuk
     hewanMasuk: hewanMasuk.map(h => ({
       id: h.id, tag: h.tag, nama: h.nama, kelamin: h.kelamin,
-      kategori: h.kategori, status: h.status, berat: h.berat,
+      kategori: h.kategori, berat: h.berat,
       tanggalLahir: h.tanggalLahir.toISOString(),
       createdAt: h.createdAt.toISOString(),
       updatedAt: h.updatedAt.toISOString(),
       farm: h.farm?.nama,
     })),
-    hewanKeluar: hewanKeluar.map(h => ({
-      id: h.id, tag: h.tag, nama: h.nama, kelamin: h.kelamin,
-      kategori: h.kategori, status: h.status, berat: h.berat,
-      tanggalLahir: h.tanggalLahir.toISOString(),
-      createdAt: h.createdAt.toISOString(),
-      updatedAt: h.updatedAt.toISOString(),
-      farm: h.farm?.nama,
+    // hewanKeluar = kematian records
+    hewanKeluar: hewanKeluar.map(k => ({
+      id: k.hewan.id, tag: k.hewan.tag, nama: k.hewan.nama, kelamin: k.hewan.kelamin,
+      kategori: k.hewan.kategori, berat: k.hewan.berat,
+      tanggalLahir: k.hewan.tanggalLahir.toISOString(),
+      createdAt: k.hewan.createdAt.toISOString(),
+      updatedAt: k.tanggalMati.toISOString(), // tanggal keluar = tanggal mati
+      tanggalMati: k.tanggalMati.toISOString(),
+      penyebab: k.penyebab,
+      farm: k.hewan.farm?.nama,
+      status: 'MATI', // legacy compat untuk LaporanClient display
     })),
     mutasiData: mutasiData.map(t => ({
       id: t.id, hewanId: t.hewanId, tag: t.hewan?.tag, nama: t.hewan?.nama, kategori: t.hewan?.kategori,

@@ -3,7 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { checkInbreeding } from '@/lib/inbreeding'
-import { getSession } from '@/lib/auth'
+import { withAuth } from '@/lib/auth'
 
 export type TambahReproduksiState = {
   warning?: boolean
@@ -11,10 +11,7 @@ export type TambahReproduksiState = {
   error?: string
 } | null
 
-export async function tambahReproduksi(formData: FormData): Promise<TambahReproduksiState> {
-  const session = await getSession()
-  if (!session) throw new Error('Unauthorized')
-
+export const tambahReproduksi = withAuth(async (session, formData: FormData): Promise<TambahReproduksiState> => {
   const indukId = formData.get('indukId') as string
   if (!indukId) return { error: 'Induk tidak dipilih' }
 
@@ -67,4 +64,4 @@ export async function tambahReproduksi(formData: FormData): Promise<TambahReprod
   })
 
   redirect('/reproduksi')
-}
+})

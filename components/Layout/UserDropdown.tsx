@@ -70,7 +70,8 @@ export default function UserDropdown({
       <motion.button
         onClick={() => setOpen((v) => !v)}
         whileTap={{ scale: 0.97 }}
-        className="cursor-pointer flex items-center gap-2 px-3 py-2 rounded-full"
+        className="cursor-pointer flex items-center gap-2 p-1.5 md:px-3 md:py-2 rounded-full"
+        aria-label="Menu akun"
         style={{
           border: `1px solid ${palette.border}`,
           background: open ? 'rgba(13,20,15,0.06)' : '#fff',
@@ -81,7 +82,7 @@ export default function UserDropdown({
         id="user-dropdown-trigger"
       >
         <div
-          className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
+          className="w-7 h-7 md:w-6 md:h-6 rounded-full flex items-center justify-center shrink-0"
           style={{
             background: palette.ochre,
             color: palette.cream,
@@ -118,7 +119,7 @@ export default function UserDropdown({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.97 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute right-0 top-full mt-2 z-50"
+            className="absolute right-0 top-full mt-2 z-50 max-w-[calc(100vw-1.5rem)]"
             style={{ minWidth: 240 }}
             role="menu"
             aria-labelledby="user-dropdown-trigger"

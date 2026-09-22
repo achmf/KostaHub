@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const pieColors = [palette.moss, palette.ink, palette.ochre, palette.mossSoft, palette.ochreSoft]
 const chartGreen = '#3F7A4E'
 const chartRed = '#B5443B'
-const chartAmber = '#D9A23C'
+const chartAmber = '#D9A23C' // used in birth success rate widget
 
 const KATEGORI_LABEL: Record<string, string> = {
   INDUKAN: 'Indukan',
@@ -116,14 +116,14 @@ function RangeCalendar({
   }
 
   return (
-    <div className="w-[230px]">
+    <div className="w-full sm:w-[230px]">
       <div className="flex items-center justify-between mb-3 px-1">
-        <button onClick={handlePrev} className="p-1.5 rounded-full hover:bg-black/5 transition-colors cursor-pointer text-ink">
+        <button onClick={handlePrev} aria-label="Bulan sebelumnya" className="w-10 h-10 sm:w-auto sm:h-auto flex items-center justify-center p-1.5 rounded-full hover:bg-black/5 transition-colors cursor-pointer text-ink">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         </button>
         <div className="flex gap-1" style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, fontWeight: 500, color: palette.ink }}>
           <Select value={String(month)} onValueChange={(val) => val && setViewDate(new Date(year, parseInt(val), 1))}>
-            <SelectTrigger className="h-7 border-none bg-transparent shadow-none px-1.5 py-0 w-auto hover:bg-black/5 rounded text-[13px] font-medium text-ink gap-1 [&_svg]:size-3.5 focus-visible:ring-0 focus-visible:ring-offset-0">
+            <SelectTrigger className="h-10 sm:h-7 border-none bg-transparent shadow-none px-1.5 py-0 w-auto hover:bg-black/5 rounded text-[13px] font-medium text-ink gap-1 [&_svg]:size-3.5 focus-visible:ring-0 focus-visible:ring-offset-0">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -134,7 +134,7 @@ function RangeCalendar({
           </Select>
           
           <Select value={String(year)} onValueChange={(val) => val && setViewDate(new Date(parseInt(val), month, 1))}>
-            <SelectTrigger className="h-7 border-none bg-transparent shadow-none px-1.5 py-0 w-auto hover:bg-black/5 rounded text-[13px] font-medium text-ink gap-1 [&_svg]:size-3.5 focus-visible:ring-0 focus-visible:ring-offset-0">
+            <SelectTrigger className="h-10 sm:h-7 border-none bg-transparent shadow-none px-1.5 py-0 w-auto hover:bg-black/5 rounded text-[13px] font-medium text-ink gap-1 [&_svg]:size-3.5 focus-visible:ring-0 focus-visible:ring-offset-0">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -144,7 +144,7 @@ function RangeCalendar({
             </SelectContent>
           </Select>
         </div>
-        <button onClick={handleNext} className="p-1.5 rounded-full hover:bg-black/5 transition-colors cursor-pointer text-ink">
+        <button onClick={handleNext} aria-label="Bulan berikutnya" className="w-10 h-10 sm:w-auto sm:h-auto flex items-center justify-center p-1.5 rounded-full hover:bg-black/5 transition-colors cursor-pointer text-ink">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
         </button>
       </div>
@@ -177,10 +177,9 @@ function RangeCalendar({
               )}
               <button
                 onClick={() => selectDate(d)}
-                className="relative z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer hover:bg-black/5"
+                className="relative z-10 w-full aspect-square sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all cursor-pointer hover:bg-black/5 text-[13px] sm:text-[11px]"
                 style={{
                   fontFamily: "'JetBrains Mono',monospace",
-                  fontSize: 11,
                   background: active ? palette.ink : 'transparent',
                   color: active ? palette.cream : palette.ink,
                   fontWeight: active ? 500 : 400,
@@ -208,10 +207,12 @@ function ChartFilter({
   const [tempStart, setTempStart] = useState(value.type === 'custom' ? value.start : '')
   const [tempEnd, setTempEnd] = useState(value.type === 'custom' ? value.end : '')
   const containerRef = useRef<HTMLDivElement>(null)
+  // Dropdown bulan/tahun di-portal ke body: tekanan di sana tetap "di dalam" lewat pohon React
+  const insidePressRef = useRef<Event | null>(null)
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (event !== insidePressRef.current && containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setShowCustom(false)
       }
     }
@@ -230,9 +231,13 @@ function ChartFilter({
   }, [value])
 
   return (
-    <div className="relative flex items-center gap-2" ref={containerRef}>
+    <div
+      className="relative flex items-center gap-2 w-full sm:w-auto"
+      ref={containerRef}
+      onMouseDownCapture={(e) => { insidePressRef.current = e.nativeEvent }}
+    >
       {/* Presets */}
-      <div className="flex items-center gap-1">
+      <div className="flex flex-1 flex-wrap items-center gap-1 sm:flex-initial">
         {PRESETS.map((p) => {
           const active = value.type === 'preset' && value.months === p.months
           return (
@@ -242,10 +247,9 @@ function ChartFilter({
                 setShowCustom(false)
                 onChange({ type: 'preset', months: p.months })
               }}
-              className="cursor-pointer px-2.5 py-1 rounded-full transition-all hover:bg-black/5"
+              className="cursor-pointer h-10 flex-1 px-1 whitespace-nowrap text-[11px] sm:h-auto sm:flex-initial sm:px-2.5 sm:py-1 sm:text-[9.5px] rounded-full transition-all hover:bg-black/5"
               style={{
                 fontFamily: "'JetBrains Mono',monospace",
-                fontSize: 9.5,
                 letterSpacing: '0.08em',
                 border: `1px solid ${active ? palette.ink : palette.border}`,
                 background: active ? palette.ink : 'transparent',
@@ -261,7 +265,9 @@ function ChartFilter({
       {/* Toggle Button */}
       <button 
         onClick={() => setShowCustom(!showCustom)}
-        className="p-1.5 rounded-full transition-all cursor-pointer relative z-10 hover:bg-black/5"
+        aria-label="Pilih rentang tanggal"
+        aria-expanded={showCustom}
+        className="w-10 h-10 shrink-0 flex items-center justify-center sm:w-auto sm:h-auto p-1.5 rounded-full transition-all cursor-pointer relative z-10 hover:bg-black/5"
         style={{ 
           background: showCustom || value.type === 'custom' ? palette.ink : 'transparent',
           border: `1px solid ${showCustom || value.type === 'custom' ? palette.ink : 'rgba(13,20,15,0.1)'}`,
@@ -285,7 +291,7 @@ function ChartFilter({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.96 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full mt-2 p-5 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] z-50 flex flex-col gap-4"
+            className="absolute left-0 right-0 sm:left-auto sm:w-max top-full mt-2 p-4 sm:p-5 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] z-50 flex flex-col gap-4"
             style={{ 
               background: '#ffffff', 
               border: `1px solid ${palette.border}`,
@@ -315,8 +321,8 @@ function ChartFilter({
             <div className="pt-3 flex items-center justify-end gap-2" style={{ borderTop: `1px solid ${palette.border}` }}>
               <button 
                 onClick={() => setShowCustom(false)}
-                className="px-3 py-1.5 rounded-lg transition-colors hover:bg-black/5 cursor-pointer"
-                style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, fontWeight: 500, color: palette.ink }}
+                className="h-10 flex-1 sm:h-auto sm:flex-initial px-3 py-1.5 rounded-lg transition-colors hover:bg-black/5 cursor-pointer text-[13px] sm:text-[11px]"
+                style={{ fontFamily: "'Inter',sans-serif", fontWeight: 500, color: palette.ink }}
               >
                 Batal
               </button>
@@ -328,12 +334,11 @@ function ChartFilter({
                     setShowCustom(false)
                   }
                 }}
-                className="px-4 py-1.5 rounded-lg transition-all shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-10 flex-1 sm:h-auto sm:flex-initial px-4 py-1.5 rounded-lg transition-all shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-[13px] sm:text-[11px]"
                 style={{ 
                   background: palette.ink, 
                   color: palette.cream,
                   fontFamily: "'Inter',sans-serif", 
-                  fontSize: 11, 
                   fontWeight: 500 
                 }}
               >
@@ -349,17 +354,18 @@ function ChartFilter({
 
 // ─── CLIENT-SIDE AGGREGATION HELPERS ──────────────────────
 function buildTrendData(
-  raw: { createdAt: string; status: string }[],
+  raw: { createdAt: string }[],
+  kematianRaw: { tanggalMati: string }[],
   filter: DateFilter
 ) {
   const { from, to } = getDateRange(filter)
 
-  const map = new Map<string, { masuk: number; mati: number; terjual: number }>()
+  const map = new Map<string, { masuk: number; keluar: number }>()
   const cur = new Date(from.getFullYear(), from.getMonth(), 1)
   const end = new Date(to.getFullYear(), to.getMonth(), 1)
   while (cur <= end) {
     const key = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '00')}`
-    map.set(key, { masuk: 0, mati: 0, terjual: 0 })
+    map.set(key, { masuk: 0, keluar: 0 })
     cur.setMonth(cur.getMonth() + 1)
   }
 
@@ -368,11 +374,16 @@ function buildTrendData(
     if (d >= from && d <= to) {
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '00')}`
       const entry = map.get(key)
-      if (entry) {
-        entry.masuk++
-        if (h.status === 'MATI') entry.mati++
-        if (h.status === 'TERJUAL') entry.terjual++
-      }
+      if (entry) entry.masuk++
+    }
+  })
+
+  kematianRaw.forEach((k) => {
+    const d = new Date(k.tanggalMati)
+    if (d >= from && d <= to) {
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '00')}`
+      const entry = map.get(key)
+      if (entry) entry.keluar++
     }
   })
 
@@ -538,6 +549,7 @@ export default function DashboardClient({
   farmCount,
   overviewData,
   trendRaw,
+  kematianTrendRaw,
   beratRaw,
   diagnosisRaw,
 }: {
@@ -555,7 +567,8 @@ export default function DashboardClient({
   isSuperAdmin: boolean
   farmCount: number
   overviewData: OverviewData
-  trendRaw: { createdAt: string; status: string }[]
+  trendRaw: { createdAt: string }[]
+  kematianTrendRaw?: { tanggalMati: string }[]
   beratRaw: { tanggal: string; berat: number }[]
   diagnosisRaw: { diagnosis: string; tanggal: string }[]
 }) {
@@ -573,9 +586,10 @@ export default function DashboardClient({
 
   // ─── Computed chart data (client-side filtering) ────────
   const trendData = useMemo(
-    () => buildTrendData(trendRaw, trendFilter),
-    [trendRaw, trendFilter]
+    () => buildTrendData(trendRaw, kematianTrendRaw ?? [], trendFilter),
+    [trendRaw, kematianTrendRaw, trendFilter]
   )
+
   const beratTrendData = useMemo(
     () => buildBeratData(beratRaw, beratFilter),
     [beratRaw, beratFilter]
@@ -603,7 +617,7 @@ export default function DashboardClient({
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="col-span-12 md:col-span-6 rounded-2xl p-7 relative overflow-hidden"
+          className="col-span-12 xl:col-span-6 rounded-2xl p-5 sm:p-7 relative overflow-hidden"
           style={{ background: palette.ink, color: palette.cream }}
         >
           <div className="flex items-start justify-between">
@@ -623,7 +637,7 @@ export default function DashboardClient({
                 <Count to={stats.totalHewan} />
               </div>
               <div
-                className="mt-3 flex items-center gap-2"
+                className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1"
                 style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}
               >
                 <span className="flex items-center gap-1" style={{ color: palette.ochreSoft }}>
@@ -661,18 +675,18 @@ export default function DashboardClient({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 + i * 0.07 }}
-            className="col-span-12 md:col-span-2 rounded-2xl p-5"
+            className={`${s.warn ? 'col-span-12' : 'col-span-6'} sm:col-span-4 xl:col-span-2 rounded-2xl p-4 sm:p-5`}
             style={{ background: '#fff', border: `1px solid ${palette.border}` }}
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <KostaSectionLabel>{s.l}</KostaSectionLabel>
-              {s.warn && <AlertCircle size={14} style={{ color: palette.ochre }} />}
+              {s.warn && <AlertCircle size={14} className="shrink-0" style={{ color: palette.ochre }} />}
             </div>
             <div
               className="mt-3"
               style={{
                 fontFamily: "'Fraunces',serif",
-                fontSize: 40,
+                fontSize: 'clamp(32px, 9vw, 40px)',
                 lineHeight: 1,
                 letterSpacing: '-0.025em',
                 color: s.tone,
@@ -691,7 +705,7 @@ export default function DashboardClient({
       </div>
 
       {/* ─── SECONDARY STAT STRIP ────────────────────────── */}
-      <KostaCard className="p-5 mb-4 grid grid-cols-2 md:grid-cols-5 gap-6">
+      <KostaCard className="p-4 sm:p-5 mb-4 grid grid-cols-2 md:grid-cols-5 gap-x-4 gap-y-5 sm:gap-6">
         {[
           {
             l: 'Angka kematian',
@@ -731,7 +745,7 @@ export default function DashboardClient({
             </div>
             <div
               className="mt-1"
-              style={{ fontFamily: "'Fraunces',serif", fontSize: 28, letterSpacing: '-0.02em' }}
+              style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(24px, 7vw, 28px)', letterSpacing: '-0.02em' }}
             >
               <Count to={s.v} />
             </div>
@@ -747,22 +761,21 @@ export default function DashboardClient({
       {/* ─── TREN POPULASI + DISTRIBUSI KATEGORI ─────────── */}
       <div className="grid grid-cols-12 gap-4 mb-4">
         {/* Tren Populasi — filter di dalam kartu */}
-        <KostaCard className="col-span-12 lg:col-span-8 p-6">
-          <div className="flex items-center justify-between mb-4">
+        <KostaCard className="col-span-12 lg:col-span-8 p-4 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div>
               <KostaSectionLabel>TREN POPULASI</KostaSectionLabel>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
               <ChartFilter value={trendFilter} onChange={setTrendFilter} />
-              <div className="flex gap-3 ml-1">
+              <div className="flex flex-wrap gap-3 sm:ml-1">
                 <LegendDot color={chartGreen} label="Masuk" />
-                <LegendDot color={chartRed} label="Mati" />
-                <LegendDot color={chartAmber} label="Terjual" />
+                <LegendDot color={chartRed} label="Keluar" />
               </div>
             </div>
           </div>
           <div className="h-56">
-            {trendData.some((t) => t.masuk > 0 || t.mati > 0 || t.terjual > 0) ? (
+            {trendData.some((t) => t.masuk > 0 || t.keluar > 0) ? (
               <ResponsiveContainer>
                 <AreaChart data={trendData}>
                   <defs>
@@ -775,6 +788,7 @@ export default function DashboardClient({
                     dataKey="label"
                     tickLine={false}
                     axisLine={false}
+                    interval="preserveStartEnd"
                     style={{
                       fontFamily: "'JetBrains Mono',monospace",
                       fontSize: 10,
@@ -817,21 +831,12 @@ export default function DashboardClient({
                   />
                   <Area
                     type="monotone"
-                    dataKey="mati"
+                    dataKey="keluar"
                     stroke={chartRed}
                     fill="transparent"
                     strokeWidth={1.5}
                     strokeDasharray="4 3"
-                    name="Mati"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="terjual"
-                    stroke={chartAmber}
-                    fill="transparent"
-                    strokeWidth={1.5}
-                    strokeDasharray="4 3"
-                    name="Terjual"
+                    name="Keluar"
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -842,10 +847,11 @@ export default function DashboardClient({
         </KostaCard>
 
         {/* Distribusi Kategori (tidak time-filtered) */}
-        <KostaCard className="col-span-12 lg:col-span-4 p-6">
-          <div className="flex items-center justify-between mb-2">
+        <KostaCard className="col-span-12 lg:col-span-4 p-4 sm:p-6">
+          <div className="flex items-center justify-between gap-2 mb-2">
             <KostaSectionLabel>DISTRIBUSI KATEGORI</KostaSectionLabel>
             <span
+              className="shrink-0"
               style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.5 }}
             >
               {stats.totalHewan} EKOR
@@ -939,13 +945,13 @@ export default function DashboardClient({
       <div className="grid grid-cols-12 gap-4 mb-4">
         {/* Reproduksi Overview (tidak time-filtered) */}
         <KostaCard
-          className="col-span-12 lg:col-span-4 p-6"
+          className="col-span-12 md:col-span-6 xl:col-span-4 p-4 sm:p-6"
           style={{ background: palette.ink, color: palette.cream, border: 'none' }}
         >
           <KostaSectionLabel>
             <span style={{ color: 'rgba(242,237,224,0.55)' }}>REPRODUKSI OVERVIEW</span>
           </KostaSectionLabel>
-          <div className="flex items-center gap-6 mt-4">
+          <div className="flex items-center gap-4 sm:gap-6 mt-4">
             <div className="relative w-28 h-28 flex-shrink-0">
               <svg viewBox="0 0 100 100" className="w-full h-full">
                 <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(242,237,224,0.12)" strokeWidth="8" />
@@ -1004,8 +1010,8 @@ export default function DashboardClient({
         </KostaCard>
 
         {/* Top Diagnosa — filter di dalam kartu */}
-        <KostaCard className="col-span-12 lg:col-span-4 p-6">
-          <div className="flex items-center justify-between mb-4">
+        <KostaCard className="col-span-12 md:col-span-6 xl:col-span-4 p-4 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <KostaSectionLabel>TOP DIAGNOSA MEDIS</KostaSectionLabel>
             <ChartFilter value={diagnosisFilter} onChange={setDiagnosisFilter} />
           </div>
@@ -1018,6 +1024,7 @@ export default function DashboardClient({
                   <div key={d.name}>
                     <div className="flex items-center justify-between mb-1">
                       <span
+                        className="min-w-0 break-words"
                         style={{
                           fontFamily: "'Inter',sans-serif",
                           fontSize: 12.5,
@@ -1027,6 +1034,7 @@ export default function DashboardClient({
                         {d.name}
                       </span>
                       <span
+                        className="shrink-0 ml-3"
                         style={{
                           fontFamily: "'JetBrains Mono',monospace",
                           fontSize: 11,
@@ -1058,7 +1066,7 @@ export default function DashboardClient({
         </KostaCard>
 
         {/* Distribusi Umur (tidak time-filtered) */}
-        <KostaCard className="col-span-12 lg:col-span-4 p-6">
+        <KostaCard className="col-span-12 xl:col-span-4 p-4 sm:p-6">
           <KostaSectionLabel>DISTRIBUSI UMUR POPULASI</KostaSectionLabel>
           {overviewData.distribusiUmur.length > 0 ? (
             <div className="h-52 mt-3">
@@ -1114,9 +1122,9 @@ export default function DashboardClient({
 
       {/* ─── TREN BERAT BADAN — filter di dalam kartu ─────── */}
       {beratRaw.length > 0 && (
-        <KostaCard className="p-6 mb-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
+        <KostaCard className="p-4 sm:p-6 mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <KostaSectionLabel>TREN RATA-RATA BERAT BADAN</KostaSectionLabel>
               <Badge variant="ochre">AVG {overviewData.avgBerat} kg</Badge>
             </div>
@@ -1130,6 +1138,7 @@ export default function DashboardClient({
                     dataKey="label"
                     tickLine={false}
                     axisLine={false}
+                    interval="preserveStartEnd"
                     style={{
                       fontFamily: "'JetBrains Mono',monospace",
                       fontSize: 10,
@@ -1184,7 +1193,7 @@ export default function DashboardClient({
       {/* ─── BOTTOM LISTS ────────────────────────────────── */}
       <div className="grid grid-cols-12 gap-4">
         {/* Estimasi kelahiran */}
-        <KostaCard className="col-span-12 lg:col-span-7 p-6">
+        <KostaCard className="col-span-12 lg:col-span-7 p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <KostaSectionLabel>ESTIMASI KELAHIRAN</KostaSectionLabel>
@@ -1220,7 +1229,7 @@ export default function DashboardClient({
                   style={{ borderColor: palette.border }}
                 >
                   <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center"
+                    className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center"
                     style={{
                       background: 'rgba(63,91,58,0.12)',
                       color: palette.moss,
@@ -1231,17 +1240,17 @@ export default function DashboardClient({
                     {(r.induk.nama || r.induk.tag || '?').slice(0, 1)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14 }}>
+                    <div className="break-words" style={{ fontFamily: "'Inter',sans-serif", fontSize: 14 }}>
                       {r.induk.nama || 'Tanpa Nama'}
                     </div>
                     <div
-                      className="opacity-60"
+                      className="opacity-60 break-all"
                       style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}
                     >
                       {r.induk.tag}
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right shrink-0">
                     <div
                       style={{
                         fontFamily: "'Fraunces',serif",
@@ -1268,7 +1277,7 @@ export default function DashboardClient({
         </KostaCard>
 
         {/* Vaksin notifikasi */}
-        <KostaCard className="col-span-12 lg:col-span-5 p-6">
+        <KostaCard className="col-span-12 lg:col-span-5 p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <KostaSectionLabel>NOTIFIKASI MEDIS</KostaSectionLabel>
@@ -1302,9 +1311,9 @@ export default function DashboardClient({
                   border: '1px solid rgba(199,135,62,0.18)',
                 }}
               >
-                <Syringe size={14} style={{ color: palette.ochre, marginTop: 3 }} />
+                <Syringe size={14} className="shrink-0" style={{ color: palette.ochre, marginTop: 3 }} />
                 <div className="flex-1 min-w-0">
-                  <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
+                  <div className="break-words" style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
                     {n.title ?? n.message ?? 'Notifikasi vaksin'}
                   </div>
                   <div

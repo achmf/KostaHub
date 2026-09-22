@@ -86,7 +86,7 @@ interface AdminDashboardClientProps {
     hewanMasuk: TrendStat
     hewanMati: TrendStat
   }
-  trendData: { label: string; masuk: number; mati: number; terjual: number }[]
+  trendData: { label: string; masuk: number; keluar: number }[]
   farmComparison: FarmComparison[]
   kategoriData: { name: string; value: number }[]
   topDiagnosa: { name: string; count: number }[]
@@ -116,16 +116,14 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   )
 }
 
-function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div
-      className={`rounded-2xl p-5 ${className}`}
-      style={{ background: '#fff', border: `1px solid ${palette.border}` }}
-    >
-      {children}
-    </div>
-  )
-}
+const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
+  <div
+    className={`p-4 sm:p-5 sm:px-6 rounded-2xl h-full flex flex-col min-w-0 ${className}`}
+    style={{ background: '#fff', border: `1px solid ${palette.border}` }}
+  >
+    {children}
+  </div>
+)
 
 // TrendBadge — shows delta % vs last month
 function TrendBadge({ delta, invertedDanger = false }: { delta: number; invertedDanger?: boolean }) {
@@ -232,7 +230,7 @@ export default function AdminDashboardClient({
     <div>
       {/* ── PAGE HEADER ── */}
       <motion.div
-        className="mb-10"
+        className="mb-6 sm:mb-10"
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -249,19 +247,19 @@ export default function AdminDashboardClient({
       </motion.div>
 
       {/* ── KPI CARDS ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-10">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6 sm:mb-10">
         {kpiCards.map((card, i) => {
           const Icon = card.icon
           const trendData2 = card.trendKey ? trend[card.trendKey] : null
           return (
             <motion.div key={card.label} custom={i} variants={fadeUp} initial="hidden" animate="visible">
-              <Link href={card.href} className="block group">
+              <Link href={card.href} className="block group h-full">
                 <div
-                  className="rounded-2xl p-5 h-full transition-all group-hover:shadow-md group-hover:-translate-y-0.5"
+                  className="rounded-2xl p-4 sm:p-5 h-full transition-all group-hover:shadow-md group-hover:-translate-y-0.5"
                   style={{ background: '#fff', border: `1px solid ${palette.border}` }}
                 >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: card.bg }}>
+                  <div className="flex flex-wrap items-start justify-between gap-2 mb-4">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: card.bg }}>
                       <Icon size={17} style={{ color: card.color }} />
                     </div>
                     <div className="flex items-center gap-2">
@@ -271,13 +269,13 @@ export default function AdminDashboardClient({
                       <ArrowUpRight size={14} style={{ color: 'rgba(13,20,15,0.25)', transition: 'color 0.2s' }} className="group-hover:text-ochre mt-1" />
                     </div>
                   </div>
-                  <div style={{ fontFamily: "'Fraunces',serif", fontSize: 28, fontWeight: 400, color: palette.ink, lineHeight: 1 }}>
+                  <div style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(22px, 6vw, 28px)', fontWeight: 400, color: palette.ink, lineHeight: 1 }}>
                     {card.value}
                   </div>
                   <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.15em', color: 'rgba(13,20,15,0.5)', marginTop: 6 }}>
                     {card.label.toUpperCase()}
                   </div>
-                  <div className="flex items-center justify-between mt-2">
+                  <div className="flex flex-wrap items-center justify-between gap-x-2 mt-2">
                     <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'rgba(13,20,15,0.45)' }}>
                       {card.sub}
                     </div>
@@ -302,22 +300,19 @@ export default function AdminDashboardClient({
             <div className="flex items-center justify-between mb-5">
               <div>
                 <SectionLabel>TREN POPULASI REGIONAL</SectionLabel>
-                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink, marginTop: -12 }}>
+                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink }}>
                   Pergerakan hewan 6 bulan terakhir
                 </div>
               </div>
               <TrendingUp size={16} style={{ color: palette.ochre, opacity: 0.7 }} />
             </div>
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={trendData} margin={{ top: 4, right: 0, left: -20, bottom: 0 }}>
+            <div className="w-full min-w-0">
+              <ResponsiveContainer width="100%" height={200}>
+                <AreaChart data={trendData} margin={{ top: 4, right: 0, left: -20, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="gradMasuk" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="adminGradMasuk" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={palette.ochre} stopOpacity={0.2} />
                     <stop offset="95%" stopColor={palette.ochre} stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="gradMati" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={palette.danger} stopOpacity={0.15} />
-                    <stop offset="95%" stopColor={palette.danger} stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,20,15,0.05)" />
@@ -330,11 +325,10 @@ export default function AdminDashboardClient({
                   contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}`, opacity: 1 }}
                 />
                 <Legend wrapperStyle={{ fontFamily: "'Inter',sans-serif", fontSize: 11 }} />
-                <Area type="monotone" dataKey="masuk" name="Masuk" stroke={palette.ochre} strokeWidth={2} fill="url(#gradMasuk)" />
-                <Area type="monotone" dataKey="mati" name="Mati" stroke={palette.danger} strokeWidth={2} fill="url(#gradMati)" />
-                <Area type="monotone" dataKey="terjual" name="Terjual" stroke={palette.info} strokeWidth={2} fill="none" strokeDasharray="4 2" />
-              </AreaChart>
-            </ResponsiveContainer>
+                <Area type="monotone" dataKey="masuk" name="Masuk" stroke={palette.ochre} strokeWidth={2} fill="url(#adminGradMasuk)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </Card>
         </motion.div>
 
@@ -349,12 +343,12 @@ export default function AdminDashboardClient({
                   <Link
                     key={f.id}
                     href={`/admin/farms/${f.id}`}
-                    className="flex items-center justify-between p-2.5 rounded-lg hover:bg-black/3 transition-colors"
+                    className="flex items-center justify-between gap-2 p-2.5 rounded-lg hover:bg-black/3 transition-colors"
                     style={{ border: '1px solid rgba(181,68,59,0.2)', background: 'rgba(181,68,59,0.05)' }}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       <Flame size={11} style={{ color: palette.danger, flexShrink: 0 }} />
-                      <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, fontWeight: 500, color: palette.ink }}>{f.nama}</span>
+                      <span className="min-w-0 break-words" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, fontWeight: 500, color: palette.ink }}>{f.nama}</span>
                     </div>
                     <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: palette.danger, fontWeight: 600 }}>
                       {f.mortalityRate}%
@@ -385,8 +379,8 @@ export default function AdminDashboardClient({
                     style={{ border: '1px solid rgba(181,68,59,0.15)', background: 'rgba(181,68,59,0.04)' }}
                   >
                     <AlertTriangle size={12} style={{ color: palette.danger, flexShrink: 0, marginTop: 2 }} />
-                    <div>
-                      <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, fontWeight: 500, color: palette.ink }}>
+                    <div className="min-w-0">
+                      <div className="break-words" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, fontWeight: 500, color: palette.ink }}>
                         {alert.nama}
                       </div>
                       <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: palette.danger, letterSpacing: '0.05em' }}>
@@ -425,7 +419,7 @@ export default function AdminDashboardClient({
               </div>
               <Link
                 href="/admin/approvals"
-                className="mt-3.5 flex items-center justify-center gap-1.5 py-2 rounded-lg w-full text-center transition-colors hover:bg-black/5"
+                className="mt-3.5 flex items-center justify-center gap-1.5 py-2.5 sm:py-2 rounded-lg w-full text-center transition-colors hover:bg-black/5"
                 style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: palette.ochre, border: `1px solid rgba(199,135,62,0.3)` }}
               >
                 Lihat semua <ArrowUpRight size={12} />
@@ -442,7 +436,7 @@ export default function AdminDashboardClient({
             <div className="flex items-center justify-between mb-4">
               <div>
                 <SectionLabel>FARM TIDAK AKTIF (30+ HARI)</SectionLabel>
-                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink, marginTop: -12 }}>
+                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink }}>
                   Farm aktif tanpa aktivitas lebih dari 30 hari
                 </div>
               </div>
@@ -489,15 +483,17 @@ export default function AdminDashboardClient({
             <div className="flex items-center justify-between mb-5">
               <div>
                 <SectionLabel>PERBANDINGAN ANTAR FARM</SectionLabel>
-                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink, marginTop: -12 }}>
+                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink }}>
                   Jumlah hewan per farm
                 </div>
               </div>
-              <Link href="/admin/analytics" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: palette.ochre }}>
+              <Link href="/admin/analytics" className="shrink-0 flex items-center min-h-10" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: palette.ochre }}>
                 Detail →
               </Link>
             </div>
-            <ResponsiveContainer width="100%" height={200}>
+            {/* Banyak farm: di ponsel grafik bisa di-swipe agar batang tidak terlalu tipis */}
+            <div className="overflow-x-auto">
+            <ResponsiveContainer width="100%" height={200} minWidth={farmComparison.length * 40} className="md:min-w-0!">
               <BarChart data={farmComparison} margin={{ top: 4, right: 0, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,20,15,0.05)" vertical={false} />
                 <XAxis dataKey="nama" tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
@@ -517,6 +513,7 @@ export default function AdminDashboardClient({
                 <Bar dataKey="user" name="User" fill="rgba(199,135,62,0.3)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+            </div>
           </Card>
         </motion.div>
 
@@ -524,7 +521,7 @@ export default function AdminDashboardClient({
         <motion.div custom={10} variants={fadeUp} initial="hidden" animate="visible">
           <Card className="h-full">
             <SectionLabel>DISTRIBUSI KATEGORI</SectionLabel>
-            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink, marginTop: -12, marginBottom: 16 }}>
+            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink, marginBottom: 16 }}>
               Kategori hewan regional
             </div>
             {kategoriData.length > 0 ? (
@@ -581,7 +578,7 @@ export default function AdminDashboardClient({
         <motion.div custom={11} variants={fadeUp} initial="hidden" animate="visible">
           <Card>
             <SectionLabel>TOP DIAGNOSA PENYAKIT REGIONAL</SectionLabel>
-            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink, marginTop: -12, marginBottom: 16 }}>
+            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink, marginBottom: 16 }}>
               Penyakit paling umum di seluruh wilayah
             </div>
             {topDiagnosa.length === 0 ? (
@@ -593,8 +590,8 @@ export default function AdminDashboardClient({
                   const pct = Math.round((d.count / max) * 100)
                   return (
                     <div key={d.name}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: palette.ink }}>{d.name}</span>
+                      <div className="flex items-center justify-between gap-3 mb-1">
+                        <span className="min-w-0 break-words" style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: palette.ink }}>{d.name}</span>
                         <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'rgba(13,20,15,0.5)' }}>
                           {d.count}×
                         </span>
@@ -619,11 +616,11 @@ export default function AdminDashboardClient({
             <div className="flex items-center justify-between mb-4">
               <div>
                 <SectionLabel>DAFTAR FARM</SectionLabel>
-                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink, marginTop: -12 }}>
+                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink }}>
                   Semua farm di sistem
                 </div>
               </div>
-              <Link href="/admin/farms" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: palette.ochre }}>
+              <Link href="/admin/farms" className="shrink-0 flex items-center min-h-10" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: palette.ochre }}>
                 Lihat semua →
               </Link>
             </div>
@@ -635,18 +632,18 @@ export default function AdminDashboardClient({
                   <Link
                     key={f.id}
                     href={`/admin/farms/${f.id}`}
-                    className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-black/5 transition-colors group"
+                    className="flex items-center justify-between gap-3 py-2.5 px-3 rounded-xl hover:bg-black/5 transition-colors group"
                     style={{ border: `1px solid ${palette.border}` }}
                   >
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
                       <div
-                        className="w-7 h-7 rounded-lg flex items-center justify-center"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                         style={{ background: f.status === 'AKTIF' ? 'rgba(63,91,58,0.1)' : 'rgba(181,68,59,0.08)' }}
                       >
                         <Building2 size={13} style={{ color: f.status === 'AKTIF' ? palette.moss : palette.danger }} />
                       </div>
-                      <div>
-                        <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5, fontWeight: 500, color: palette.ink }}>
+                      <div className="min-w-0">
+                        <div className="break-words" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5, fontWeight: 500, color: palette.ink }}>
                           {f.namaPanjang}
                         </div>
                         <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: f.status === 'AKTIF' ? palette.moss : palette.danger, letterSpacing: '0.08em' }}>
@@ -654,7 +651,7 @@ export default function AdminDashboardClient({
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 shrink-0">
                       {/* Health Score */}
                       <div className="text-right">
                         <div style={{ fontFamily: "'Fraunces',serif", fontSize: 14, color: scoreColor }}>{score}%</div>

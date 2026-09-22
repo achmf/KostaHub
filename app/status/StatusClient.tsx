@@ -146,10 +146,10 @@ function PendingView() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-      className="relative z-10 w-full max-w-[480px] rounded-3xl overflow-hidden"
+      className="relative z-10 m-auto w-full max-w-[480px] rounded-3xl overflow-hidden"
       style={{ background: '#fff', border: `1px solid ${palette.border}` }}
     >
-      <div className="px-8 pt-8 pb-10" style={{ background: palette.forest, color: palette.cream }}>
+      <div className="px-6 pt-6 pb-8 sm:px-8 sm:pt-8 sm:pb-10" style={{ background: palette.forest, color: palette.cream }}>
         <div className="flex items-center gap-3 mb-5">
           <GoatMark className="w-7 h-7" />
           <span style={{ fontFamily: "'Fraunces',serif", fontWeight: 600, fontSize: 18 }}>KostaHub</span>
@@ -175,7 +175,7 @@ function PendingView() {
         </h1>
       </div>
 
-      <div className="px-8 py-8">
+      <div className="p-6 sm:p-8">
         <div className="space-y-4" style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, color: 'rgba(13,20,15,0.7)', lineHeight: 1.7 }}>
           <p>
             Tim admin sedang meninjau data farm Anda. Proses verifikasi biasanya memakan waktu{' '}
@@ -280,10 +280,10 @@ function RejectedView({ rejectionReason, farm }: { rejectionReason: string | nul
         key="success"
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="relative z-10 w-full max-w-[480px] rounded-3xl overflow-hidden"
+        className="relative z-10 m-auto w-full max-w-[480px] rounded-3xl overflow-hidden"
         style={{ background: '#fff', border: `1px solid ${palette.border}` }}
       >
-        <div className="px-8 pt-8 pb-10" style={{ background: palette.forest, color: palette.cream }}>
+        <div className="px-6 pt-6 pb-8 sm:px-8 sm:pt-8 sm:pb-10" style={{ background: palette.forest, color: palette.cream }}>
           <div className="flex items-center gap-3 mb-5">
             <GoatMark className="w-7 h-7" />
             <span style={{ fontFamily: "'Fraunces',serif", fontWeight: 600, fontSize: 18 }}>KostaHub</span>
@@ -305,7 +305,7 @@ function RejectedView({ rejectionReason, farm }: { rejectionReason: string | nul
             Permohonan Anda sudah kami terima dan akan segera ditinjau kembali oleh admin.
           </p>
         </div>
-        <div className="px-8 py-6">
+        <div className="px-6 sm:px-8 py-6">
           <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.6)', lineHeight: 1.6 }}>
             Halaman ini akan memperlihatkan status terbaru setelah admin memproses permohonan Anda.
           </p>
@@ -320,11 +320,11 @@ function RejectedView({ rejectionReason, farm }: { rejectionReason: string | nul
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-      className="relative z-10 w-full max-w-[520px] rounded-3xl overflow-hidden"
+      className="relative z-10 m-auto w-full max-w-[520px] rounded-3xl overflow-hidden"
       style={{ background: '#fff', border: `1px solid ${palette.border}` }}
     >
       {/* Header */}
-      <div className="px-8 pt-8 pb-8" style={{ background: palette.forest, color: palette.cream }}>
+      <div className="p-6 sm:p-8" style={{ background: palette.forest, color: palette.cream }}>
         <div className="flex items-center gap-3 mb-5">
           <GoatMark className="w-7 h-7" />
           <span style={{ fontFamily: "'Fraunces',serif", fontWeight: 600, fontSize: 18 }}>KostaHub</span>
@@ -353,7 +353,7 @@ function RejectedView({ rejectionReason, farm }: { rejectionReason: string | nul
         </p>
       </div>
 
-      <div className="px-8 py-8">
+      <div className="p-6 sm:p-8">
         {/* Rejection reason */}
         {rejectionReason && (
           <div
@@ -570,6 +570,7 @@ function RejectedView({ rejectionReason, farm }: { rejectionReason: string | nul
                         id="ra-new-password"
                         type="password"
                         name="newPassword"
+                        autoComplete="new-password"
                         placeholder="Minimal 6 karakter"
                         className="w-full px-4 py-3 rounded-xl transition-all"
                         style={{ background: 'rgba(13,20,15,0.03)', border: `1px solid ${palette.border}`, fontFamily: "'Inter',sans-serif", fontSize: 14, color: palette.ink, outline: 'none' }}
@@ -591,6 +592,7 @@ function RejectedView({ rejectionReason, farm }: { rejectionReason: string | nul
                         id="ra-confirm-password"
                         type="password"
                         name="confirmPassword"
+                        autoComplete="new-password"
                         placeholder="Ulangi password baru"
                         className="w-full px-4 py-3 rounded-xl transition-all"
                         style={{ background: 'rgba(13,20,15,0.03)', border: `1px solid ${palette.border}`, fontFamily: "'Inter',sans-serif", fontSize: 14, color: palette.ink, outline: 'none' }}
@@ -602,11 +604,11 @@ function RejectedView({ rejectionReason, farm }: { rejectionReason: string | nul
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-2">
+                <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
                   <button
                     type="button"
                     onClick={() => setShowForm(false)}
-                    className="cursor-pointer flex items-center gap-2 px-5 py-3 rounded-full transition-opacity hover:opacity-70"
+                    className="cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 rounded-full transition-opacity hover:opacity-70"
                     style={{ background: 'rgba(13,20,15,0.06)', color: palette.ink, fontFamily: "'Inter',sans-serif", fontSize: 14, border: `1px solid ${palette.border}` }}
                   >
                     <ArrowLeft size={14} />
@@ -616,7 +618,7 @@ function RejectedView({ rejectionReason, farm }: { rejectionReason: string | nul
                     id="reapply-submit-btn"
                     type="submit"
                     disabled={isPending}
-                    className="group flex-1 flex items-center justify-center gap-3 px-6 py-3.5 rounded-full transition-opacity cursor-pointer"
+                    className="group w-full sm:w-auto sm:flex-1 flex items-center justify-center gap-3 px-6 py-3.5 rounded-full transition-opacity cursor-pointer"
                     style={{
                       background: isPending ? 'rgba(13,20,15,0.5)' : palette.ink,
                       color: palette.cream,
@@ -648,7 +650,7 @@ function RejectedView({ rejectionReason, farm }: { rejectionReason: string | nul
 // ─── Main export ──────────────────────────────────────────────────────────────
 export default function StatusClient({ status, rejectionReason, farm }: Props) {
   return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: palette.cream }}>
+    <div className="min-h-dvh flex p-4 sm:p-6" style={{ background: palette.cream }}>
       <WaveBg />
       <AnimatePresence mode="wait">
         {status === 'PENDING' ? (

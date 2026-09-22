@@ -494,8 +494,9 @@ export async function GET(req: NextRequest) {
     prisma.farm.count(),
     prisma.farm.count({ where: { status: 'AKTIF' } }),
     prisma.user.count({ where: { deletedAt: null } }),
-    prisma.hewan.count({ where: { status: 'AKTIF' } }),
+    prisma.hewan.count(),
   ])
+
 
   const coverData: CoverData = {
     totalFarm:  farmCount,
@@ -789,11 +790,12 @@ export async function GET(req: NextRequest) {
     const hewan = await prisma.hewan.findMany({
       select: {
         id: true, tag: true, nama: true, kelamin: true,
-        tanggalLahir: true, berat: true, kategori: true, status: true,
+        tanggalLahir: true, berat: true, kategori: true,
+        kematian: { select: { tanggalMati: true } },
         farm: { select: { nama: true } },
         createdAt: true,
       },
-      orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+      orderBy: [{ createdAt: 'desc' }],
       take: 5000,
     })
 
@@ -803,9 +805,8 @@ export async function GET(req: NextRequest) {
     }
     const KELAMIN: Record<string, string> = { JANTAN: 'Jantan ♂', BETINA: 'Betina ♀' }
 
-    const totalAktif  = hewan.filter(h => h.status === 'AKTIF').length
-    const totalMati   = hewan.filter(h => h.status === 'MATI').length
-    const totalTerjual= hewan.filter(h => h.status === 'TERJUAL').length
+    const totalMati   = hewan.filter(h => !!h.kematian).length
+    const totalHidup  = hewan.length - totalMati
     const avgBerat    = hewan.length
       ? (hewan.reduce((s, h) => s + (h.berat ?? 0), 0) / hewan.length).toFixed(1)
       : 0
@@ -836,9 +837,8 @@ export async function GET(req: NextRequest) {
       totalCols: cols.length,
       stats: [
         { label: 'Total Hewan', value: hewan.length,  color: T.forest },
-        { label: 'Aktif',       value: totalAktif,    color: T.moss   },
+        { label: 'Hidup',       value: totalHidup,    color: T.moss   },
         { label: 'Mati',        value: totalMati,     color: T.red    },
-        { label: 'Terjual',     value: totalTerjual,  color: T.blue   },
         { label: 'Rata Berat',  value: `${avgBerat} kg`, color: T.ochre },
       ],
     })
@@ -890,9 +890,11 @@ export async function GET(req: NextRequest) {
       r.getCell(8).font      = { name: 'Calibri', size: 10, color: { argb: `FF${T.forest}` } }
       r.getCell(8).alignment = al.right()
 
-      applyStatus(r.getCell(9), h.status)
+      // Status based on kematian relation
+      const hewanStatus = h.kematian ? 'MATI' : 'HIDUP'
+      applyStatus(r.getCell(9), hewanStatus)
 
-      r.getCell(10).value    = h.farm.nama
+      r.getCell(10).value    = h.farm?.nama ?? '—'
       r.getCell(10).font     = F.body()
 
       r.getCell(11).value    = h.createdAt.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })

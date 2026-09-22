@@ -69,11 +69,12 @@ export default function AdminFarmActions({ farmId }: AdminFarmActionsProps) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    // Di mobile `contents`: tombol ikut grid 2 kolom milik AdminFarmProfileActions
+    <div className="contents sm:flex sm:flex-wrap sm:items-center sm:gap-3">
       <button
         onClick={handleOpenDashboard}
         disabled={isPendingDashboard || isPendingDelete}
-        className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
+        className="col-span-2 order-first sm:order-none flex items-center justify-center gap-2 min-h-10 sm:min-h-0 px-4 py-2 rounded-xl transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
         style={{
           background: palette.forest,
           color: palette.cream,
@@ -89,10 +90,10 @@ export default function AdminFarmActions({ farmId }: AdminFarmActionsProps) {
       <button
         onClick={handleDelete}
         disabled={isPendingDashboard || isPendingDelete}
-        className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
+        className="flex items-center justify-center gap-2 min-h-10 sm:min-h-0 px-4 py-2 rounded-xl transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
         style={{
           background: 'rgba(181,68,59,0.08)',
-          color: palette.danger,
+          color: palette.rose,
           fontFamily: "'Inter',sans-serif",
           fontSize: 13,
           fontWeight: 500,

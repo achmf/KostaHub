@@ -90,11 +90,11 @@ export default function LaporanClient({ data, isGlobal, farmName, farmId }: { da
           <KostaButton
             onClick={handleExport}
             disabled={exportLoading}
-            className="whitespace-nowrap"
+            className="whitespace-nowrap min-h-10 md:min-h-0"
           >
             {exportLoading ? (
               <>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                <svg width="16" height="16" className="md:w-[14px] md:h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                   style={{ animation: 'spin 1s linear infinite', opacity: 0.7 }}>
                   <path d="M21 12a9 9 0 1 1-6.219-8.56" />
                 </svg>
@@ -102,10 +102,10 @@ export default function LaporanClient({ data, isGlobal, farmName, farmId }: { da
               </>
             ) : (
               <>
-                <FileSpreadsheet size={14} style={{ color: palette.ochre }} />
-                <span>Export Laporan</span>
-                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, opacity: 0.5, letterSpacing: '0.05em' }}>.xlsx</span>
-                <Download size={12} style={{ opacity: 0.45, marginLeft: 2 }} />
+                <FileSpreadsheet size={16} className="md:w-[14px] md:h-[14px]" style={{ color: palette.ochre }} />
+                <span>Export<span className="hidden md:inline"> Laporan</span></span>
+                <span className="hidden md:inline" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, opacity: 0.5, letterSpacing: '0.05em' }}>.xlsx</span>
+                <Download size={14} className="md:w-[12px] md:h-[12px]" style={{ opacity: 0.45, marginLeft: 2 }} />
               </>
             )}
             <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
@@ -116,7 +116,7 @@ export default function LaporanClient({ data, isGlobal, farmName, farmId }: { da
 
 
       {/* ─── TAB NAV ─────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+      <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 pb-3 mb-1 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-visible sm:mx-0 sm:px-0 sm:pb-0 sm:mb-4">
         {tabs.map((t, i) => (
           <motion.button
             key={t.key}
@@ -124,7 +124,7 @@ export default function LaporanClient({ data, isGlobal, farmName, farmId }: { da
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.06 }}
-            className="cursor-pointer rounded-2xl p-4 text-left transition-all"
+            className="cursor-pointer rounded-2xl p-4 text-left transition-all shrink-0 w-[44%] sm:w-auto"
             style={{
               background: tab === t.key ? palette.ink : '#fff',
               color: tab === t.key ? palette.cream : palette.ink,
@@ -178,19 +178,22 @@ export default function LaporanClient({ data, isGlobal, farmName, farmId }: { da
 
 // ─── LAPORAN 1: STATUS & RIWAYAT TERNAK ────────────────────────
 function LaporanKeluarMasuk({ data }: { data: any }) {
-  const [activeSection, setActiveSection] = useState<'aktif' | 'masuk' | 'keluar' | 'mati' | 'mutasi'>('aktif')
+  const [activeSection, setActiveSection] = useState<'aktif' | 'masuk' | 'mati' | 'mutasi'>('aktif')
+
   const [search, setSearch] = useState('')
 
-  const hewanAktif = (data.hewanMasuk ?? []).filter((h: any) => h.status === 'AKTIF')
+  // hewanKeluar = semua kematian records (synthetic status: 'MATI')
   const hewanMasuk = data.hewanMasuk ?? []
-  const hewanKeluar = (data.hewanKeluar ?? []).filter((h: any) => h.status === 'TERJUAL')
-  const hewanMati = (data.hewanKeluar ?? []).filter((h: any) => h.status === 'MATI')
+  const hewanKeluar = data.hewanKeluar ?? []
+  const hewanMati = hewanKeluar // semua keluar = mati
+  const hewanKematianIds = new Set((hewanKeluar as any[]).map((h: any) => h.id))
+  // hewanAktif = hewan yang tidak ada di daftar kematian
+  const hewanAktif = (hewanMasuk as any[]).filter((h: any) => !hewanKematianIds.has(h.id))
   const mutasi = data.mutasiData ?? []
 
   const sections = [
-    { key: 'aktif' as const, label: 'Ternak Aktif', icon: <PackagePlus size={13} />, count: hewanAktif.length, color: palette.moss },
+    { key: 'aktif' as const, label: 'Ternak Hidup', icon: <PackagePlus size={13} />, count: hewanAktif.length, color: palette.moss },
     { key: 'masuk' as const, label: 'Ternak Masuk', icon: <PackagePlus size={13} />, count: hewanMasuk.length, color: palette.ink },
-    { key: 'keluar' as const, label: 'Ternak Keluar', icon: <ShoppingCart size={13} />, count: hewanKeluar.length, color: palette.ochre },
     { key: 'mati' as const, label: 'Ternak Mati', icon: <Skull size={13} />, count: hewanMati.length, color: palette.rose },
     { key: 'mutasi' as const, label: 'Mutasi / Transfer', icon: <ArrowRightLeft size={13} />, count: mutasi.length, color: '#5B7FA6' },
   ]
@@ -199,7 +202,6 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
     switch (activeSection) {
       case 'aktif': return hewanAktif
       case 'masuk': return hewanMasuk
-      case 'keluar': return hewanKeluar
       case 'mati': return hewanMati
       case 'mutasi': return mutasi
       default: return []
@@ -225,12 +227,12 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
       {/* Section toggle */}
       <KostaCard className="mb-4 p-2">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 sm:overflow-visible">
           {sections.map(s => (
             <button
               key={s.key}
               onClick={() => { setActiveSection(s.key); setSearch('') }}
-              className="cursor-pointer rounded-xl px-4 py-3 flex items-center gap-2 transition-all"
+              className="cursor-pointer rounded-xl px-4 py-3 flex items-center gap-2 transition-all shrink-0 whitespace-nowrap sm:whitespace-normal"
               style={{
                 background: activeSection === s.key ? s.color : 'transparent',
                 color: activeSection === s.key ? '#fff' : palette.ink,
@@ -259,22 +261,87 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Cari tag atau nama ternak..."
-            className="flex-1 bg-transparent outline-none"
+            className="flex-1 min-w-0 bg-transparent outline-none"
             style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}
           />
           {search && (
-            <button onClick={() => setSearch('')} className="cursor-pointer opacity-40 hover:opacity-70 text-xs">✕</button>
+            <button type="button" onClick={() => setSearch('')} aria-label="Hapus pencarian" className="cursor-pointer opacity-40 hover:opacity-70 text-xs w-10 h-10 -my-3 -mr-3 shrink-0 flex items-center justify-center">✕</button>
           )}
         </div>
 
+        {filteredData.length === 0 && <NoResults />}
+
+        {/* ── MOBILE: card list ── */}
+        {filteredData.length > 0 && (
+          <div className="flex flex-col divide-y md:hidden" style={{ borderColor: palette.border }}>
+            {pagination.paged.map((item: any) => {
+              if (activeSection === 'mutasi') {
+                return (
+                  <div key={item.id} className="px-4 py-3.5 flex flex-col gap-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12 }}>{item.tag}</div>
+                        <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}>{item.nama || <span style={{ opacity: 0.4 }}>—</span>}</div>
+                      </div>
+                      <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, opacity: 0.6, flexShrink: 0 }}>{formatDate(item.tanggal)}</div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap" style={{ borderTop: `1px solid rgba(13,20,15,0.05)`, paddingTop: 8 }}>
+                      <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5 }}>{item.fromFarm?.replace('Farm ', '') || '—'}</span>
+                      <span style={{ opacity: 0.4 }}>→</span>
+                      <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5 }}>{item.toFarm?.replace('Farm ', '') || '—'}</span>
+                      {item.alasan && <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, opacity: 0.55 }}>· {item.alasan}</span>}
+                    </div>
+                  </div>
+                )
+              }
+              // aktif / masuk / mati
+              return (
+                <Link key={item.id} href={`/hewan/${item.id}`} className="block px-4 py-3.5 active:bg-black/[0.03] transition-colors">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{item.tag}</span>
+                        <Badge variant={item.kategori === 'INDUKAN' ? 'moss' : item.kategori === 'PEJANTAN' ? 'ink' : 'ochre'}>
+                          {item.kategori?.replace('_', ' ')}
+                        </Badge>
+                        <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{item.kelamin === 'JANTAN' ? '♂' : '♀'}</span>
+                      </div>
+                      <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}>{item.nama || <span style={{ opacity: 0.4 }}>Tanpa Nama</span>}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div style={{ fontFamily: "'Fraunces',serif", fontSize: 15 }}>{item.berat ? `${item.berat} kg` : '—'}</div>
+                      {activeSection === 'mati' && item.tanggalMati ? (
+                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: palette.rose, marginTop: 2 }}>
+                          Mati {formatDate(item.tanggalMati)}
+                        </div>
+                      ) : (
+                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.5, marginTop: 2 }}>
+                          {formatDate(item.createdAt)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {activeSection === 'mati' && item.penyebab && (
+                    <div className="mt-1.5" style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, opacity: 0.55 }}>
+                      Penyebab: {item.penyebab.replace('_', ' ')}
+                    </div>
+                  )}
+                </Link>
+              )
+            })}
+          </div>
+        )}
+
+        {/* ── DESKTOP: horizontal-scroll table ── */}
+        <div className="overflow-x-auto hidden md:block">
         {/* Masuk & Aktif table */}
         {(activeSection === 'aktif' || activeSection === 'masuk') && (
           <>
             <TableHeader cols={['TAG', 'NAMA', 'KATEGORI', 'KELAMIN', 'BERAT AWAL', 'TGL DAFTAR', 'FARM']} grid="0.8fr 1fr 0.9fr 0.7fr 0.7fr 0.8fr 0.8fr" />
             {filteredData.length === 0 ? <NoResults /> : pagination.paged.map((h: any, i: number) => (
               <TableRow key={h.id} i={i} grid="0.8fr 1fr 0.9fr 0.7fr 0.7fr 0.8fr 0.8fr" cells={[
-                <Link href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{h.tag}</span></Link>,
-                <Link href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{h.nama || <span style={{ opacity: 0.4 }}>—</span>}</span></Link>,
+                <Link href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{h.tag}</span></Link>,
+                <Link href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{h.nama || <span style={{ opacity: 0.4 }}>—</span>}</span></Link>,
                 <Badge variant={h.kategori === 'INDUKAN' ? 'moss' : h.kategori === 'PEJANTAN' ? 'ink' : 'ochre'}>{h.kategori.replace('_', ' ')}</Badge>,
                 <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{h.kelamin === 'JANTAN' ? '♂' : '♀'}</span>,
                 <span style={{ fontFamily: "'Fraunces',serif", fontSize: 14 }}>{h.berat ? `${h.berat} kg` : '—'}</span>,
@@ -285,22 +352,19 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
           </>
         )}
         
-        {/* Keluar & Mati table */}
-        {(activeSection === 'keluar' || activeSection === 'mati') && (
+        {/* Mati table */}
+        {activeSection === 'mati' && (
           <>
-            <TableHeader cols={['TAG', 'NAMA', 'STATUS', 'BERAT', 'TGL DAFTAR', 'KETERANGAN', 'FARM']} grid="0.8fr 1fr 0.7fr 0.6fr 0.8fr 1fr 0.8fr" />
+            <TableHeader cols={['TAG', 'NAMA', 'BERAT', 'TGL DAFTAR', 'TANGGAL MATI', 'PENYEBAB', 'FARM']} grid="0.8fr 1fr 0.6fr 0.8fr 0.8fr 1fr 0.8fr" />
             {filteredData.length === 0 ? <NoResults /> : pagination.paged.map((h: any, i: number) => (
-              <TableRow key={h.id} i={i} grid="0.8fr 1fr 0.7fr 0.6fr 0.8fr 1fr 0.8fr" cells={[
-                <Link href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{h.tag}</span></Link>,
-                <Link href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{h.nama || '—'}</span></Link>,
-                <span className="flex items-center gap-1.5" style={{ color: h.status === 'MATI' ? palette.rose : palette.ochre }}>
-                  {h.status === 'MATI' ? <Skull size={12} /> : <ShoppingCart size={12} />}
-                  <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{h.status}</span>
-                </span>,
+              <TableRow key={h.id} i={i} grid="0.8fr 1fr 0.6fr 0.8fr 0.8fr 1fr 0.8fr" cells={[
+                <Link href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{h.tag}</span></Link>,
+                <Link href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{h.nama || '—'}</span></Link>,
                 <span style={{ fontFamily: "'Fraunces',serif", fontSize: 14 }}>{h.berat ? `${h.berat} kg` : '—'}</span>,
                 <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(h.createdAt)}</span>,
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, color: palette.rose }}>{h.tanggalMati ? formatDate(h.tanggalMati) : '—'}</span>,
                 <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, opacity: 0.6 }}>
-                  {h.status === 'MATI' ? 'Ternak mati' : 'Terjual'}
+                  {h.penyebab ? h.penyebab.replace('_', ' ') : 'Ternak mati'}
                 </span>,
                 <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, opacity: 0.7 }}>{h.farm || '—'}</span>,
               ]} />
@@ -314,8 +378,8 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
             <TableHeader cols={['TAG', 'NAMA', 'DARI FARM', 'KE FARM', 'TGL TRANSFER', 'ALASAN']} grid="0.7fr 0.9fr 1fr 1fr 0.8fr 1.4fr" />
             {filteredData.length === 0 ? <NoResults /> : pagination.paged.map((t: any, i: number) => (
               <TableRow key={t.id} i={i} grid="0.7fr 0.9fr 1fr 1fr 0.8fr 1.4fr" cells={[
-                <Link href={`/hewan/${t.hewanId}`} className="hover:underline hover:text-moss transition-colors block" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{t.tag}</span></Link>,
-                <Link href={`/hewan/${t.hewanId}`} className="hover:underline hover:text-moss transition-colors block" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{t.nama || '—'}</span></Link>,
+                <Link href={`/hewan/${t.hewanId}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{t.tag}</span></Link>,
+                <Link href={`/hewan/${t.hewanId}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{t.nama || '—'}</span></Link>,
                 <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{t.fromFarm?.replace('Farm ', '')}</span>,
                 <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{t.toFarm?.replace('Farm ', '')}</span>,
                 <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(t.tanggal)}</span>,
@@ -324,6 +388,7 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
             ))}
           </>
         )}
+        </div>
 
         {filteredData.length > 0 && (
           <div className="px-5 pb-4">
@@ -334,6 +399,7 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
     </motion.div>
   )
 }
+
 
 // ─── LAPORAN 2: KESEHATAN & MEDIS ──────────────────────────
 function LaporanMedis({ data }: { data: any[] }) {
@@ -367,7 +433,7 @@ function LaporanMedis({ data }: { data: any[] }) {
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
       {/* Stats strip */}
-      <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 mb-4">
         {['VAKSINASI', 'VITAMIN', 'PENGOBATAN', 'PEMERIKSAAN', 'PERAWATAN_LUKA', 'LAINNYA'].map(k => (
           <div
             key={k}
@@ -392,27 +458,76 @@ function LaporanMedis({ data }: { data: any[] }) {
       </div>
 
       <KostaCard className="overflow-hidden">
-        <div className="px-5 py-3 flex items-center gap-3 border-b" style={{ borderColor: palette.border }}>
+        <div className="px-5 py-3 flex flex-wrap items-center gap-x-3 gap-y-2 border-b" style={{ borderColor: palette.border }}>
           <Search size={13} style={{ opacity: 0.4 }} />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Cari tag, diagnosis, dokter..."
-            className="flex-1 bg-transparent outline-none"
+            className="flex-1 min-w-[160px] bg-transparent outline-none"
             style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}
           />
           {filterKategori !== 'ALL' && (
-            <span
-              className="flex items-center gap-1 px-2 py-1 rounded-full text-xs cursor-pointer"
+            <button
+              type="button"
+              className="relative flex items-center gap-1 px-2 py-1 rounded-full text-xs cursor-pointer after:absolute after:-inset-2"
               onClick={() => setFilterKategori('ALL')}
+              aria-label={`Hapus filter ${KATEGORI_MEDIS_LABEL[filterKategori]}`}
               style={{ background: `${KATEGORI_MEDIS_COLOR[filterKategori]}15`, color: KATEGORI_MEDIS_COLOR[filterKategori] }}
             >
               {KATEGORI_MEDIS_LABEL[filterKategori]} ✕
-            </span>
+            </button>
           )}
           <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.4 }}>{filtered.length} rekaman</span>
         </div>
 
+        {/* ── MOBILE: card list ── */}
+        {filtered.length === 0 ? <NoResults /> : (
+          <div className="flex flex-col divide-y md:hidden" style={{ borderColor: palette.border }}>
+            {medisP.paged.map((m: any) => (
+              <Link key={m.id} href={`/hewan/${m.hewanId}`} className="block px-4 py-3.5 active:bg-black/[0.03] transition-colors">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    {/* Kategori + Tanggal */}
+                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                      <span
+                        className="flex items-center gap-1 px-2 py-0.5 rounded-full"
+                        style={{
+                          background: `${KATEGORI_MEDIS_COLOR[m.kategori]}15`,
+                          color: KATEGORI_MEDIS_COLOR[m.kategori],
+                          fontFamily: "'Inter',sans-serif", fontSize: 11,
+                        }}
+                      >
+                        {KATEGORI_MEDIS_ICON[m.kategori]}
+                        {KATEGORI_MEDIS_LABEL[m.kategori]}
+                      </span>
+                      <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.5 }}>
+                        {formatDate(m.tanggal)}
+                      </span>
+                    </div>
+                    {/* Hewan */}
+                    <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{m.hewanTag}</div>
+                    {m.hewanNama && <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, opacity: 0.55 }}>{m.hewanNama}</div>}
+                    {/* Diagnosis */}
+                    <div className="mt-2" style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}>{m.diagnosis}</div>
+                    {m.notes && <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, opacity: 0.5, marginTop: 2 }}>{m.notes}</div>}
+                  </div>
+                </div>
+                {/* Obat + Dokter */}
+                {(m.obat || m.namaDokter) && (
+                  <div className="flex flex-wrap gap-x-4 mt-2" style={{ borderTop: `1px solid rgba(13,20,15,0.05)`, paddingTop: 8 }}>
+                    {m.obat && <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, opacity: 0.7 }}>💊 {m.obat}</span>}
+                    {m.namaDokter && <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, opacity: 0.7 }}>👤 {m.namaDokter}</span>}
+                    {m.tanggalLanjut && <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, opacity: 0.6 }}>Kontrol: {formatDate(m.tanggalLanjut)}</span>}
+                  </div>
+                )}
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {/* ── DESKTOP: horizontal-scroll table ── */}
+        <div className="overflow-x-auto hidden md:block">
         <TableHeader
           cols={['TANGGAL', 'TAG', 'KATEGORI', 'DIAGNOSIS / TINDAKAN', 'OBAT / VAKSIN', 'PETUGAS', 'KONTROL']}
           grid="0.7fr 0.7fr 0.9fr 1.6fr 1fr 0.9fr 0.7fr"
@@ -420,7 +535,7 @@ function LaporanMedis({ data }: { data: any[] }) {
         {filtered.length === 0 ? <NoResults /> : medisP.paged.map((m: any, i: number) => (
           <TableRow key={m.id} i={i} grid="0.7fr 0.7fr 0.9fr 1.6fr 1fr 0.9fr 0.7fr" cells={[
             <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(m.tanggal)}</span>,
-            <Link href={`/hewan/${m.hewanId}`} className="hover:underline hover:text-moss transition-colors block" onClick={(e) => e.stopPropagation()}>
+            <Link href={`/hewan/${m.hewanId}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}>
               <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{m.hewanTag}</div>
               {m.hewanNama && <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, opacity: 0.5 }}>{m.hewanNama}</div>}
             </Link>,
@@ -446,6 +561,7 @@ function LaporanMedis({ data }: { data: any[] }) {
             </span>,
           ]} />
         ))}
+        </div>
       </KostaCard>
       {filtered.length > 0 && (
         <div className="px-5 pb-4">
@@ -456,6 +572,7 @@ function LaporanMedis({ data }: { data: any[] }) {
   )
 }
 
+
 // ─── LAPORAN 3: BREEDING ────────────────────────────────────
 function LaporanBreeding({ data }: { data: any[] }) {
   const [filterStatus, setFilterStatus] = useState<string>('ALL')
@@ -464,7 +581,7 @@ function LaporanBreeding({ data }: { data: any[] }) {
 
   const filtered = useMemo(() => {
     return (data ?? []).filter((r: any) => {
-      const matchStatus = filterStatus === 'ALL' || r.status === filterStatus
+      const matchStatus = filterStatus === 'ALL' || (filterStatus === 'inbreeding' ? r.inbreedingWarning : r.status === filterStatus)
       const q = search.toLowerCase()
       const matchSearch = !q || r.indukTag?.toLowerCase().includes(q) ||
         r.pejantanTag?.toLowerCase().includes(q) || r.indukNama?.toLowerCase().includes(q) ||
@@ -494,15 +611,15 @@ function LaporanBreeding({ data }: { data: any[] }) {
         ].map(s => (
           <div
             key={s.key}
-            className="p-5 cursor-pointer transition-all rounded-2xl"
-            onClick={() => setFilterStatus(s.key === 'inbreeding' ? 'ALL' : (filterStatus === s.key ? 'ALL' : s.key))}
+            className="p-4 sm:p-5 cursor-pointer transition-all rounded-2xl"
+            onClick={() => setFilterStatus(filterStatus === s.key ? 'ALL' : s.key)}
             style={{
               background: '#fff',
               border: filterStatus === s.key ? `2px solid ${s.color}` : `1px solid ${palette.border}`,
             }}
           >
             <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, opacity: 0.5, marginBottom: 6 }}>{s.label}</div>
-            <div style={{ fontFamily: "'Fraunces',serif", fontSize: 32, letterSpacing: '-0.025em', color: s.color }}>
+            <div style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(26px, 7vw, 32px)', letterSpacing: '-0.025em', color: s.color }}>
               {stats[s.key as keyof typeof stats]}
             </div>
           </div>
@@ -516,7 +633,7 @@ function LaporanBreeding({ data }: { data: any[] }) {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Cari tag induk atau pejantan..."
-            className="flex-1 bg-transparent outline-none"
+            className="flex-1 min-w-0 bg-transparent outline-none"
             style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}
           />
           <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.4 }}>{filtered.length} kartu</span>
@@ -535,7 +652,7 @@ function LaporanBreeding({ data }: { data: any[] }) {
                   className="px-5 py-4 cursor-pointer hover:bg-black/[0.02] transition-colors"
                   onClick={() => setExpandedId(isExpanded ? null : r.id)}
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
                     {/* Status dot */}
                     <div
                       className="w-2.5 h-2.5 rounded-full flex-shrink-0"
@@ -543,7 +660,7 @@ function LaporanBreeding({ data }: { data: any[] }) {
                     />
 
                     {/* Induk + Pejantan */}
-                    <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-3 items-center">
+                    <div className="flex-1 min-w-[200px] grid grid-cols-2 lg:grid-cols-4 gap-3 items-center">
                       <div>
                         <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.5, marginBottom: 2 }}>INDUK</div>
                         <Link href={`/hewan/${r.indukId}`} onClick={(e) => e.stopPropagation()} className="hover:underline hover:text-moss transition-colors">
@@ -574,7 +691,7 @@ function LaporanBreeding({ data }: { data: any[] }) {
                     </div>
 
                     {/* Right side */}
-                    <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="flex items-center gap-3 flex-shrink-0 ml-auto">
                       <Badge variant={r.status === 'HAMIL' ? 'amber' : r.status === 'LAHIR' ? 'emerald' : 'rose'}>{r.status}</Badge>
                       {r.inbreedingWarning && <Badge variant="rose">KAWIN SEDARAH</Badge>}
                       {isExpanded ? <ChevronUp size={14} style={{ opacity: 0.4 }} /> : <ChevronDown size={14} style={{ opacity: 0.4 }} />}
@@ -582,15 +699,20 @@ function LaporanBreeding({ data }: { data: any[] }) {
                   </div>
                 </div>
 
-                {/* Expanded detail */}
+                {/* Expanded detail — height dan opacity dipisah: FM v12 crash 'frame.join' bila digabung */}
                 <AnimatePresence>
                   {isExpanded && (
                     <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
+                      initial={{ height: 0 }}
+                      animate={{ height: 'auto' }}
+                      exit={{ height: 0 }}
                       className="overflow-hidden"
                     >
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                      >
                       <div className="px-5 pb-5 pt-2 grid grid-cols-2 lg:grid-cols-4 gap-4"
                         style={{ background: 'rgba(13,20,15,0.02)', borderTop: `1px solid ${palette.border}` }}
                       >
@@ -610,6 +732,7 @@ function LaporanBreeding({ data }: { data: any[] }) {
                           <DetailItem label="Ref. Anak" value={r.anakTag} />
                         )}
                       </div>
+                      </motion.div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -670,9 +793,9 @@ function LaporanPertumbuhan({ data }: { data: any[] }) {
           { label: 'Rata-rata ADG', value: `${avgAdg} kg/hr`, sub: 'Average Daily Gain', color: palette.ink },
           { label: 'Total Pengukuran', value: String(data?.reduce((a: number, d: any) => a + d.totalPengukuran, 0) ?? 0), sub: 'rekaman berat badan', color: '#5B7FA6' },
         ].map(s => (
-          <KostaCard key={s.label} className="p-5">
+          <KostaCard key={s.label} className="p-4 sm:p-5">
             <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, opacity: 0.5, marginBottom: 6 }}>{s.label}</div>
-            <div style={{ fontFamily: "'Fraunces',serif", fontSize: 26, letterSpacing: '-0.025em', color: s.color }}>{s.value}</div>
+            <div style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(20px, 5.6vw, 26px)', letterSpacing: '-0.025em', color: s.color }}>{s.value}</div>
             <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, opacity: 0.45, marginTop: 4 }}>{s.sub}</div>
           </KostaCard>
         ))}
@@ -685,14 +808,122 @@ function LaporanPertumbuhan({ data }: { data: any[] }) {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Cari tag atau nama ternak..."
-            className="flex-1 bg-transparent outline-none"
+            className="flex-1 min-w-0 bg-transparent outline-none"
             style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}
           />
           <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.4 }}>{sorted.length} ternak</span>
         </div>
 
+        {/* ── MOBILE: card list with expand ── */}
+        <div className="flex flex-col divide-y md:hidden" style={{ borderColor: palette.border }}>
+          {sorted.length === 0 ? <NoResults /> : pertumbuhanP.paged.map((d: any, i: number) => {
+            const isExpanded = expandedId === d.hewan?.tag
+            const trendUp = d.selisih > 0
+            const trendFlat = d.selisih === 0
+
+            return (
+              <motion.div key={d.hewan?.tag} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: Math.min(i * 0.015, 0.3) }}>
+                <div
+                  className="px-4 py-3.5 cursor-pointer active:bg-black/[0.02] transition-colors"
+                  onClick={() => setExpandedId(isExpanded ? null : d.hewan?.tag)}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <Link
+                        href={`/hewan/${d.hewan?.id}`}
+                        className="hover:underline hover:text-moss transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12 }}>{d.hewan?.tag}</div>
+                        {d.hewan?.nama && <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, opacity: 0.55 }}>{d.hewan.nama}</div>}
+                      </Link>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+                        <div>
+                          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, opacity: 0.45, letterSpacing: '0.08em' }}>BERAT</div>
+                          <div style={{ fontFamily: "'Fraunces',serif", fontSize: 14 }}>
+                            {d.beratAwal} → {d.beratAkhir}
+                            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, opacity: 0.55 }}> kg</span>
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, opacity: 0.45, letterSpacing: '0.08em' }}>SELISIH</div>
+                          <div
+                            className="flex items-center gap-1"
+                            style={{
+                              fontFamily: "'Fraunces',serif", fontSize: 14,
+                              color: trendFlat ? palette.ink : trendUp ? palette.moss : palette.rose,
+                            }}
+                          >
+                            {trendFlat ? <Minus size={11} /> : trendUp ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                            {trendUp ? '+' : ''}{d.selisih} kg
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, opacity: 0.45, letterSpacing: '0.08em' }}>ADG</div>
+                          <div style={{
+                            fontFamily: "'JetBrains Mono',monospace", fontSize: 12,
+                            color: d.adg > 0.05 ? palette.moss : d.adg < 0 ? palette.rose : palette.ink,
+                          }}>
+                            {d.adg > 0 ? '+' : ''}{d.adg} kg/hr
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, opacity: 0.45, letterSpacing: '0.08em' }}>REKAM</div>
+                          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, opacity: 0.6 }}>{d.totalPengukuran}×</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ opacity: 0.3, flexShrink: 0, marginTop: 4 }}>
+                      {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    </div>
+                  </div>
+                </div>
+
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: 'auto' }}
+                      exit={{ height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <div className="px-4 py-4" style={{ background: 'rgba(13,20,15,0.02)', borderTop: `1px solid ${palette.border}` }}>
+                          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.14em', opacity: 0.5, marginBottom: 10 }}>
+                            RIWAYAT PENIMBANGAN
+                          </div>
+                          <div className="grid gap-2">
+                            {d.records.map((rec: any, ri: number) => (
+                              <div key={ri} className="flex items-center gap-3">
+                                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, opacity: 0.6, minWidth: 70 }}>
+                                  {formatDate(rec.tanggal)}
+                                </span>
+                                <div
+                                  className="h-1.5 rounded-full flex-1"
+                                  style={{
+                                    background: palette.moss, opacity: 0.5,
+                                    maxWidth: `${Math.min((rec.berat / (d.beratAkhir * 1.2)) * 100, 100)}%`,
+                                    minWidth: 4,
+                                  }}
+                                />
+                                <span style={{ fontFamily: "'Fraunces',serif", fontSize: 13 }}>{rec.berat} kg</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )
+          })}
+        </div>
+
+        {/* ── DESKTOP: horizontal-scroll table ── */}
+        <div className="overflow-x-auto hidden md:block">
         {/* Header dengan sort */}
-        <div className="px-5 py-3" style={{
+        <div className="px-5 py-3 min-w-[700px] lg:min-w-0" style={{
           display: 'grid',
           gridTemplateColumns: '1fr 0.7fr 0.7fr 0.7fr 0.7fr 1fr 0.6fr',
           gap: 12,
@@ -710,7 +941,7 @@ function LaporanPertumbuhan({ data }: { data: any[] }) {
           ].map((col, i) => (
             <div
               key={i}
-              className={col.key ? 'cursor-pointer flex items-center gap-1 select-none' : 'flex items-center'}
+              className={col.key ? 'cursor-pointer flex items-center gap-1 select-none py-3 -my-3' : 'flex items-center'}
               onClick={() => col.key && toggleSort(col.key)}
               style={{
                 fontFamily: "'JetBrains Mono',monospace", fontSize: 10,
@@ -723,7 +954,7 @@ function LaporanPertumbuhan({ data }: { data: any[] }) {
           ))}
         </div>
 
-        <div className="divide-y" style={{ borderColor: palette.border }}>
+        <div className={`divide-y ${sorted.length ? 'min-w-[700px] lg:min-w-0' : ''}`} style={{ borderColor: palette.border }}>
           {sorted.length === 0 ? <NoResults /> : pertumbuhanP.paged.map((d: any, i: number) => {
             const isExpanded = expandedId === d.hewan?.tag
             const trendUp = d.selisih > 0
@@ -736,7 +967,7 @@ function LaporanPertumbuhan({ data }: { data: any[] }) {
                   style={{ display: 'grid', gridTemplateColumns: '1fr 0.7fr 0.7fr 0.7fr 0.7fr 1fr 0.6fr', gap: 12, alignItems: 'center' }}
                   onClick={() => setExpandedId(isExpanded ? null : d.hewan?.tag)}
                 >
-                  <Link href={`/hewan/${d.hewan?.id}`} className="hover:underline hover:text-moss transition-colors block" onClick={(e) => e.stopPropagation()}>
+                  <Link href={`/hewan/${d.hewan?.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}>
                     <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12 }}>{d.hewan?.tag}</div>
                     {d.hewan?.nama && <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, opacity: 0.5 }}>{d.hewan.nama}</div>}
                     <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, opacity: 0.4 }}>{d.hewan?.kategori?.replace('_', ' ')}</div>
@@ -777,15 +1008,20 @@ function LaporanPertumbuhan({ data }: { data: any[] }) {
                   </span>
                 </div>
 
-                {/* Expanded detail */}
+                {/* Expanded detail — height dan opacity dipisah: FM v12 crash 'frame.join' bila digabung */}
                 <AnimatePresence>
                   {isExpanded && (
                     <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
+                      initial={{ height: 0 }}
+                      animate={{ height: 'auto' }}
+                      exit={{ height: 0 }}
                       className="overflow-hidden"
                     >
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                      >
                       <div className="px-5 py-4" style={{ background: 'rgba(13,20,15,0.02)', borderTop: `1px solid ${palette.border}` }}>
                         <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.14em', opacity: 0.5, marginBottom: 12 }}>
                           RIWAYAT PENIMBANGAN
@@ -797,7 +1033,7 @@ function LaporanPertumbuhan({ data }: { data: any[] }) {
                                 {formatDate(rec.tanggal)}
                               </span>
                               <div
-                                className="h-1.5 rounded-full"
+                                className="h-1.5 rounded-full order-1 md:order-none"
                                 style={{
                                   width: `${Math.min((rec.berat / (d.beratAkhir * 1.2)) * 100, 100)}%`,
                                   background: palette.moss, opacity: 0.6,
@@ -812,12 +1048,14 @@ function LaporanPertumbuhan({ data }: { data: any[] }) {
                           ))}
                         </div>
                       </div>
+                      </motion.div>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </motion.div>
             )
           })}
+        </div>
         </div>
       </KostaCard>
       {sorted.length > 0 && (
@@ -830,7 +1068,7 @@ function LaporanPertumbuhan({ data }: { data: any[] }) {
 // ─── SHARED HELPERS ─────────────────────────────────────────
 function TableHeader({ cols, grid }: { cols: string[]; grid: string }) {
   return (
-    <div className="px-5 py-3" style={{
+    <div className="px-5 py-3 min-w-[700px] lg:min-w-0" style={{
       display: 'grid', gridTemplateColumns: grid, gap: 12,
       background: 'rgba(13,20,15,0.03)', borderBottom: `1px solid ${palette.border}`,
       fontFamily: "'JetBrains Mono',monospace", fontSize: 10,
@@ -847,7 +1085,7 @@ function TableRow({ cells, grid, i }: { cells: React.ReactNode[]; grid: string; 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: Math.min(i * 0.015, 0.3) }}
-      className="px-5 py-3"
+      className="px-5 py-3 min-w-[700px] lg:min-w-0"
       style={{
         display: 'grid', gridTemplateColumns: grid, gap: 12,
         alignItems: 'center', borderBottom: `1px solid ${palette.border}`,

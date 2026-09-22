@@ -6,7 +6,7 @@ import FarmPickerClient from './FarmPickerClient'
 export default async function FarmsPage() {
   const session = await getSession()
   if (!session) redirect('/login')
-  if (session.role === 'SUPER_ADMIN') redirect('/admin')
+  if (session.role === 'SUPER_ADMIN' || session.role === 'DINAS') redirect('/admin')
 
   // Ambil semua farm yang dimiliki user ini
   const userFarms = await prisma.userFarm.findMany({
@@ -15,7 +15,7 @@ export default async function FarmsPage() {
       farm: {
         include: {
           _count: {
-            select: { hewan: { where: { status: 'AKTIF' } } }
+            select: { hewan: true }
           }
         }
       }

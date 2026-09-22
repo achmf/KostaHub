@@ -11,6 +11,7 @@ enum Role {
   SUPER_ADMIN
   OWNER
   PETUGAS
+  DINAS
 }
 
 enum ApprovalStatus {
@@ -38,10 +39,12 @@ enum KategoriHewan {
   JANTAN_MUDA
 }
 
-enum StatusHewan {
-  AKTIF
-  MATI
-  TERJUAL
+enum PenyebabKematian {
+  PENYAKIT
+  KECELAKAAN
+  USIA_TUA
+  MELAHIRKAN
+  LAINNYA
 }
 
 enum KategoriMedis {
@@ -58,7 +61,6 @@ enum KategoriMedis {
   LAINNYA
 }
 
-
 enum StatusReproduksi {
   HAMIL
   LAHIR
@@ -73,6 +75,13 @@ enum TipeNotifikasi {
   CUSTOM
 }
 
+enum StatusTagRfid {
+  AKTIF
+  HILANG
+  RUSAK
+  DICOPOT
+}
+
 model User {
   id              String         @id @default(uuid())
   name            String
@@ -81,13 +90,13 @@ model User {
   role            Role
   phone           String?
   approvalStatus  ApprovalStatus @default(APPROVED)
-  rejectionReason String?        // alasan penolakan dari admin
+  rejectionReason String? // alasan penolakan dari admin
   deletedAt       DateTime?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
-  farms                UserFarm[]   // semua role bisa punya banyak farm
-  rekamMedisDitangani  RekamMedis[] @relation("DokterPemeriksa")
+  farms               UserFarm[] // semua role bisa punya banyak farm
+  rekamMedisDitangani RekamMedis[] @relation("DokterPemeriksa")
 
   @@index([approvalStatus])
 }
@@ -102,12 +111,12 @@ model Farm {
   deskripsi       String?
   sertifikatUrl   String? // foto sertifikat farm (opsional)
   status          FarmStatus @default(NONAKTIF) // NONAKTIF sampai diapprove admin
-  rejectionReason String?    // alasan penolakan dari Super Admin
+  rejectionReason String? // alasan penolakan dari Super Admin
   deletedAt       DateTime?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
-  members        UserFarm[]      // semua user yang terhubung ke farm ini
+  members        UserFarm[] // semua user yang terhubung ke farm ini
   hewan          Hewan[]
   transferMasuk  TransferHewan[] @relation("FarmTujuan")
   transferKeluar TransferHewan[] @relation("FarmAsal")
@@ -135,7 +144,6 @@ model Hewan {
   tanggalLahir DateTime
   berat        Float?
   kategori     KategoriHewan
-  status       StatusHewan   @default(AKTIF)
   fotoUrl      String?
   farmId       String
   farm         Farm          @relation(fields: [farmId], references: [id])
@@ -156,25 +164,42 @@ model Hewan {
   reproduksiAnak     Reproduksi[]    @relation("AnakReproduksi")
   transferHistory    TransferHewan[]
   beratHistory       BeratBadan[]
+  tagsRfid           TagRfid[]
+  kematian           KematianHewan?
 
   // Tag unik hanya dalam satu farm yang sama
   @@unique([tag, farmId])
   @@index([tanggalLahir])
 }
 
-model RekamMedis {
+model TagRfid {
   id            String        @id @default(uuid())
   hewanId       String
-  hewan         Hewan         @relation(fields: [hewanId], references: [id])
-  tanggal       DateTime
-  kategori      KategoriMedis @default(LAINNYA)
-  diagnosis     String
-  obat          String?
-  dokterId      String? // Untuk dokter internal (user sistem)
-  dokter        User?         @relation("DokterPemeriksa", fields: [dokterId], references: [id])
-  namaDokter    String? // Untuk dokter eksternal (tidak punya akun)
-  notes         String?
-  fotoUrl       String?
+  hewan         Hewan         @relation(fields: [hewanId], references: [id], onDelete: Cascade)
+  rfidUid       String        @unique
+  status        StatusTagRfid @default(AKTIF)
+  tanggalPasang DateTime      @default(now())
+  tanggalCopot  DateTime?
+  catatan       String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([hewanId])
+}
+
+model RekamMedis {
+  id              String        @id @default(uuid())
+  hewanId         String
+  hewan           Hewan         @relation(fields: [hewanId], references: [id])
+  tanggal         DateTime
+  kategori        KategoriMedis @default(LAINNYA)
+  diagnosis       String
+  obat            String?
+  dokterId        String? // Untuk dokter internal (user sistem)
+  dokter          User?         @relation("DokterPemeriksa", fields: [dokterId], references: [id])
+  namaDokter      String? // Untuk dokter eksternal (tidak punya akun)
+  notes           String?
+  fotoUrl         String?
   tanggalLanjut   DateTime?
   butuhNotifikasi Boolean       @default(false)
   createdAt       DateTime      @default(now())
@@ -243,4 +268,17 @@ model Notifikasi {
 
   @@index([tanggal])
   @@index([isRead])
+}
+
+model KematianHewan {
+  id          String           @id @default(uuid())
+  hewanId     String           @unique // seekor hewan hanya bisa mati sekali
+  hewan       Hewan            @relation(fields: [hewanId], references: [id], onDelete: Cascade)
+  tanggalMati DateTime
+  penyebab    PenyebabKematian
+  catatan     String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([tanggalMati])
 }

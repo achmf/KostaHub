@@ -25,18 +25,16 @@ function SilsilahNodeCard({ node, side = 'root', depth = 0 }: NodeProps) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
-      {/* Node card */}
+      {/* Node card (lebih ramping di HP agar bapak + induk muat berdampingan) */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: depth * 0.05 }}
+        className="px-3 py-2 min-w-[112px] max-w-[140px] sm:px-4 sm:py-2.5 sm:min-w-[140px] sm:max-w-[180px]"
         style={{
           background: depth === 0 ? palette.forest : '#fff',
           border: `1.5px solid ${depth === 0 ? 'transparent' : accentColor}`,
           borderRadius: 14,
-          padding: '10px 16px',
-          minWidth: 140,
-          maxWidth: 180,
           position: 'relative',
           boxShadow: depth === 0 ? '0 4px 20px rgba(27,42,31,0.25)' : '0 1px 6px rgba(13,20,15,0.07)',
           cursor: hasParents ? 'pointer' : 'default',
@@ -72,6 +70,7 @@ function SilsilahNodeCard({ node, side = 'root', depth = 0 }: NodeProps) {
           letterSpacing: '0.08em',
           color: depth === 0 ? 'rgba(242,237,224,0.75)' : 'rgba(13,20,15,0.55)',
           marginBottom: 3,
+          overflowWrap: 'anywhere',
         }}>
           {node.tag}
         </div>
@@ -104,12 +103,19 @@ function SilsilahNodeCard({ node, side = 'root', depth = 0 }: NodeProps) {
           {(isBapakOpen || isIndukOpen) && (
             <motion.div
               key="children"
-              initial={{ opacity: 0, height: 0, filter: 'blur(4px)' }}
-              animate={{ opacity: 1, height: 'auto', filter: 'blur(0px)' }}
-              exit={{ opacity: 0, height: 0, filter: 'blur(4px)' }}
+              initial={{ height: 0 }}
+              animate={{ height: 'auto' }}
+              exit={{ height: 0 }}
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               style={{ overflow: 'hidden', width: '100%', transformOrigin: 'top' }}
             >
+              {/* opacity + filter dipisah dari height — FM v12 crash "frame.join" bila height:auto + opacity/filter digabung */}
+              <motion.div
+                initial={{ opacity: 0, filter: 'blur(4px)' }}
+                animate={{ opacity: 1, filter: 'blur(0px)', transitionEnd: { filter: 'none' } }}
+                exit={{ opacity: 0, filter: 'blur(4px)' }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              >
               {/* Vertical line from card */}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <div style={{ width: 2, height: 24, background: palette.borderStrong }} />
@@ -118,7 +124,7 @@ function SilsilahNodeCard({ node, side = 'root', depth = 0 }: NodeProps) {
               {/* Horizontal connector + child nodes */}
               <div style={{ display: 'flex', width: '100%', position: 'relative', justifyContent: 'center' }}>
                 {hasBapak && node.bapak && (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 12px', position: 'relative' }}>
+                  <div className="px-1 sm:px-3" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
                     {hasInduk && (
                       <div style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: 2, background: palette.borderStrong }} />
                     )}
@@ -128,7 +134,7 @@ function SilsilahNodeCard({ node, side = 'root', depth = 0 }: NodeProps) {
                 )}
 
                 {hasInduk && node.induk && (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 12px', position: 'relative' }}>
+                  <div className="px-1 sm:px-3" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
                     {hasBapak && (
                       <div style={{ position: 'absolute', top: 0, left: 0, width: '50%', height: 2, background: palette.borderStrong }} />
                     )}
@@ -137,6 +143,7 @@ function SilsilahNodeCard({ node, side = 'root', depth = 0 }: NodeProps) {
                   </div>
                 )}
               </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>

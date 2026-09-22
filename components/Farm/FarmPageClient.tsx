@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
-import { Plus, MapPin, Users, MoreHorizontal, X } from 'lucide-react'
+import { Plus, MapPin, Users, Trash2, X } from 'lucide-react'
 import { createFarm, deleteFarm } from '@/actions/farm'
 import { KostaPageHeader, KostaCard, KostaButton, Badge, KostaSectionLabel, palette } from '@/components/KostaUI'
 import { GoatMark } from '@/components/GoatMark'
@@ -34,6 +35,18 @@ export default function FarmPageClient({ farms: initialFarms }: { farms: Farm[] 
 
   const PER_PAGE = 12
   const { paged: currentFarms, page, totalPages, onPrev, onNext } = usePagination(farms, PER_PAGE)
+
+  // Kunci scroll halaman & tutup dengan Escape selama modal terbuka
+  useEffect(() => {
+    if (!showModal) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setShowModal(false)
+    document.addEventListener('keydown', onKey)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = ''
+    }
+  }, [showModal])
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -96,25 +109,27 @@ export default function FarmPageClient({ farms: initialFarms }: { farms: Farm[] 
               }}
             >
               <div className="p-6 pb-4">
-                <div className="flex items-start justify-between">
-                  <div>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
                     <KostaSectionLabel>
                       <span style={{ color: accent ? 'rgba(242,237,224,0.55)' : undefined }}>
                         {farm.id.toUpperCase().slice(0, 8)}
                       </span>
                     </KostaSectionLabel>
                     <div
-                      className="mt-2"
-                      style={{ fontFamily: "'Fraunces',serif", fontSize: 28, letterSpacing: '-0.025em' }}
+                      className="mt-2 wrap-anywhere"
+                      style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(22px, 6vw, 28px)', letterSpacing: '-0.025em' }}
                     >
                       {farm.nama}
                     </div>
                   </div>
                   <button
-                    className="cursor-pointer p-2 rounded-full opacity-60 hover:opacity-100 transition-colors hover:bg-red-50 hover:text-red-500"
+                    className="cursor-pointer w-10 h-10 sm:w-8 sm:h-8 shrink-0 flex items-center justify-center rounded-full opacity-60 hover:opacity-100 transition-colors hover:bg-red-50 hover:text-red-500"
                     onClick={() => handleDelete(farm)}
+                    aria-label={`Hapus farm ${farm.nama}`}
+                    title="Hapus farm"
                   >
-                    <MoreHorizontal size={14} />
+                    <Trash2 size={14} />
                   </button>
                 </div>
                 {farm.alamat && (
@@ -135,7 +150,7 @@ export default function FarmPageClient({ farms: initialFarms }: { farms: Farm[] 
                 )}
               </div>
 
-              <div className="px-6 grid grid-cols-3 gap-3 pb-6">
+              <div className="px-6 grid grid-cols-2 sm:grid-cols-3 gap-3 pb-6">
                 <div>
                   <div style={{ fontFamily: "'Fraunces',serif", fontSize: 30, letterSpacing: '-0.025em' }}>
                     {farm._count.hewan}
@@ -197,9 +212,9 @@ export default function FarmPageClient({ farms: initialFarms }: { farms: Farm[] 
       )}
 
       {/* Add Farm Modal */}
-      {showModal && (
+      {showModal && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-6"
+          className="fixed inset-0 z-50 flex overflow-y-auto overscroll-contain p-3 sm:p-6"
           style={{ background: 'rgba(13,20,15,0.45)', backdropFilter: 'blur(4px)' }}
           onClick={() => setShowModal(false)}
         >
@@ -207,18 +222,20 @@ export default function FarmPageClient({ farms: initialFarms }: { farms: Farm[] 
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg rounded-3xl overflow-hidden"
+            role="dialog"
+            aria-modal="true"
+            className="m-auto w-full max-w-lg rounded-3xl overflow-hidden"
             style={{ background: '#fff' }}
           >
-            <div className="px-7 py-6" style={{ background: palette.forest, color: palette.cream }}>
+            <div className="px-5 py-5 sm:px-7 sm:py-6" style={{ background: palette.forest, color: palette.cream }}>
               <KostaSectionLabel>
                 <span style={{ color: 'rgba(242,237,224,0.55)' }}>SUPER ADMIN</span>
               </KostaSectionLabel>
-              <div className="mt-2" style={{ fontFamily: "'Fraunces',serif", fontSize: 28, letterSpacing: '-0.025em' }}>
+              <div className="mt-2" style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(22px, 6vw, 28px)', letterSpacing: '-0.025em' }}>
                 Tambah Farm Baru
               </div>
             </div>
-            <form onSubmit={handleCreate} className="px-7 py-6 space-y-4">
+            <form onSubmit={handleCreate} className="px-5 py-5 sm:px-7 sm:py-6 space-y-4">
               {error && (
                 <div className="px-4 py-3 rounded-xl" style={{ background: 'rgba(181,68,59,0.1)', color: '#B5443B', fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
                   {error}
@@ -241,7 +258,7 @@ export default function FarmPageClient({ farms: initialFarms }: { farms: Farm[] 
                   />
                 </div>
               ))}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
                   { name: 'lat', label: 'LATITUDE', placeholder: '-6.9175' },
                   { name: 'lng', label: 'LONGITUDE', placeholder: '107.6191' },
@@ -261,17 +278,18 @@ export default function FarmPageClient({ farms: initialFarms }: { farms: Farm[] 
                   </div>
                 ))}
               </div>
-              <div className="flex gap-3 pt-2">
-                <KostaButton variant="ghost" type="button" onClick={() => setShowModal(false)}>
+              <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
+                <KostaButton variant="ghost" type="button" onClick={() => setShowModal(false)} className="w-full sm:w-auto justify-center">
                   Batal
                 </KostaButton>
-                <KostaButton type="submit" disabled={pending}>
+                <KostaButton type="submit" disabled={pending} className="w-full sm:w-auto justify-center">
                   {pending ? 'Menyimpan…' : 'Simpan Farm'}
                 </KostaButton>
               </div>
             </form>
           </motion.div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

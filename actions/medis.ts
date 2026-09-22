@@ -2,12 +2,9 @@
 
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
-import { getSession } from '@/lib/auth'
+import { withAuth } from '@/lib/auth'
 
-export async function tambahRekamMedis(formData: FormData) {
-  const session = await getSession()
-  if (!session) throw new Error('Unauthorized')
-
+export const tambahRekamMedis = withAuth(async (session, formData: FormData) => {
   const hewanId = formData.get('hewanId') as string
   if (!hewanId) return { error: 'Hewan tidak dipilih' }
 
@@ -47,6 +44,5 @@ export async function tambahRekamMedis(formData: FormData) {
     }
   })
 
-
   redirect('/medis')
-}
+})

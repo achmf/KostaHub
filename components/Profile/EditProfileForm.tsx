@@ -65,6 +65,7 @@ export function EditProfileForm({ name, phone }: EditProfileFormProps) {
               id="profile-name"
               name="name"
               type="text"
+              autoComplete="name"
               defaultValue={name}
               required
               minLength={2}
@@ -89,6 +90,7 @@ export function EditProfileForm({ name, phone }: EditProfileFormProps) {
               id="profile-phone"
               name="phone"
               type="tel"
+              autoComplete="tel"
               defaultValue={phone ?? ''}
               placeholder="Contoh: 08123456789"
               style={inputStyle}
@@ -142,7 +144,7 @@ export function EditProfileForm({ name, phone }: EditProfileFormProps) {
             )}
           </AnimatePresence>
 
-          <KostaButton type="submit" variant="primary" disabled={isPending} className="self-start">
+          <KostaButton type="submit" variant="primary" disabled={isPending} className="self-stretch sm:self-start justify-center">
             {isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             {isPending ? 'Menyimpan...' : 'Simpan Perubahan'}
           </KostaButton>

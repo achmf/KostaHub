@@ -134,15 +134,15 @@ export default function NewFarmPage() {
   // ── Success / Pending Approval screen ─────────────────────────────────────
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6" style={{ background: palette.cream }}>
+      <div className="min-h-dvh flex p-4 sm:p-6" style={{ background: palette.cream }}>
         <WaveBg />
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="relative z-10 w-full max-w-[480px] rounded-3xl overflow-hidden"
+          className="relative z-10 m-auto w-full max-w-[480px] rounded-3xl overflow-hidden"
           style={{ background: '#fff', border: `1px solid ${palette.border}` }}
         >
-          <div className="px-8 pt-8 pb-10" style={{ background: palette.forest, color: palette.cream }}>
+          <div className="px-6 pt-6 pb-8 sm:px-8 sm:pt-8 sm:pb-10" style={{ background: palette.forest, color: palette.cream }}>
             <div className="flex items-center gap-3 mb-5">
               <GoatMark className="w-7 h-7" />
               <span style={{ fontFamily: "'Fraunces',serif", fontWeight: 600, fontSize: 18 }}>KostaHub</span>
@@ -173,7 +173,7 @@ export default function NewFarmPage() {
             </p>
           </div>
 
-          <div className="px-8 py-7 space-y-3" style={{ fontFamily: "'Inter',sans-serif", fontSize: 14 }}>
+          <div className="px-6 py-6 sm:px-8 sm:py-7 space-y-3" style={{ fontFamily: "'Inter',sans-serif", fontSize: 14 }}>
             <div
               className="p-4 rounded-xl"
               style={{ background: 'rgba(13,20,15,0.03)', border: `1px solid ${palette.border}` }}
@@ -227,10 +227,10 @@ export default function NewFarmPage() {
 
   // ── Farm Registration Form ─────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: palette.cream }}>
+    <div className="min-h-dvh flex p-4 sm:p-6" style={{ background: palette.cream }}>
       <WaveBg />
 
-      <div className="relative z-10 w-full max-w-[540px]">
+      <div className="relative z-10 m-auto w-full max-w-[540px]">
         {/* Brand */}
         <motion.div
           initial={{ y: -20, opacity: 0 }}
@@ -254,7 +254,7 @@ export default function NewFarmPage() {
           style={{ background: '#fff', border: `1px solid ${palette.border}` }}
         >
           {/* Header */}
-          <div className="px-8 pt-8 pb-8" style={{ background: palette.forest, color: palette.cream }}>
+          <div className="p-6 sm:p-8" style={{ background: palette.forest, color: palette.cream }}>
             <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, letterSpacing: '0.2em', opacity: 0.6 }}>
               PENDAFTARAN FARM
             </div>
@@ -271,7 +271,7 @@ export default function NewFarmPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="px-8 py-8 space-y-5">
+          <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-5">
             <AnimatePresence>
               {error && (
                 <motion.div
@@ -363,10 +363,10 @@ export default function NewFarmPage() {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-3 pt-2">
               <Link
                 href="/farms"
-                className="flex items-center gap-2 px-5 py-3 rounded-full transition-opacity hover:opacity-70"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 rounded-full transition-opacity hover:opacity-70"
                 style={{
                   background: 'rgba(13,20,15,0.06)',
                   color: palette.ink,
@@ -382,7 +382,7 @@ export default function NewFarmPage() {
                 id="new-farm-submit"
                 type="submit"
                 disabled={isPending}
-                className="group flex-1 flex items-center justify-center gap-3 px-6 py-3.5 rounded-full transition-all"
+                className="group w-full sm:w-auto sm:flex-1 flex items-center justify-center gap-3 px-6 py-3.5 rounded-full transition-all"
                 style={{
                   background: isPending ? 'rgba(13,20,15,0.6)' : palette.ink,
                   color: palette.cream,

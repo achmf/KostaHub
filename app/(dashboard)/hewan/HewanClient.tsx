@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Plus, X, Search, Filter } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import type { Hewan } from '@prisma/client'
+
+
 import PaginationControl from '@/components/Admin/PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
 import {
@@ -19,8 +20,18 @@ import {
   palette,
 } from '@/components/KostaUI'
 
-type HewanWithRelations = Hewan & {
+type HewanWithRelations = {
+  id: string
+  tag: string
+  nama: string | null
+  kelamin: string
+  kategori: string
+  berat: number | null
+  fotoUrl: string | null
+  farmId: string
+  tanggalLahir: Date
   farm: { nama: string }
+  kematian: { tanggalMati: Date } | null
   beratHistory?: { id: string; tanggal: Date; berat: number }[]
   rekamMedis?: { id: string }[]
 }
@@ -41,10 +52,9 @@ const KATEGORI_VARIANT: Record<string, 'emerald' | 'ink' | 'ochre' | 'moss' | 'a
   JANTAN_MUDA: 'amber',
 }
 
-function StatusBadge({ status }: { status: string }) {
-  if (status === 'AKTIF') return <Badge variant="emerald">Aktif</Badge>
-  if (status === 'MATI') return <Badge variant="rose">Mati</Badge>
-  return <Badge>Terjual</Badge>
+function StatusBadge({ kematian }: { kematian: { tanggalMati: Date } | null }) {
+  if (kematian) return <Badge variant="rose">Mati</Badge>
+  return <Badge variant="emerald">Hidup</Badge>
 }
 
 export function HewanClient({
@@ -62,10 +72,23 @@ export function HewanClient({
   const [farmFilter, setFarmFilter] = useState<string>('ALL')
   const router = useRouter()
 
+  // Drawer filter: Escape menutup + kunci scroll halaman di belakangnya
+  useEffect(() => {
+    if (!isFilterOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setIsFilterOpen(false) }
+    document.addEventListener('keydown', onKey)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = ''
+    }
+  }, [isFilterOpen])
+
   const filtered = useMemo(() => {
     return hewanList.filter((h) => {
       if (kat !== 'ALL' && h.kategori !== kat) return false
-      if (statusFilter !== 'ALL' && h.status !== statusFilter) return false
+      if (statusFilter === 'MATI' && !h.kematian) return false
+      if (statusFilter === 'HIDUP' && !!h.kematian) return false
       if (kelaminFilter !== 'ALL' && h.kelamin !== kelaminFilter) return false
       if (farmFilter !== 'ALL' && h.farmId !== farmFilter) return false
       if (q && !(`${h.tag} ${h.nama || ''}`.toLowerCase().includes(q.toLowerCase()))) return false
@@ -79,7 +102,7 @@ export function HewanClient({
   const activeFilterCount = (kat !== 'ALL' ? 1 : 0) + (statusFilter !== 'ALL' ? 1 : 0) + (kelaminFilter !== 'ALL' ? 1 : 0) + (farmFilter !== 'ALL' ? 1 : 0)
 
   const cats = ['ALL', 'INDUKAN', 'PEJANTAN', 'ANAKAN', 'DARA', 'JANTAN_MUDA']
-  const statuses = ['ALL', 'AKTIF', 'MATI', 'TERJUAL']
+  const statuses = ['ALL', 'HIDUP', 'MATI']
   const kelamins = ['ALL', 'JANTAN', 'BETINA']
 
   // Derive unique farms for Super Admin filter
@@ -96,14 +119,15 @@ export function HewanClient({
         title="Daftar Hewan"
         description={`${filtered.length} ekor ditampilkan. Klik baris untuk membuka profil lengkap.`}
         action={
-          <div className="flex gap-2">
-            <KostaButton variant="outline" onClick={() => setIsFilterOpen(true)}>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <KostaButton variant="outline" onClick={() => setIsFilterOpen(true)} className="flex-1 sm:flex-none justify-center">
               <Filter size={13} /> 
-              Filter {activeFilterCount > 0 && <span className="ml-1 w-4 h-4 rounded-full bg-[rgba(13,20,15,0.1)] flex items-center justify-center text-[10px]">{activeFilterCount}</span>}
+              <span>Filter</span>
+              {activeFilterCount > 0 && <span className="ml-1 w-4 h-4 rounded-full bg-[rgba(13,20,15,0.1)] flex items-center justify-center text-[10px]">{activeFilterCount}</span>}
             </KostaButton>
-            <Link href="/hewan/tambah">
-              <KostaButton>
-                <Plus size={13} /> Tambah Hewan
+            <Link href="/hewan/tambah" className="flex-1 sm:flex-none">
+              <KostaButton className="w-full sm:w-auto justify-center">
+                <Plus size={13} /> <span>Tambah Hewan</span>
               </KostaButton>
             </Link>
           </div>
@@ -121,14 +145,105 @@ export function HewanClient({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Cari tag (KST-…), atau nama..."
-            className="bg-transparent outline-none flex-1"
+            aria-label="Cari hewan"
+            enterKeyHint="search"
+            className="bg-transparent outline-none flex-1 min-w-0"
             style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}
           />
         </div>
       </KostaCard>
 
-      {/* Table */}
-      <KostaCard className="overflow-hidden">
+      {/* Mobile: individual separated cards */}
+      <div className="flex flex-col gap-2 md:hidden">
+        {filtered.length === 0 && (
+          <KostaCard className="overflow-hidden">
+            <KostaEmptyState title="Tidak ada hewan." hint="Coba ubah filter atau tambah hewan baru." />
+          </KostaCard>
+        )}
+        {paged.map((h, i) => (
+          <motion.div
+            key={h.id}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: Math.min(i * 0.015, 0.4), duration: 0.3 }}
+          >
+            <KostaCard className="overflow-hidden">
+              <button
+                onClick={() => router.push(`/hewan/${h.id}`)}
+                className="cursor-pointer w-full text-left flex flex-col px-4 py-3.5 gap-3 active:bg-[rgba(13,20,15,0.04)] transition-colors"
+              >
+                {/* Row 1: Avatar + Nama + Status */}
+                <div className="flex items-center justify-between w-full gap-3 min-w-0">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {h.fotoUrl ? (
+                      <div className="w-9 h-9 rounded-full overflow-hidden shrink-0" style={{ border: `1px solid ${palette.border}` }}>
+                        <img
+                          src={h.fotoUrl}
+                          alt={h.nama || h.tag}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                        style={{ background: 'rgba(63,91,58,0.12)', color: palette.moss, fontFamily: "'Fraunces',serif", fontSize: 14, border: `1px solid rgba(63,91,58,0.15)` }}
+                      >
+                        {(h.nama || h.tag).slice(0, 1).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13.5 }}>{h.nama || 'Tanpa Nama'}</div>
+                      <div className="opacity-55" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>
+                        {h.tag}
+                      </div>
+                    </div>
+                  </div>
+                  <StatusBadge kematian={h.kematian} />
+                </div>
+
+                {/* Row 2: Info chips */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant={KATEGORI_VARIANT[h.kategori] ?? 'default'}>
+                    {KATEGORI_LABEL[h.kategori] ?? h.kategori}
+                  </Badge>
+                  <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }} className="bg-black/5 px-2 py-0.5 rounded">
+                    {h.kelamin === 'BETINA' ? '♀ Betina' : '♂ Jantan'}
+                  </div>
+                  <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }} className="bg-black/5 px-2 py-0.5 rounded">
+                    {new Date(h.tanggalLahir).toLocaleDateString('id-ID')}
+                  </div>
+                  <div style={{ fontFamily: "'Fraunces',serif", fontSize: 15 }}>
+                    {h.berat ?? '—'}
+                    <span className="opacity-55" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10 }}> kg</span>
+                  </div>
+                  {isSuperAdmin && (
+                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }} className="text-gray-500">
+                      <span className="text-xs mr-1 opacity-70">Farm:</span>
+                      {h.farm.nama.replace('Farm ', '')}
+                    </div>
+                  )}
+                </div>
+              </button>
+            </KostaCard>
+          </motion.div>
+        ))}
+
+        {filtered.length > 0 && (
+          <div className="pt-2">
+            <PaginationControl
+              page={page}
+              totalPages={totalPages}
+              onPrev={onPrev}
+              onNext={onNext}
+              totalItems={filtered.length}
+              perPage={PER_PAGE}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Desktop: single card with table layout */}
+      <KostaCard className="overflow-hidden hidden md:block">
         <div
           className={`grid px-5 py-3 ${isSuperAdmin ? 'grid-cols-[1.6fr_0.8fr_0.6fr_0.8fr_0.6fr_0.8fr_0.6fr]' : 'grid-cols-[1.6fr_0.8fr_0.6fr_0.8fr_0.6fr_0.6fr]'}`}
           style={{
@@ -159,15 +274,15 @@ export function HewanClient({
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: Math.min(i * 0.015, 0.4), duration: 0.3 }}
-              className={`cursor-pointer grid px-5 py-3 w-full text-left items-center hover:bg-[rgba(13,20,15,0.025)] transition-colors ${isSuperAdmin ? 'grid-cols-[1.6fr_0.8fr_0.6fr_0.8fr_0.6fr_0.8fr_0.6fr]' : 'grid-cols-[1.6fr_0.8fr_0.6fr_0.8fr_0.6fr_0.6fr]'}`}
+              className={`cursor-pointer w-full text-left grid px-5 py-3 gap-0 items-center hover:bg-[rgba(13,20,15,0.025)] transition-colors ${isSuperAdmin ? 'grid-cols-[1.6fr_0.8fr_0.6fr_0.8fr_0.6fr_0.8fr_0.6fr]' : 'grid-cols-[1.6fr_0.8fr_0.6fr_0.8fr_0.6fr_0.6fr]'}`}
               style={{ borderBottom: `1px solid ${palette.border}` }}
             >
               <div className="flex items-center gap-3 min-w-0">
                 {h.fotoUrl ? (
                   <div className="w-9 h-9 rounded-full overflow-hidden shrink-0" style={{ border: `1px solid ${palette.border}` }}>
-                    <img 
-                      src={h.fotoUrl} 
-                      alt={h.nama || h.tag} 
+                    <img
+                      src={h.fotoUrl}
+                      alt={h.nama || h.tag}
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -207,7 +322,7 @@ export function HewanClient({
                 </div>
               )}
               <div>
-                <StatusBadge status={h.status} />
+                <StatusBadge kematian={h.kematian} />
               </div>
             </motion.button>
           ))}
@@ -251,7 +366,7 @@ export function HewanClient({
                 >
                   <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: `1px solid ${palette.border}` }}>
                     <h3 style={{ fontFamily: "'Fraunces',serif", fontSize: 20, color: palette.ink }}>Filter Hewan</h3>
-                    <button onClick={() => setIsFilterOpen(false)} className="cursor-pointer p-2 rounded-full hover:bg-[rgba(13,20,15,0.05)]">
+                    <button onClick={() => setIsFilterOpen(false)} aria-label="Tutup" className="cursor-pointer w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center rounded-full hover:bg-[rgba(13,20,15,0.05)]">
                       <X size={16} />
                     </button>
                   </div>
@@ -265,7 +380,7 @@ export function HewanClient({
                           <button
                             key={c}
                             onClick={() => setKat(c)}
-                            className="cursor-pointer px-4 py-2 rounded-full border transition-colors"
+                            className="cursor-pointer px-4 py-2.5 sm:py-2 rounded-full border transition-colors"
                             style={{
                               fontFamily: "'Inter',sans-serif", fontSize: 12,
                               background: kat === c ? palette.ink : 'transparent',
@@ -287,7 +402,7 @@ export function HewanClient({
                           <button
                             key={s}
                             onClick={() => setStatusFilter(s)}
-                            className="cursor-pointer px-4 py-2 rounded-full border transition-colors"
+                            className="cursor-pointer px-4 py-2.5 sm:py-2 rounded-full border transition-colors"
                             style={{
                               fontFamily: "'Inter',sans-serif", fontSize: 12,
                               background: statusFilter === s ? palette.ink : 'transparent',
@@ -295,7 +410,7 @@ export function HewanClient({
                               borderColor: statusFilter === s ? palette.ink : palette.border
                             }}
                           >
-                            {s === 'ALL' ? 'Semua' : s === 'AKTIF' ? 'Aktif' : s === 'MATI' ? 'Mati' : 'Terjual'}
+                          {s === 'ALL' ? 'Semua' : s === 'HIDUP' ? 'Hidup' : 'Mati'}
                           </button>
                         ))}
                       </div>
@@ -309,7 +424,7 @@ export function HewanClient({
                           <button
                             key={k}
                             onClick={() => setKelaminFilter(k)}
-                            className="cursor-pointer px-4 py-2 rounded-full border transition-colors"
+                            className="cursor-pointer px-4 py-2.5 sm:py-2 rounded-full border transition-colors"
                             style={{
                               fontFamily: "'Inter',sans-serif", fontSize: 12,
                               background: kelaminFilter === k ? palette.ink : 'transparent',
@@ -330,7 +445,7 @@ export function HewanClient({
                         <div className="flex flex-wrap gap-2">
                           <button
                             onClick={() => setFarmFilter('ALL')}
-                            className="cursor-pointer px-4 py-2 rounded-full border transition-colors"
+                            className="cursor-pointer px-4 py-2.5 sm:py-2 rounded-full border transition-colors"
                             style={{
                               fontFamily: "'Inter',sans-serif", fontSize: 12,
                               background: farmFilter === 'ALL' ? palette.ink : 'transparent',
@@ -344,7 +459,7 @@ export function HewanClient({
                             <button
                               key={f.id}
                               onClick={() => setFarmFilter(f.id)}
-                              className="cursor-pointer px-4 py-2 rounded-full border transition-colors"
+                              className="cursor-pointer px-4 py-2.5 sm:py-2 rounded-full border transition-colors"
                               style={{
                                 fontFamily: "'Inter',sans-serif", fontSize: 12,
                                 background: farmFilter === f.id ? palette.ink : 'transparent',

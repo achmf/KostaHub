@@ -61,7 +61,7 @@ function ToastContainer({ toasts, removeToast }: { toasts: ToastOptions[], remov
   if (!mounted) return null
 
   return createPortal(
-    <div className="fixed top-6 right-6 z-[999999] flex flex-col gap-3 pointer-events-none w-full max-w-[320px]">
+    <div className="fixed top-3 inset-x-3 sm:top-6 sm:right-6 sm:left-auto z-[999999] flex flex-col gap-3 pointer-events-none sm:w-full sm:max-w-[320px]" aria-live="polite">
       <AnimatePresence>
         {toasts.map((toast) => (
           <ToastItem key={toast.id!} toast={toast} removeToast={removeToast} />
@@ -97,7 +97,7 @@ function ToastItem({ toast, removeToast }: { toast: ToastOptions, removeToast: (
       <div className="w-1.5 shrink-0" style={{ background: styles.bg }} />
       <div className="p-4 flex gap-3 flex-1 items-start">
         <div className="mt-0.5 shrink-0">{styles.icon}</div>
-        <div className="flex-1 pr-2">
+        <div className="flex-1 min-w-0 pr-2 break-words">
           <h4 className="font-medium" style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, color: palette.ink, lineHeight: 1.3 }}>
             {toast.title}
           </h4>
@@ -109,7 +109,8 @@ function ToastItem({ toast, removeToast }: { toast: ToastOptions, removeToast: (
         </div>
         <button
           onClick={() => removeToast(toast.id!)}
-          className="shrink-0 p-1 opacity-40 hover:opacity-100 transition-opacity rounded-md hover:bg-black/5 cursor-pointer"
+          className="shrink-0 -mt-1.5 -mr-2 w-8 h-8 flex items-center justify-center opacity-40 hover:opacity-100 transition-opacity rounded-md hover:bg-black/5 cursor-pointer"
+          aria-label="Tutup notifikasi"
         >
           <X size={16} />
         </button>

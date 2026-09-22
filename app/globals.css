@@ -105,6 +105,26 @@ body {
   line-height: 1.55;
 }
 
+/* ─── Mobile ergonomics ──────────────────────────────────── */
+/* Jaring pengaman: elemen yang sedikit melebar tidak membuat seluruh halaman bisa digeser ke samping.
+   `clip` (bukan `hidden`) supaya position: sticky tetap berfungsi. */
+body { overflow-x: clip; }
+
+/* iOS Safari otomatis zoom saat fokus ke input < 16px — paksa 16px di perangkat sentuh */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Strip horizontal (tab, chip filter) yang bisa di-swipe tanpa scrollbar */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
 /* ─── Typography Utilities ───────────────────────────────── */
 .font-serif  { font-family: 'Fraunces', Georgia, serif; }
 .font-sans   { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
@@ -228,6 +248,15 @@ body {
 
 .leaflet-popup-close-button:hover {
   color: rgba(13,20,15,0.8) !important;
+}
+
+/* Area sentuh tombol tutup popup 40px tanpa mengubah tampilan */
+@media (pointer: coarse) {
+  .leaflet-popup-close-button::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+  }
 }
 
 /* ─── Leaflet Attribution ────────────────────── */

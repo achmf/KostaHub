@@ -7,13 +7,15 @@ import FarmSelector from '@/components/Layout/FarmSelector'
 import { Search } from 'lucide-react'
 import UserDropdown from '@/components/Layout/UserDropdown'
 import NotificationDropdown from '@/components/Layout/NotificationDropdown'
+import { MobileMenuProvider } from '@/components/Layout/MobileMenuContext'
+import MobileMenuButton from '@/components/Layout/MobileMenuButton'
 
 import { palette } from '@/components/KostaUI'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
   if (!session) redirect('/login')
-  if (session.role === 'SUPER_ADMIN' && !session.activeFarmId) redirect('/admin')
+  if ((session.role === 'SUPER_ADMIN' || session.role === 'DINAS') && !session.activeFarmId) redirect('/admin')
 
   // Jika Owner/Staff belum memilih farm → redirect ke farm picker
   if (!session.activeFarmId) {
@@ -38,8 +40,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   return (
-    <div className="min-h-screen flex" style={{ background: palette.cream, color: palette.ink }}>
-      <Sidebar
+    <MobileMenuProvider>
+      <div className="min-h-screen flex" style={{ background: palette.cream, color: palette.ink }}>
+        <Sidebar
         role={session.role}
         name={session.name}
         email={session.email ?? ''}
@@ -51,7 +54,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Header */}
         <header
-          className="sticky top-0 z-30 px-6 md:px-10 py-4 flex items-center justify-between gap-4"
+          className="sticky top-0 z-30 px-4 sm:px-6 lg:px-10 py-3 lg:py-4 flex items-center justify-between gap-3"
           style={{
             background: 'rgba(242,237,224,0.85)',
             backdropFilter: 'blur(8px)',
@@ -59,10 +62,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
           }}
         >
           <div className="flex items-center gap-3 min-w-0">
-            {/* Mobile brand */}
-            <div className="lg:hidden flex items-center gap-2" style={{ color: palette.ink }}>
-              <GoatMark className="w-6 h-6" />
-              <span style={{ fontFamily: "'Fraunces',serif", fontWeight: 600 }}>KostaHub</span>
+            {/* Mobile brand & hamburger */}
+            <div className="lg:hidden flex items-center gap-2 min-w-0" style={{ color: palette.ink }}>
+              <MobileMenuButton />
+              <GoatMark className="w-6 h-6 shrink-0" />
+              <div className="min-w-0 leading-tight">
+                <div style={{ fontFamily: "'Fraunces',serif", fontWeight: 600 }}>KostaHub</div>
+                {farmName && (
+                  <div className="truncate" style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: palette.ochre }}>
+                    {farmName}
+                  </div>
+                )}
+              </div>
             </div>
             {/* Desktop farm name */}
             <div className="hidden lg:flex items-center gap-2">
@@ -93,7 +104,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             </div>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-2 md:gap-3 shrink-0">
             {/* Search pill */}
             <div
               className="hidden md:flex items-center gap-2 px-3 py-2 rounded-full"
@@ -107,11 +118,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 placeholder="Cari tag, nama, dokter…"
                 className="bg-transparent outline-none w-44"
                 style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}
+                suppressHydrationWarning
               />
             </div>
 
             {/* Farm selector — super admin only (fallback, karena SUPER_ADMIN diredirect ke /admin) */}
-            {session.role === 'SUPER_ADMIN' && <FarmSelector farms={allFarms} />}
+            {session.role === 'SUPER_ADMIN' && (
+              <div className="hidden sm:block">
+                <FarmSelector farms={allFarms} />
+              </div>
+            )}
 
             {/* Notifications */}
             <NotificationDropdown />
@@ -127,10 +143,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </header>
 
         {/* Page content */}
-        <main className="flex-1 px-6 md:px-10 py-10">
+        <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10">
           {children}
         </main>
       </div>
     </div>
+    </MobileMenuProvider>
   )
 }

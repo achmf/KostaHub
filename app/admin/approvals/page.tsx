@@ -2,8 +2,10 @@ import { prisma } from '@/lib/prisma'
 import ApprovalList from '@/components/Admin/ApprovalList'
 import { CheckCircle2 } from 'lucide-react'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { getSession } from '@/lib/auth'
 
 export default async function ApprovalsPage() {
+  const session = await getSession()
   // Cari semua farm yang masih NONAKTIF (menunggu approval)
   const pendingFarms = await prisma.farm.findMany({
     where: { status: 'NONAKTIF', deletedAt: null, rejectionReason: null },
@@ -58,6 +60,7 @@ export default async function ApprovalsPage() {
           BACKOFFICE
         </div>
         <h1
+
           style={{
             fontFamily: "'Fraunces',serif",
             fontSize: 'clamp(1.5rem, 3vw, 2rem)',
@@ -84,7 +87,7 @@ export default async function ApprovalsPage() {
           />
         </div>
       ) : (
-        <ApprovalList users={pendingItems} />
+        <ApprovalList users={pendingItems} userRole={session?.role} />
       )}
     </div>
   )

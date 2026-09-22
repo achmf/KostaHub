@@ -42,7 +42,7 @@ export default function AdminLaporanClient({ farmDetailList }: { farmDetailList:
         </div>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full min-w-[880px]">
           <thead>
             <tr style={{ borderBottom: `1px solid ${palette.border}`, background: 'rgba(13,20,15,0.02)' }}>
               {['No', 'Nama Farm', 'Status', 'Hewan Aktif', 'Kematian', 'Terjual', 'Hamil', 'Rekam Medis', 'Mortality %', 'Staf'].map((col) => (

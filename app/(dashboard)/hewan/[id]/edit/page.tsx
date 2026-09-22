@@ -15,11 +15,12 @@ export default async function EditHewanPage(props: { params: Promise<{ id: strin
       where: { id: params.id },
       include: {
         bapak: { select: { id: true, tag: true, nama: true, kelamin: true } },
-        induk: { select: { id: true, tag: true, nama: true, kelamin: true } }
+        induk: { select: { id: true, tag: true, nama: true, kelamin: true } },
+        kematian: true,
       }
     }),
     prisma.hewan.findMany({
-      where: { status: 'AKTIF', ...farmFilter },
+      where: { ...farmFilter },
       select: { id: true, tag: true, nama: true, kelamin: true },
       orderBy: { tag: 'asc' },
     }),
@@ -31,9 +32,9 @@ export default async function EditHewanPage(props: { params: Promise<{ id: strin
     redirect('/hewan')
   }
 
-  let finalSemuaHewan = [...semuaHewan]
+  const finalSemuaHewan = [...semuaHewan]
 
-  // Ensure parents are in the options even if they are inactive
+  // Ensure parents are in the options even if they are not in the farm filter
   if (hewan.bapak && !finalSemuaHewan.some(h => h.id === hewan.bapak!.id)) {
     finalSemuaHewan.push(hewan.bapak as any)
   }
@@ -41,5 +42,5 @@ export default async function EditHewanPage(props: { params: Promise<{ id: strin
     finalSemuaHewan.push(hewan.induk as any)
   }
 
-  return <EditHewanForm hewan={hewan} semuaHewan={finalSemuaHewan} />
+  return <EditHewanForm hewan={hewan} isMati={!!hewan.kematian} semuaHewan={finalSemuaHewan} />
 }

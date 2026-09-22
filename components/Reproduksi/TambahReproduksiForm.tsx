@@ -90,18 +90,18 @@ export function TambahReproduksiForm({
 
   return (
     <div className="max-w-2xl mx-auto">
-      <Link href="/reproduksi" className="flex items-center gap-2 mb-8 opacity-70 hover:opacity-100 transition-opacity"
+      <Link href="/reproduksi" className="flex w-fit items-center gap-2 min-h-10 mb-4 md:min-h-0 md:mb-8 opacity-70 hover:opacity-100 transition-opacity"
         style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: palette.ink }}>
         <ArrowLeft size={14} /> Kembali ke Reproduksi
       </Link>
 
       <div className="rounded-3xl overflow-hidden" style={{ background: '#fff', border: `1px solid ${palette.border}` }}>
         {/* Header */}
-        <div className="px-8 pt-8 pb-6" style={{ background: palette.forest, color: palette.cream }}>
+        <div className="px-5 pt-6 pb-5 sm:px-8 sm:pt-8 sm:pb-6" style={{ background: palette.forest, color: palette.cream }}>
           <KostaSectionLabel>
             <span style={{ color: 'rgba(242,237,224,0.55)' }}>REPRODUKSI · CATAT</span>
           </KostaSectionLabel>
-          <h1 className="mt-2" style={{ fontFamily: "'Fraunces',serif", fontSize: 32, letterSpacing: '-0.025em', lineHeight: 1.05 }}>
+          <h1 className="mt-2" style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(26px, 7vw, 32px)', letterSpacing: '-0.025em', lineHeight: 1.05 }}>
             Catat Perkawinan
           </h1>
           <p className="mt-2 opacity-70" style={{ fontFamily: "'Inter',sans-serif", fontSize: 14 }}>
@@ -109,9 +109,9 @@ export function TambahReproduksiForm({
           </p>
         </div>
 
-        <form action={formAction} className="px-8 py-8 space-y-5">
+        <form action={formAction} className="px-5 py-6 sm:px-8 sm:py-8 space-y-5">
           {/* Pasangan selection */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label style={labelStyle}>INDUK BETINA ♀ *</label>
               <HewanSelector
@@ -160,7 +160,7 @@ export function TambahReproduksiForm({
           {/* Inbreeding Warning Panel */}
           {hasRisk && !isCheckingInbreeding && (
             <div
-              className="rounded-2xl p-5 space-y-4"
+              className="rounded-2xl p-4 sm:p-5 space-y-4"
               style={{ background: 'rgba(178, 75, 75, 0.05)', border: '1.5px solid rgba(178, 75, 75, 0.15)' }}
             >
               <div className="flex items-start gap-3">
@@ -246,13 +246,14 @@ export function TambahReproduksiForm({
           <input type="hidden" name="forceSubmit" value={overrideConfirmed ? 'true' : 'false'} />
 
           {/* Actions */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
             <Link href="/reproduksi">
-              <KostaButton variant="outline" type="button">Batal</KostaButton>
+              <KostaButton variant="outline" type="button" className="w-full sm:w-auto justify-center">Batal</KostaButton>
             </Link>
             <KostaButton
               type="submit"
               disabled={isPending || (!!hasRisk && (!isSuperAdmin || !overrideConfirmed))}
+              className="w-full sm:w-auto justify-center"
             >
               {isPending ? 'Menyimpan…' : 'Simpan Perkawinan'}
             </KostaButton>

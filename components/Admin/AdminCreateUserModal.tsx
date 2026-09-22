@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   X, UserPlus, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle,
@@ -19,6 +19,7 @@ const palette = {
 }
 
 const ROLES = [
+  { value: 'SUPER_ADMIN', label: 'Super Admin', color: '#B5443B', desc: 'Akses penuh ke seluruh sistem.' },
   { value: 'OWNER',   label: 'Owner',   color: '#A0692B', desc: 'Pemilik peternakan, memiliki akses penuh ke sistem farm.' },
   { value: 'PETUGAS', label: 'Petugas', color: '#2C5F8A', desc: 'Staf operasional, input data harian.' },
   { value: 'DINAS',   label: 'Dinas',   color: '#1E78A0', desc: 'Akses readonly ke admin dashboard.' },
@@ -30,7 +31,7 @@ interface Props {
 }
 
 function InputField({
-  id, label, icon: Icon, type = 'text', placeholder, required, rightSlot,
+  id, label, icon: Icon, type = 'text', placeholder, required, rightSlot, autoComplete,
 }: {
   id: string
   label: string
@@ -39,6 +40,7 @@ function InputField({
   placeholder: string
   required?: boolean
   rightSlot?: React.ReactNode
+  autoComplete?: string
 }) {
   return (
     <div>
@@ -60,7 +62,8 @@ function InputField({
           type={type}
           placeholder={placeholder}
           required={required}
-          className="flex-1 bg-transparent outline-none"
+          autoComplete={autoComplete}
+          className="flex-1 min-w-0 bg-transparent outline-none"
           style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: palette.ink }}
         />
         {rightSlot}
@@ -99,6 +102,19 @@ export default function AdminCreateUserModal({ open, onClose }: Props) {
     })
   }
 
+  // Kunci scroll halaman & tutup dengan Escape selama modal terbuka
+  // (tanpa deps supaya handleClose yang dipakai selalu versi terbaru)
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && handleClose()
+    document.addEventListener('keydown', onKey)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = ''
+    }
+  })
+
   return (
     <AnimatePresence>
       {open && (
@@ -121,10 +137,11 @@ export default function AdminCreateUserModal({ open, onClose }: Props) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 16 }}
             transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-            className="fixed z-[201] inset-0 flex items-center justify-center p-4 pointer-events-none"
+            onClick={(e) => e.target === e.currentTarget && handleClose()}
+            className="fixed z-[201] inset-0 flex overflow-y-auto overscroll-contain p-3 sm:p-4"
           >
             <div
-              className="w-full max-w-md rounded-2xl overflow-hidden pointer-events-auto"
+              className="m-auto w-full max-w-md rounded-2xl overflow-hidden"
               style={{ background: '#fff', border: `1px solid ${palette.border}`, boxShadow: '0 24px 64px rgba(13,20,15,0.18)' }}
             >
               {/* Header */}
@@ -151,7 +168,8 @@ export default function AdminCreateUserModal({ open, onClose }: Props) {
                 <button
                   onClick={handleClose}
                   disabled={isPending}
-                  className="cursor-pointer w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:bg-black/5"
+                  aria-label="Tutup"
+                  className="cursor-pointer w-10 h-10 -mr-2 sm:mr-0 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center transition-all hover:bg-black/5"
                   style={{ color: palette.muted }}
                 >
                   <X size={14} />
@@ -161,9 +179,9 @@ export default function AdminCreateUserModal({ open, onClose }: Props) {
               {/* Form */}
               <form ref={formRef} onSubmit={handleSubmit} className="p-5 space-y-4">
                 {/* Name + Email */}
-                <div className="grid grid-cols-2 gap-3">
-                  <InputField id="name" label="Nama Lengkap" icon={User} placeholder="John Doe" required />
-                  <InputField id="email" label="Email" icon={Mail} type="email" placeholder="user@email.com" required />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-3">
+                  <InputField id="name" label="Nama Lengkap" icon={User} placeholder="John Doe" required autoComplete="off" />
+                  <InputField id="email" label="Email" icon={Mail} type="email" placeholder="user@email.com" required autoComplete="off" />
                 </div>
 
                 {/* Password */}
@@ -174,11 +192,13 @@ export default function AdminCreateUserModal({ open, onClose }: Props) {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Min. 6 karakter"
                   required
+                  autoComplete="new-password"
                   rightSlot={
                     <button
                       type="button"
                       onClick={() => setShowPassword((p) => !p)}
-                      className="cursor-pointer"
+                      aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                      className="cursor-pointer shrink-0 w-10 h-10 -my-2.5 -mr-3 flex items-center justify-center sm:w-auto sm:h-auto sm:m-0"
                       style={{ color: palette.muted }}
                     >
                       {showPassword ? <EyeOff size={12} /> : <Eye size={12} />}
@@ -187,7 +207,7 @@ export default function AdminCreateUserModal({ open, onClose }: Props) {
                 />
 
                 {/* Phone */}
-                <InputField id="phone" label="No. Telepon" icon={Phone} placeholder="08xxxxxxxxxx (opsional)" />
+                <InputField id="phone" label="No. Telepon" icon={Phone} type="tel" placeholder="08xxxxxxxxxx (opsional)" autoComplete="off" />
 
                 {/* Role */}
                 <div>
@@ -195,7 +215,7 @@ export default function AdminCreateUserModal({ open, onClose }: Props) {
                     ROLE <span style={{ color: palette.ochre }}>*</span>
                   </div>
                   <input type="hidden" name="role" value={selectedRole} />
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {ROLES.map((r) => (
                       <button
                         key={r.value}
@@ -251,12 +271,12 @@ export default function AdminCreateUserModal({ open, onClose }: Props) {
                 </AnimatePresence>
 
                 {/* Actions */}
-                <div className="flex items-center justify-end gap-2 pt-1">
+                <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 pt-1">
                   <button
                     type="button"
                     onClick={handleClose}
                     disabled={isPending}
-                    className="cursor-pointer px-4 py-2 rounded-xl transition-all hover:bg-black/5"
+                    className="cursor-pointer min-h-10 sm:min-h-0 px-4 py-2 rounded-xl transition-all hover:bg-black/5"
                     style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: palette.muted, border: `1px solid ${palette.border}` }}
                   >
                     Batal
@@ -264,7 +284,7 @@ export default function AdminCreateUserModal({ open, onClose }: Props) {
                   <button
                     type="submit"
                     disabled={isPending}
-                    className="cursor-pointer flex items-center gap-1.5 px-5 py-2 rounded-xl transition-all"
+                    className="cursor-pointer flex items-center justify-center gap-1.5 min-h-10 sm:min-h-0 px-5 py-2 rounded-xl transition-all"
                     style={{
                       fontFamily: "'Inter',sans-serif",
                       fontSize: 13,

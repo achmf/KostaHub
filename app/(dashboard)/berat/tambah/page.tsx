@@ -16,7 +16,7 @@ export default async function TambahBeratPage(props: { searchParams: Promise<{ h
   const farmFilter = farmId ? { farmId } : {}
 
   const hewanList = await prisma.hewan.findMany({
-    where: { status: 'AKTIF', ...farmFilter },
+    where: { kematian: { is: null }, ...farmFilter },
     select: { id: true, tag: true, nama: true }
   })
 

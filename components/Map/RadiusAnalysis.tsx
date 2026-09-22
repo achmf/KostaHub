@@ -67,17 +67,16 @@ export default function RadiusAnalysisLayer({
     }).addTo(map)
     circleRef.current = circle
 
-    // Draggable center marker
+    // Draggable center marker — titik 24px di dalam area sentuh 40px agar mudah di-drag di HP
     const centerIcon = L.divIcon({
-      html: `<div style="
+      html: `<div style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:grab;"><div style="
         width:24px;height:24px;border-radius:50%;
         background:#C7873E;border:3px solid white;
         box-shadow:0 2px 8px rgba(0,0,0,0.3);
-        cursor:grab;
-      "></div>`,
+      "></div></div>`,
       className: '',
-      iconSize: [24, 24],
-      iconAnchor: [12, 12],
+      iconSize: [40, 40],
+      iconAnchor: [20, 20],
     })
 
     const marker = L.marker([centerLat, centerLng], {

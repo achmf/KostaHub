@@ -12,6 +12,14 @@ async function requireSuperAdmin() {
   return session
 }
 
+async function requireAdminOrDinas() {
+  const session = await getSession()
+  if (!session || (session.role !== 'SUPER_ADMIN' && session.role !== 'DINAS')) {
+    throw new Error('Unauthorized')
+  }
+  return session
+}
+
 // ── Send Announcement to all active farms ──────────────────────────────────
 export async function sendAnnouncement(data: { title: string; message: string }) {
   await requireSuperAdmin()
@@ -47,7 +55,7 @@ export async function sendAnnouncement(data: { title: string; message: string })
 
 // ── Get past announcements (CUSTOM type) ────────────────────────────────────
 export async function getAnnouncements() {
-  await requireSuperAdmin()
+  await requireAdminOrDinas()
 
   // Get unique announcements by title+message (since one record per farm)
   const notifs = await prisma.notifikasi.findMany({

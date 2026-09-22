@@ -75,7 +75,8 @@ export default function NotificationDropdown() {
   }
 
   return (
-    <div ref={ref} className="relative">
+    // Di mobile wrapper tidak `relative` → panel menempel ke header (sticky) selebar layar
+    <div ref={ref} className="sm:relative">
       {/* Trigger */}
       <motion.button
         onClick={() => setOpen((v) => !v)}
@@ -118,7 +119,7 @@ export default function NotificationDropdown() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.97 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute right-0 top-full mt-2 z-50 w-80 sm:w-96"
+            className="absolute inset-x-3 top-full mt-2 sm:inset-x-auto sm:right-0 z-50 sm:w-96"
             role="menu"
           >
             <div
@@ -141,7 +142,7 @@ export default function NotificationDropdown() {
               </div>
 
               {/* List */}
-              <div className="flex flex-col max-h-[360px] overflow-y-auto">
+              <div className="flex flex-col max-h-[min(360px,calc(100dvh-12rem))] overflow-y-auto overscroll-contain">
                 {displayNotifications.length === 0 ? (
                   <div className="px-4 py-8 text-center" style={{ opacity: 0.5, fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
                     Tidak ada notifikasi.

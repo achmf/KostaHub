@@ -9,7 +9,8 @@ import dynamic from 'next/dynamic'
 import type { AdminFarm, MapLayer } from './AdminMapClient'
 import type { Farm } from '@/components/Map/MapPageClient'
 import { saveGeojsonAdmin } from '@/actions/admin/saveGeojsonAdmin'
-import { toast } from 'sonner'
+import { useToast } from '@/components/ToastProvider'
+import { escapeHtml } from '@/lib/utils'
 
 // Dynamically load GIS sub-components (no SSR)
 const HeatmapLayer = dynamic(() => import('@/components/Map/HeatmapLayer'), { ssr: false })
@@ -152,18 +153,18 @@ function buildPopupHtml(farm: AdminFarm) {
   ] as const
 
   return `
-    <div style="font-family:'Inter',sans-serif;min-width:230px;padding:4px 0;">
+    <div style="font-family:'Inter',sans-serif;min-width:230px;max-width:240px;overflow-wrap:break-word;padding:4px 0;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
         <div style="width:8px;height:8px;border-radius:50%;background:${isActive ? '#4ade80' : '#9ca3af'};flex-shrink:0;"></div>
-        <strong style="font-size:13px;color:#0D140F;">${farm.nama}</strong>
+        <strong style="font-size:13px;color:#0D140F;">${escapeHtml(farm.nama)}</strong>
         <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:${isActive ? '#3F5B3A' : '#9ca3af'};padding:2px 7px;border-radius:99px;border:1px solid ${isActive ? 'rgba(63,91,58,0.3)' : 'rgba(13,20,15,0.15)'}">
-          ${farm.status}
+          ${escapeHtml(farm.status)}
         </span>
       </div>
       <div style="font-size:11px;color:rgba(13,20,15,0.5);margin-bottom:8px;">
-        Owner: <strong style="color:#1B2A1F;">${farm.ownerName}</strong>
+        Owner: <strong style="color:#1B2A1F;">${escapeHtml(farm.ownerName)}</strong>
       </div>
-      ${farm.alamat ? `<div style="font-size:11px;color:rgba(13,20,15,0.55);margin-bottom:8px;line-height:1.5;">${farm.alamat}</div>` : ''}
+      ${farm.alamat ? `<div style="font-size:11px;color:rgba(13,20,15,0.55);margin-bottom:8px;line-height:1.5;">${escapeHtml(farm.alamat)}</div>` : ''}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px;">
         ${rows.map(([label, val]) => `
           <div style="text-align:center;padding:5px;border-radius:8px;background:rgba(13,20,15,0.04);border:1px solid rgba(13,20,15,0.08);">
@@ -172,7 +173,7 @@ function buildPopupHtml(farm: AdminFarm) {
           </div>
         `).join('')}
       </div>
-      <a href="/admin/farms/${farm.id}" style="display:block;text-align:center;padding:7px 12px;background:#1B2A1F;color:#F2EDE0;border-radius:99px;font-size:12px;font-weight:500;text-decoration:none;">
+      <a href="/admin/farms/${escapeHtml(farm.id)}" class="min-h-10 lg:min-h-0" style="display:flex;align-items:center;justify-content:center;text-align:center;padding:7px 12px;background:#1B2A1F;color:#F2EDE0;border-radius:99px;font-size:12px;font-weight:500;text-decoration:none;">
         Lihat di Admin →
       </a>
     </div>
@@ -218,6 +219,7 @@ export default function AdminFarmMap({
     validFarms.length > 0 ? [validFarms[0].lat, validFarms[0].lng] : defaultCenter
 
   const [isSaving, setIsSaving] = useState(false)
+  const { showToast } = useToast()
 
   // Memoize farm arrays so downstream GIS layers don't get new refs every render
   const farmsAsFarm = useMemo(() => farms.map(toFarm), [farms])
@@ -242,9 +244,9 @@ export default function AdminFarmMap({
     const result = await saveGeojsonAdmin(selectedFarm.id, geojson)
     setIsSaving(false)
     if (result?.error) {
-      toast.error(result.error)
+      showToast({ title: result.error, type: 'error' })
     } else {
-      toast.success(geojson ? 'Area kandang berhasil disimpan!' : 'Area kandang dihapus.')
+      showToast({ title: geojson ? 'Area kandang berhasil disimpan!' : 'Area kandang dihapus.', type: 'success' })
       onDrawSaved(selectedFarm.id, geojson)
       onDrawClose()
     }
@@ -286,6 +288,8 @@ export default function AdminFarmMap({
 
         {drawMode && selectedFarm && (
           <DrawPolygonControl
+            // Ganti farm saat menggambar → reset titik, supaya poligon tidak tersimpan ke farm yang salah
+            key={selectedFarm.id}
             farm={toFarm(selectedFarm)}
             onSave={handlePolygonSave}
             onClose={onDrawClose}
@@ -309,7 +313,8 @@ export default function AdminFarmMap({
                 position={[farm.lat, farm.lng]}
                 icon={createAdminMarkerIcon(farm, isSelected)}
                 zIndexOffset={isSelected ? 1000 : 0}
-                eventHandlers={{ click: () => onSelectFarm(isSelected ? null : farm) }}
+                // Saat menggambar, tap marker tidak boleh mengganti/membatalkan farm yang sedang digambar
+                eventHandlers={{ click: () => { if (!drawMode) onSelectFarm(isSelected ? null : farm) } }}
               >
                 <Popup minWidth={240}>
                   <div dangerouslySetInnerHTML={{ __html: buildPopupHtml(farm) }} />

@@ -86,12 +86,17 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
       {/* Add form */}
       <AnimatePresence>
         {showForm && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
+        <motion.div
+            initial={{ height: 0 }}
+            animate={{ height: 'auto' }}
+            exit={{ height: 0 }}
             className="overflow-hidden mb-6"
           >
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
             <form
               action={handleCreate}
               className="p-6 rounded-2xl space-y-4"
@@ -131,6 +136,7 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
                   <input
                     name="name"
                     required
+                    autoComplete="off"
                     placeholder="Nama staff"
                     className="w-full px-4 py-3 rounded-xl"
                     style={{ background: 'rgba(13,20,15,0.03)', border: `1px solid ${palette.border}`, fontFamily: "'Inter',sans-serif", fontSize: 14, color: palette.ink, outline: 'none' }}
@@ -144,6 +150,7 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
                     name="email"
                     type="email"
                     required
+                    autoComplete="off"
                     placeholder="email@staff.com"
                     className="w-full px-4 py-3 rounded-xl"
                     style={{ background: 'rgba(13,20,15,0.03)', border: `1px solid ${palette.border}`, fontFamily: "'Inter',sans-serif", fontSize: 14, color: palette.ink, outline: 'none' }}
@@ -157,6 +164,7 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
                     name="password"
                     type="password"
                     required
+                    autoComplete="new-password"
                     placeholder="Min 6 karakter"
                     className="w-full px-4 py-3 rounded-xl"
                     style={{ background: 'rgba(13,20,15,0.03)', border: `1px solid ${palette.border}`, fontFamily: "'Inter',sans-serif", fontSize: 14, color: palette.ink, outline: 'none' }}
@@ -190,6 +198,8 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
                 </label>
                 <input
                   name="phone"
+                  type="tel"
+                  autoComplete="off"
                   placeholder="08xxxxxxxxxx"
                   className="w-full px-4 py-3 rounded-xl"
                   style={{ background: 'rgba(13,20,15,0.03)', border: `1px solid ${palette.border}`, fontFamily: "'Inter',sans-serif", fontSize: 14, color: palette.ink, outline: 'none' }}
@@ -199,10 +209,12 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
               <KostaButton
                 type="submit"
                 disabled={isPending}
+                className="w-full sm:w-auto justify-center"
               >
                 {isPending ? 'Menyimpan…' : 'Simpan Staff'}
               </KostaButton>
             </form>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -226,7 +238,7 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
               <div
                 key={s.id}
                 onClick={() => router.push(`/staff/${s.id}`)}
-                className="flex items-center gap-4 px-5 py-4 rounded-2xl group hover:bg-gray-50/50 transition-colors cursor-pointer"
+                className="flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-4 rounded-2xl group hover:bg-gray-50/50 transition-colors cursor-pointer"
                 style={{ background: '#fff', border: `1px solid ${palette.border}` }}
               >
                 <div
@@ -236,8 +248,8 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
                   {s.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500 }}>{s.name}</span>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className="min-w-0 wrap-anywhere" style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500 }}>{s.name}</span>
                     <span
                       className="px-2 py-0.5 rounded-full"
                       style={{ background: roleInfo.bg, color: roleInfo.color, fontSize: 10, fontWeight: 500 }}
@@ -245,22 +257,23 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
                       {roleInfo.label}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 mt-0.5" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'rgba(13,20,15,0.5)' }}>
-                    <span className="flex items-center gap-1"><Mail size={10} />{s.email}</span>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'rgba(13,20,15,0.5)' }}>
+                    <span className="flex items-center gap-1 min-w-0"><Mail size={10} className="shrink-0" /><span className="truncate">{s.email}</span></span>
                     {s.phone && <span className="flex items-center gap-1"><Phone size={10} />{s.phone}</span>}
                   </div>
                 </div>
                 {isOwner && (
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-1 sm:gap-2 pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 pointer-fine:focus-within:opacity-100 transition-opacity">
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
                         handleDelete(s.id, s.name)
                       }}
                       disabled={isPending}
-                      className="p-2 rounded-lg transition-all hover:bg-red-50"
+                      className="w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg transition-all hover:bg-red-50"
                       style={{ color: 'rgba(181,68,59,0.5)' }}
                       title="Hapus staff"
+                      aria-label={`Hapus staff ${s.name}`}
                     >
                       <Trash2 size={14} />
                     </button>

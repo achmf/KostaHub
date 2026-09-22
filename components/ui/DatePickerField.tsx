@@ -112,9 +112,9 @@ function SingleCalendar({
   }
 
   return (
-    <div className="w-[230px] p-2">
+    <div className="w-[min(300px,calc(100vw-2.5rem))] sm:w-[230px] p-2">
       <div className="flex items-center justify-between mb-3 px-1">
-        <button onClick={handlePrev} className="p-1.5 rounded-full hover:bg-black/5 transition-colors cursor-pointer text-ink">
+        <button type="button" onClick={handlePrev} aria-label="Bulan sebelumnya" className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-full hover:bg-black/5 transition-colors cursor-pointer text-ink">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         </button>
         <div className="flex gap-1" style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, fontWeight: 500, color: palette.ink }}>
@@ -140,7 +140,7 @@ function SingleCalendar({
             </SelectContent>
           </Select>
         </div>
-        <button onClick={handleNext} className="p-1.5 rounded-full hover:bg-black/5 transition-colors cursor-pointer text-ink">
+        <button type="button" onClick={handleNext} aria-label="Bulan berikutnya" className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-full hover:bg-black/5 transition-colors cursor-pointer text-ink">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
         </button>
       </div>
@@ -161,12 +161,13 @@ function SingleCalendar({
           return (
             <div key={i} className="relative aspect-square flex items-center justify-center">
               <button
+                type="button"
                 onClick={() => {
                   if (!isDis) onSelect(new Date(year, month, d))
                 }}
                 disabled={isDis}
                 className={cn(
-                  "relative z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all",
+                  "relative z-10 w-9 h-9 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all",
                   isDis ? "cursor-not-allowed opacity-30" : "cursor-pointer hover:bg-black/5"
                 )}
                 style={{

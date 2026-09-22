@@ -94,7 +94,7 @@ export function FarmMemberships({ farms }: FarmMembershipsProps) {
                 return (
                   <div
                     key={farm.id}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl"
+                    className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 rounded-xl"
                     style={{
                       background: 'rgba(13,20,15,0.025)',
                       border: `1px solid ${palette.border}`,
@@ -106,7 +106,7 @@ export function FarmMemberships({ farms }: FarmMembershipsProps) {
                     >
                       <Building2 size={15} style={{ color: palette.forest, opacity: 0.7 }} />
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-24">
                       <div
                         className="truncate"
                         style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink }}
@@ -118,7 +118,7 @@ export function FarmMemberships({ farms }: FarmMembershipsProps) {
                       </KostaSectionLabel>
                     </div>
                     <div
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full shrink-0"
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full shrink-0 ml-auto"
                       style={{ background: cfg.bg }}
                     >
                       <StatusIcon size={11} style={{ color: cfg.color }} />

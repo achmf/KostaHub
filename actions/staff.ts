@@ -116,7 +116,7 @@ export async function updateStaff(staffId: string, formData: FormData) {
   )
   if (!isMemberOfActiveFarm) return { error: 'Bukan staff farm Anda' }
 
-  let updateData: any = { name, phone: phone || null }
+  const updateData: any = { name, phone: phone || null }
   
   if (password && password.length >= 6) {
     updateData.password = await bcrypt.hash(password, 10)

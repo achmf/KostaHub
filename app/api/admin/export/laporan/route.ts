@@ -307,17 +307,18 @@ export async function GET() {
 
   const farmDetails = await Promise.all(
     farms.map(async (farm) => {
-      const [aktif, mati, terjual, hamil, totalMedis, lahir] = await Promise.all([
-        prisma.hewan.count({ where: { farmId: farm.id, status: 'AKTIF'   } }),
-        prisma.hewan.count({ where: { farmId: farm.id, status: 'MATI'    } }),
-        prisma.hewan.count({ where: { farmId: farm.id, status: 'TERJUAL' } }),
+      const [totalHewan, mati, hamil, totalMedis, lahir] = await Promise.all([
+        prisma.hewan.count({ where: { farmId: farm.id } }),
+        prisma.kematianHewan.count({ where: { hewan: { farmId: farm.id } } }),
         prisma.reproduksi.count({ where: { induk: { farmId: farm.id }, status: 'HAMIL' } }),
         prisma.rekamMedis.count({ where: { hewan: { farmId: farm.id } } }),
         prisma.reproduksi.count({ where: { induk: { farmId: farm.id }, status: 'LAHIR' } }),
       ])
-      const total       = aktif + mati + terjual
-      const mortality   = total > 0 ? Math.round((mati / total) * 100) : 0
-      const health      = healthScore(aktif, mati, terjual)
+      const aktif    = totalHewan - mati
+      const terjual  = 0
+      const total    = totalHewan
+      const mortality = total > 0 ? Math.round((mati / total) * 100) : 0
+      const health   = healthScore(aktif, mati, 0)
       return { ...farm, aktif, mati, terjual, hamil, totalMedis, lahir, mortality, health, total }
     })
   )

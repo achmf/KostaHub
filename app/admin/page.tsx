@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import AdminDashboardClient from '@/components/Admin/AdminDashboardClient'
+import { countKematianPerFarm } from '@/services/kematian.service'
 
 export default async function AdminPage() {
   // ─── DATE RANGES ─────────────────────────────────────────────
@@ -16,16 +17,14 @@ export default async function AdminPage() {
     totalUser,
     totalHewan,
     totalMati,
-    totalTerjual,
     pendingApprovals,
     totalOwner,
   ] = await Promise.all([
     prisma.farm.count(),
     prisma.farm.count({ where: { status: 'AKTIF' } }),
     prisma.user.count({ where: { deletedAt: null, approvalStatus: 'APPROVED' } }),
-    prisma.hewan.count({ where: { status: 'AKTIF' } }),
-    prisma.hewan.count({ where: { status: 'MATI' } }),
-    prisma.hewan.count({ where: { status: 'TERJUAL' } }),
+    prisma.hewan.count(),
+    prisma.kematianHewan.count(),
     prisma.farm.count({ where: { status: 'NONAKTIF', deletedAt: null, rejectionReason: null } }),
     prisma.user.count({ where: { role: 'OWNER', deletedAt: null } }),
   ])
@@ -47,8 +46,8 @@ export default async function AdminPage() {
     prisma.user.count({ where: { createdAt: { gte: lastMonthStart, lte: lastMonthEnd }, deletedAt: null } }),
     prisma.hewan.count({ where: { createdAt: { gte: thisMonthStart } } }),
     prisma.hewan.count({ where: { createdAt: { gte: lastMonthStart, lte: lastMonthEnd } } }),
-    prisma.hewan.count({ where: { status: 'MATI', updatedAt: { gte: thisMonthStart } } }),
-    prisma.hewan.count({ where: { status: 'MATI', updatedAt: { gte: lastMonthStart, lte: lastMonthEnd } } }),
+    prisma.kematianHewan.count({ where: { tanggalMati: { gte: thisMonthStart } } }),
+    prisma.kematianHewan.count({ where: { tanggalMati: { gte: lastMonthStart, lte: lastMonthEnd } } }),
   ])
 
   function calcDelta(curr: number, prev: number) {
@@ -64,8 +63,7 @@ export default async function AdminPage() {
   }
 
   // ─── MORTALITY RATE ──────────────────────────────────────────
-  const totalSemua = totalHewan + totalMati + totalTerjual
-  const mortalityRate = totalSemua > 0 ? Math.round((totalMati / totalSemua) * 100) : 0
+  const mortalityRate = totalHewan > 0 ? Math.round((totalMati / totalHewan) * 100) : 0
 
   // ─── REPRODUKSI ──────────────────────────────────────────────
   const [totalLahir, totalGagal, totalHamil] = await Promise.all([
@@ -84,25 +82,30 @@ export default async function AdminPage() {
 
   const hewanBaru = await prisma.hewan.findMany({
     where: { createdAt: { gte: sixMonthsAgo } },
-    select: { createdAt: true, status: true },
+    select: { createdAt: true },
+  })
+  const kematianBaru = await prisma.kematianHewan.findMany({
+    where: { tanggalMati: { gte: sixMonthsAgo } },
+    select: { tanggalMati: true },
   })
 
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
-  const trendMap = new Map<string, { masuk: number; mati: number; terjual: number }>()
+  const trendMap = new Map<string, { masuk: number; keluar: number }>()
   for (let i = 5; i >= 0; i--) {
     const d = new Date()
     d.setMonth(d.getMonth() - i)
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-    trendMap.set(key, { masuk: 0, mati: 0, terjual: 0 })
+    trendMap.set(key, { masuk: 0, keluar: 0 })
   }
   hewanBaru.forEach((h) => {
     const key = `${h.createdAt.getFullYear()}-${String(h.createdAt.getMonth() + 1).padStart(2, '0')}`
     const entry = trendMap.get(key)
-    if (entry) {
-      entry.masuk++
-      if (h.status === 'MATI') entry.mati++
-      if (h.status === 'TERJUAL') entry.terjual++
-    }
+    if (entry) entry.masuk++
+  })
+  kematianBaru.forEach((k) => {
+    const key = `${k.tanggalMati.getFullYear()}-${String(k.tanggalMati.getMonth() + 1).padStart(2, '0')}`
+    const entry = trendMap.get(key)
+    if (entry) entry.keluar++
   })
   const trendData = Array.from(trendMap.entries()).map(([key, val]) => {
     const m = key.split('-')[1]
@@ -121,20 +124,18 @@ export default async function AdminPage() {
     orderBy: { createdAt: 'desc' },
   })
 
-  // Health score per farm (aktif / total * 100)
-  const farmsWithHealth = await Promise.all(
-    farms.map(async (f) => {
-      const [aktif, mati, terjual] = await Promise.all([
-        prisma.hewan.count({ where: { farmId: f.id, status: 'AKTIF' } }),
-        prisma.hewan.count({ where: { farmId: f.id, status: 'MATI' } }),
-        prisma.hewan.count({ where: { farmId: f.id, status: 'TERJUAL' } }),
-      ])
-      const total = aktif + mati + terjual
-      const healthScore = total > 0 ? Math.round((aktif / total) * 100) : 100
-      const mortalityRateFarm = total > 0 ? Math.round((mati / total) * 100) : 0
-      return { ...f, aktif, mati, total, healthScore, mortalityRateFarm }
-    })
-  )
+  // Health score per farm (hidup / total * 100)
+  const allFarmIds = farms.map(f => f.id)
+  const farmKematianMap = await countKematianPerFarm(allFarmIds)
+
+  const farmsWithHealth = farms.map((f) => {
+    const mati = farmKematianMap.get(f.id) ?? 0
+    const total = f._count.hewan
+    const hidup = total - mati
+    const healthScore = total > 0 ? Math.round((hidup / total) * 100) : 100
+    const mortalityRateFarm = total > 0 ? Math.round((mati / total) * 100) : 0
+    return { ...f, aktif: hidup, mati, total, healthScore, mortalityRateFarm }
+  })
 
   const farmComparison = farmsWithHealth.map((f) => ({
     id: f.id,
@@ -149,7 +150,7 @@ export default async function AdminPage() {
 
   // ─── INACTIVE FARM DETECTION (no activity > 30 days) ─────────
   const latestActivity = await prisma.hewan.findMany({
-    where: { status: 'AKTIF', farm: { status: 'AKTIF' } },
+    where: { farm: { status: 'AKTIF' } },
     select: { farmId: true, createdAt: true, updatedAt: true },
     orderBy: { updatedAt: 'desc' },
   })
@@ -186,7 +187,6 @@ export default async function AdminPage() {
   const kategoriStats = await prisma.hewan.groupBy({
     by: ['kategori'],
     _count: true,
-    where: { status: 'AKTIF' },
   })
   const kategoriData = kategoriStats.map((k) => ({
     name: k.kategori === 'INDUKAN' ? 'Indukan'

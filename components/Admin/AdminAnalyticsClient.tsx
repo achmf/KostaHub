@@ -12,7 +12,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
   PieChart,
   Pie,
   Cell,
@@ -59,8 +58,22 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl p-6 ${className}`} style={{ background: '#fff', border: `1px solid ${palette.border}` }}>
+    <div className={`rounded-2xl p-4 sm:p-6 flex flex-col min-w-0 ${className}`} style={{ background: '#fff', border: `1px solid ${palette.border}` }}>
       {children}
+    </div>
+  )
+}
+
+// Legend di luar area grafik yang di-scroll horizontal, supaya selalu terlihat & bisa wrap di ponsel
+function ChartLegend({ items }: { items: { label: string; color: string }[] }) {
+  return (
+    <div className="flex flex-wrap justify-center gap-x-2.5 gap-y-1 mt-2" style={{ fontFamily: "'Inter',sans-serif", fontSize: 11 }}>
+      {items.map((item) => (
+        <span key={item.label} className="flex items-center gap-1" style={{ color: item.color }}>
+          <span className="w-3.5 h-2.5 shrink-0" style={{ background: item.color }} />
+          {item.label}
+        </span>
+      ))}
     </div>
   )
 }
@@ -100,7 +113,7 @@ export default function AdminAnalyticsClient({
     <div>
       {/* Header */}
       <motion.div
-        className="mb-10"
+        className="mb-6 sm:mb-10"
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -115,34 +128,6 @@ export default function AdminAnalyticsClient({
           Analisis mendalam perbandingan antar farm di seluruh wilayah.
         </p>
 
-        {/* Export Excel Buttons */}
-        <div className="flex flex-wrap gap-2 mt-5">
-          {[
-            { label: 'Farm', type: 'farms' },
-            { label: 'Hewan', type: 'hewan' },
-            { label: 'User', type: 'users' },
-            { label: 'Semua Data', type: 'all' },
-          ].map((btn) => (
-            <a
-              key={btn.type}
-              href={`/api/admin/export?type=${btn.type}`}
-              download
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl hover:-translate-y-0.5 hover:shadow-sm transition-all duration-300 ease-out"
-              style={{
-                fontFamily: "'Inter',sans-serif",
-                fontSize: 12,
-                background: btn.type === 'all' ? 'rgba(27,42,31,0.06)' : '#fff',
-                color: palette.ink,
-                border: `1px solid ${btn.type === 'all' ? palette.moss : palette.border}`,
-                textDecoration: 'none',
-                fontWeight: btn.type === 'all' ? 500 : 400,
-              }}
-            >
-              <Download size={12} style={{ color: btn.type === 'all' ? palette.moss : palette.ochre }} />
-              {btn.type === 'all' ? 'Semua Data' : `Export ${btn.label}`} .xlsx
-            </a>
-          ))}
-        </div>
       </motion.div>
 
       {/* ── STACKED BAR: Komposisi Hewan per Farm ── */}
@@ -157,6 +142,7 @@ export default function AdminAnalyticsClient({
               Belum ada data farm
             </div>
           ) : (
+            <>
             <div className="relative w-full">
               <div className="absolute left-0 top-0 bottom-0 z-10 bg-white pointer-events-none" style={{ width: 45 }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -168,7 +154,6 @@ export default function AdminAnalyticsClient({
                     <Bar dataKey="jantanMuda" stackId="a" fill="transparent" />
                     <YAxis tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
                     <XAxis dataKey="nama" height={24} tick={false} axisLine={false} tickLine={false} />
-                    <Legend height={36} content={() => <div />} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -177,7 +162,7 @@ export default function AdminAnalyticsClient({
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={hewanPerFarm} margin={{ top: 4, right: 0, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,20,15,0.05)" vertical={false} />
-                      <XAxis dataKey="nama" height={24} tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, fill: 'rgba(13,20,15,0.5)' }} axisLine={false} tickLine={false} />
+                      <XAxis dataKey="nama" height={24} tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, fill: 'rgba(13,20,15,0.5)' }} tickFormatter={(val) => String(val).replace(/^Farm Kosta\s+/i, '')} axisLine={false} tickLine={false} />
                       <YAxis tick={false} axisLine={false} tickLine={false} />
                       <Tooltip
                         cursor={{ fill: 'rgba(255,255,255,0.05)' }}
@@ -189,7 +174,6 @@ export default function AdminAnalyticsClient({
                           return item?.namaPanjang || String(label)
                         }}
                       />
-                      <Legend height={36} wrapperStyle={{ fontFamily: "'Inter',sans-serif", fontSize: 11 }} />
                       <Bar dataKey="indukan" name="Indukan" stackId="a" fill={STACKED_COLORS.indukan} radius={[0, 0, 0, 0]} />
                       <Bar dataKey="pejantan" name="Pejantan" stackId="a" fill={STACKED_COLORS.pejantan} />
                       <Bar dataKey="anakan" name="Anakan" stackId="a" fill={STACKED_COLORS.anakan} />
@@ -200,6 +184,16 @@ export default function AdminAnalyticsClient({
                 </div>
               </div>
             </div>
+            <ChartLegend
+              items={[
+                { label: 'Indukan', color: STACKED_COLORS.indukan },
+                { label: 'Pejantan', color: STACKED_COLORS.pejantan },
+                { label: 'Anakan', color: STACKED_COLORS.anakan },
+                { label: 'Dara', color: STACKED_COLORS.dara },
+                { label: 'Jantan Muda', color: STACKED_COLORS.jantanMuda },
+              ]}
+            />
+            </>
           )}
         </Card>
       </motion.div>
@@ -272,6 +266,7 @@ export default function AdminAnalyticsClient({
                 Belum ada data reproduksi selesai
               </div>
             ) : (
+              <>
               <div className="relative w-full">
                 <div className="absolute left-0 top-0 bottom-0 z-10 bg-white pointer-events-none" style={{ width: 45 }}>
                   <ResponsiveContainer width="100%" height="100%">
@@ -283,7 +278,6 @@ export default function AdminAnalyticsClient({
                       <Bar dataKey="gagal" fill="transparent" />
                       <YAxis tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
                       <XAxis dataKey="nama" height={24} tick={false} axisLine={false} tickLine={false} />
-                      <Legend height={36} content={() => <div />} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -295,7 +289,7 @@ export default function AdminAnalyticsClient({
                         margin={{ top: 4, right: 0, left: -20, bottom: 0 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,20,15,0.05)" vertical={false} />
-                        <XAxis dataKey="nama" height={24} tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, fill: 'rgba(13,20,15,0.5)' }} axisLine={false} tickLine={false} />
+                        <XAxis dataKey="nama" height={24} tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, fill: 'rgba(13,20,15,0.5)' }} tickFormatter={(val) => String(val).replace(/^Farm Kosta\s+/i, '')} axisLine={false} tickLine={false} />
                         <YAxis tick={false} axisLine={false} tickLine={false} />
                         <Tooltip
                           cursor={{ fill: 'rgba(255,255,255,0.05)' }}
@@ -304,7 +298,6 @@ export default function AdminAnalyticsClient({
                           contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}` }}
                           labelFormatter={(label) => reproduksiPerFarm.find((f) => f.nama === String(label))?.namaPanjang || String(label)}
                         />
-                        <Legend height={36} wrapperStyle={{ fontFamily: "'Inter',sans-serif", fontSize: 11 }} />
                         <Bar dataKey="lahir" name="Berhasil Lahir" fill={palette.moss} radius={[4, 4, 0, 0]} />
                         <Bar dataKey="gagal" name="Gagal" fill={palette.danger} radius={[4, 4, 0, 0]} />
                       </BarChart>
@@ -312,6 +305,13 @@ export default function AdminAnalyticsClient({
                   </div>
                 </div>
               </div>
+              <ChartLegend
+                items={[
+                  { label: 'Berhasil Lahir', color: palette.moss },
+                  { label: 'Gagal', color: palette.danger },
+                ]}
+              />
+              </>
             )}
           </Card>
         </motion.div>
@@ -331,7 +331,7 @@ export default function AdminAnalyticsClient({
                 Belum ada data
               </div>
             ) : (
-              <div className="flex gap-4 items-center">
+              <div className="flex flex-col sm:flex-row gap-4 items-center">
                 <ResponsiveContainer width="55%" height={180}>
                   <PieChart>
                     <Pie data={distribusiUmur} cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={2} dataKey="value">
@@ -347,7 +347,7 @@ export default function AdminAnalyticsClient({
                     />
                   </PieChart>
                 </ResponsiveContainer>
-                <div className="flex-1 space-y-2">
+                <div className="flex-1 w-full space-y-2">
                   {distribusiUmur.map((d, idx) => (
                     <div key={d.name} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -437,9 +437,16 @@ export default function AdminAnalyticsClient({
                   formatter={(val) => [`${val} kasus`, 'Frekuensi']}
                 />
                 <Bar dataKey="count" name="Kasus" fill={palette.ochre} radius={[0, 4, 4, 0]}>
-                  {topDiagnosa.map((_, idx) => (
-                    <Cell key={idx} fill={idx === 0 ? palette.danger : palette.ochre} opacity={1 - idx * 0.08} />
-                  ))}
+                  {topDiagnosa.map((_, idx) => {
+                    const isTop = idx === topDiagnosa.length - 1;
+                    return (
+                      <Cell 
+                        key={idx} 
+                        fill={isTop ? palette.danger : palette.ochre} 
+                        opacity={1 - (topDiagnosa.length - 1 - idx) * 0.08} 
+                      />
+                    );
+                  })}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -454,7 +461,7 @@ export default function AdminAnalyticsClient({
             <Trophy size={15} style={{ color: palette.ochre }} />
             <div>
               <SectionLabel>RANKING PERFORMA FARM</SectionLabel>
-              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink, marginTop: -12 }}>
+              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink }}>
                 Peringkat farm berdasarkan jumlah hewan aktif
               </div>
             </div>
@@ -464,8 +471,9 @@ export default function AdminAnalyticsClient({
               Belum ada data farm
             </div>
           ) : (
+            <>
             <div className="overflow-x-auto">
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
+              <table className="min-w-[600px]" style={{ width: '100%', borderCollapse: 'collapse', fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
                 <thead>
                   <tr style={{ borderBottom: `2px solid ${palette.border}` }}>
                     {['#', 'Farm', 'Status', 'Hewan Aktif', 'Mati', 'Terjual', 'Mortality', 'Health Score'].map((h) => (
@@ -518,15 +526,16 @@ export default function AdminAnalyticsClient({
                   })}
                 </tbody>
               </table>
-              <PaginationControl
-                page={page}
-                totalPages={totalPages}
-                onPrev={onPrev}
-                onNext={onNext}
-                totalItems={hewanPerFarm.length}
-                perPage={10}
-              />
             </div>
+            <PaginationControl
+              page={page}
+              totalPages={totalPages}
+              onPrev={onPrev}
+              onNext={onNext}
+              totalItems={hewanPerFarm.length}
+              perPage={10}
+            />
+            </>
           )}
         </Card>
       </motion.div>
