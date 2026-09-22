@@ -305,3 +305,53 @@ export function KostaDialog({
     document.body
   )
 }
+
+export function KostaSpinner({
+  size = 'md',
+  color = 'ochre',
+  text,
+}: {
+  size?: 'sm' | 'md' | 'lg' | 'xl'
+  color?: 'ochre' | 'ink' | 'cream' | 'moss'
+  text?: string
+}) {
+  const sizeMap = { sm: 16, md: 24, lg: 32, xl: 48 }
+  const colorMap = {
+    ochre: palette.ochre,
+    ink: palette.ink,
+    cream: palette.cream,
+    moss: palette.moss,
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center gap-3">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={sizeMap[size]}
+        height={sizeMap[size]}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={colorMap[color]}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="animate-spin"
+      >
+        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+      </svg>
+      {text && (
+        <div
+          style={{
+            fontFamily: "'JetBrains Mono',monospace",
+            fontSize: size === 'sm' ? 10 : 12,
+            letterSpacing: '0.1em',
+            color: 'rgba(13,20,15,0.5)',
+            textTransform: 'uppercase',
+          }}
+        >
+          {text}
+        </div>
+      )}
+    </div>
+  )
+}
