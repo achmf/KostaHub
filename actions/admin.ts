@@ -4,6 +4,7 @@ import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { sendApprovalEmail, sendRejectionEmail } from '@/lib/email'
+import { invalidateAdmin, invalidateFarm } from '@/lib/cache-invalidation'
 
 async function requireSuperAdmin() {
   const session = await getSession()
@@ -43,6 +44,8 @@ export async function approveRegistration(farmId: string) {
     await sendApprovalEmail(owner.email, owner.name)
   }
 
+  invalidateAdmin()
+  invalidateFarm()
   revalidatePath('/admin/approvals')
   return { success: true }
 }
@@ -78,6 +81,7 @@ export async function rejectRegistration(farmId: string, reason?: string) {
     await sendRejectionEmail(owner.email, owner.name, reason)
   }
 
+  invalidateAdmin()
   revalidatePath('/admin/approvals')
   return { success: true }
 }
@@ -94,6 +98,7 @@ export async function deleteUser(userId: string) {
     where: { id: userId },
     data: { deletedAt: new Date() },
   })
+  invalidateAdmin()
   revalidatePath('/admin/users')
   return { success: true }
 }
@@ -122,6 +127,7 @@ export async function createUserByAdmin(formData: FormData): Promise<{ success?:
     data: { name, email, phone: phone || null, role: role as any, password: hashed, approvalStatus: 'APPROVED' },
   })
 
+  invalidateAdmin()
   revalidatePath('/admin/users')
   return { success: true }
 }

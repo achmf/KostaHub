@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
+import { cache } from 'react'
 
 const secretKey = process.env.JWT_SECRET || 'secret-kostahub-farm-2026'
 const key = new TextEncoder().encode(secretKey)
@@ -27,7 +28,11 @@ export async function decrypt(input: string): Promise<SessionPayload | null> {
   return payload as SessionPayload
 }
 
-export async function getSession() {
+/**
+ * Deduplicated per-request via React cache().
+ * Layout + page both call getSession() but JWT is decoded only once.
+ */
+export const getSession = cache(async () => {
   const cookieStore = await cookies()
   const session = cookieStore.get('session')?.value
   if (!session) return null
@@ -36,7 +41,7 @@ export async function getSession() {
   } catch {
     return null
   }
-}
+})
 
 /**
  * HOF wrapper untuk Server Actions agar tidak perlu menulis ulang `getSession()`

@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { withAuth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
+import { invalidateBerat } from '@/lib/cache-invalidation'
 
 import { redirect } from 'next/navigation'
 
@@ -32,6 +33,7 @@ export const addBeratBadan = withAuth(async (session, formData: FormData) => {
     data: { berat }
   })
 
+  invalidateBerat()
   revalidatePath(`/hewan/${hewanId}`)
   redirect('/berat')
 })
