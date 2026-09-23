@@ -38,40 +38,89 @@ export async function getAncestorIds(hewanId: string): Promise<Set<string>> {
 }
 
 /**
- * Mengambil pohon silsilah rekursif untuk sebuah hewan.
- * Depth dibatasi agar tidak infinite loop jika ada data korup.
+ * Mengambil pohon silsilah rekursif untuk sebuah hewan dalam SATU QUERY (Recursive CTE).
+ * Mencegah N+1 query problem yang membuat loading profil sangat lambat.
  */
 export async function buildSilsilahTree(
   hewanId: string,
-  maxDepth = 10,
-  currentDepth = 0
+  maxDepth = 10
 ): Promise<SilsilahNode | null> {
-  if (currentDepth >= maxDepth) return null
+  const rows = await prisma.$queryRaw<
+    {
+      id: string
+      tag: string
+      nama: string | null
+      kelamin: string
+      tanggalLahir: Date
+      bapakId: string | null
+      indukId: string | null
+      depth: number
+    }[]
+  >`
+    WITH RECURSIVE ancestors AS (
+      -- Base case: target hewan
+      SELECT id, tag, nama, kelamin, "tanggalLahir", "bapakId", "indukId", 0 as depth
+      FROM "Hewan"
+      WHERE id = ${hewanId}
 
-  const hewan = await prisma.hewan.findUnique({
-    where: { id: hewanId },
-    select: { id: true, tag: true, nama: true, kelamin: true, tanggalLahir: true, bapakId: true, indukId: true },
-  })
+      UNION ALL
 
-  if (!hewan) return null
+      -- Recursive step
+      SELECT h.id, h.tag, h.nama, h.kelamin, h."tanggalLahir", h."bapakId", h."indukId", a.depth + 1
+      FROM "Hewan" h
+      INNER JOIN ancestors a ON h.id = a."bapakId" OR h.id = a."indukId"
+      WHERE a.depth < ${maxDepth}
+    )
+    SELECT * FROM ancestors
+  `
 
-  const node: SilsilahNode = {
-    id: hewan.id,
-    tag: hewan.tag,
-    nama: hewan.nama,
-    kelamin: hewan.kelamin,
-    tanggalLahir: hewan.tanggalLahir,
+  if (!rows || rows.length === 0) return null
+
+  // Karena JOIN bisa membuat duplikat ID di lineage berbeda (inbreeding),
+  // kita map ID ke object untuk referensi unik.
+  const nodeMap = new Map<string, SilsilahNode>()
+
+  // Buat objek node untuk semua row yang didapat
+  for (const row of rows) {
+    if (!nodeMap.has(row.id)) {
+      nodeMap.set(row.id, {
+        id: row.id,
+        tag: row.tag,
+        nama: row.nama,
+        kelamin: row.kelamin,
+        tanggalLahir: row.tanggalLahir,
+      })
+    }
   }
 
-  if (hewan.bapakId) {
-    const bapakTree = await buildSilsilahTree(hewan.bapakId, maxDepth, currentDepth + 1)
-    if (bapakTree) node.bapak = bapakTree
+  // Rekonstruksi tree di memory menggunakan nodeMap (berdasarkan baris orisinal untuk relasi)
+  // Untuk menghindari cycle / stack overflow (karena inbreeding dsb), kita build tree
+  // menggunakan fungsi rekursif sederhana di memory, mencari dari baris yang tersedia.
+  function buildNode(currentId: string, currentDepth: number): SilsilahNode | undefined {
+    if (currentDepth > maxDepth) return undefined
+    const row = rows.find(r => r.id === currentId && r.depth === currentDepth)
+    if (!row) return undefined
+
+    const nodeInfo = nodeMap.get(currentId)!
+    
+    // Create a new instance per position in tree (since inbreeding means same animal appears twice in different branches)
+    const treeNode: SilsilahNode = {
+      ...nodeInfo
+    }
+
+    if (row.bapakId) {
+      const bapak = buildNode(row.bapakId, currentDepth + 1)
+      if (bapak) treeNode.bapak = bapak
+    }
+    
+    if (row.indukId) {
+      const induk = buildNode(row.indukId, currentDepth + 1)
+      if (induk) treeNode.induk = induk
+    }
+
+    return treeNode
   }
 
-  if (hewan.indukId) {
-    const indukTree = await buildSilsilahTree(hewan.indukId, maxDepth, currentDepth + 1)
-    if (indukTree) node.induk = indukTree
-  }
-
-  return node
+  const root = buildNode(hewanId, 0)
+  return root || null
 }
