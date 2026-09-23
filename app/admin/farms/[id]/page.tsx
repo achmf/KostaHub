@@ -8,7 +8,7 @@ import {
   Calendar,
   ArrowLeft,
   Heart,
-  Baby,
+  Dna,
   TrendingUp,
   FileText,
 } from 'lucide-react'
@@ -161,7 +161,7 @@ export default async function AdminFarmDetailPage({
         {[
           { label: 'Hewan Hidup', value: farm._count.hewan - mati, icon: Activity, color: palette.ochre, bg: 'rgba(199,135,62,0.10)' },
           { label: 'Hewan Mati', value: mati, icon: Heart, color: palette.danger, bg: 'rgba(181,68,59,0.08)' },
-          { label: 'Sedang Hamil', value: hamil, icon: Baby, color: palette.ochre, bg: 'rgba(199,135,62,0.08)' },
+          { label: 'Sedang Hamil', value: hamil, icon: Dna, color: palette.ochre, bg: 'rgba(199,135,62,0.08)' },
           { label: 'Rekam Medis', value: rekamMedisCount, icon: FileText, color: palette.info, bg: 'rgba(44,95,138,0.10)' },
           { label: 'Total Hewan', value: farm._count.hewan, icon: Activity, color: palette.moss, bg: 'rgba(63,91,58,0.10)' },
           { label: 'Mortality Rate', value: `${mortalityRate}%`, icon: Heart, color: mortalityRate > 10 ? palette.danger : palette.moss, bg: mortalityRate > 10 ? 'rgba(181,68,59,0.08)' : 'rgba(63,91,58,0.10)' },
