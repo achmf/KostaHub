@@ -7,7 +7,7 @@ import {
   Heart,
   Building2,
   Users,
-  Baby,
+  Dna,
   Filter,
   ArrowUpRight,
   Clock,
@@ -44,7 +44,7 @@ const TYPE_CONFIG: Record<ActivityType, { label: string; color: string; bg: stri
   medis: { label: 'Rekam Medis', color: palette.danger, bg: 'rgba(181,68,59,0.12)', icon: Heart },
   farm: { label: 'Farm', color: palette.moss, bg: 'rgba(63,91,58,0.12)', icon: Building2 },
   user: { label: 'User', color: palette.info, bg: 'rgba(44,95,138,0.12)', icon: Users },
-  reproduksi: { label: 'Reproduksi', color: '#7A5C2E', bg: 'rgba(122,92,46,0.12)', icon: Baby },
+  reproduksi: { label: 'Reproduksi', color: '#7A5C2E', bg: 'rgba(122,92,46,0.12)', icon: Dna },
 }
 
 const ALL_TYPES: ActivityType[] = ['hewan', 'medis', 'farm', 'user', 'reproduksi']
