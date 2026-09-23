@@ -28,7 +28,10 @@ export default async function ReproduksiPage(props: {
 
   const reproduksiList = await prisma.reproduksi.findMany({
     where: farmFilter,
-    include: { induk: true, pejantan: true },
+    include: {
+      induk: { select: { tag: true, nama: true, farm: { select: { nama: true } } } },
+      pejantan: { select: { tag: true, nama: true } },
+    },
     orderBy: { estimasiLahir: 'asc' },
   })
 

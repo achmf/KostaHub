@@ -6,7 +6,6 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Plus, X, Search, Filter } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useNavigationLoading } from '@/components/Layout/NavigationLoadingContext'
 
 
 import PaginationControl from '@/components/Admin/PaginationControl'
@@ -34,7 +33,7 @@ type HewanWithRelations = {
   farm: { nama: string }
   kematian: { tanggalMati: Date } | null
   beratHistory?: { id: string; tanggal: Date; berat: number }[]
-  rekamMedis?: { id: string }[]
+  _count?: { rekamMedis: number }
 }
 
 const KATEGORI_LABEL: Record<string, string> = {
@@ -71,16 +70,7 @@ export function HewanClient({
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
   const [kelaminFilter, setKelaminFilter] = useState<string>('ALL')
   const [farmFilter, setFarmFilter] = useState<string>('ALL')
-  const [pendingId, setPendingId] = useState<string | null>(null)
   const router = useRouter()
-  const startNavigation = useNavigationLoading()
-
-  function navigate(id: string) {
-    if (pendingId) return
-    setPendingId(id)
-    startNavigation()
-    router.push(`/hewan/${id}`)
-  }
 
   // Drawer filter: Escape menutup + kunci scroll halaman di belakangnya
   useEffect(() => {
@@ -179,7 +169,7 @@ export function HewanClient({
           >
             <KostaCard className="overflow-hidden">
               <button
-                onClick={() => navigate(h.id)}
+                onClick={() => router.push(`/hewan/${h.id}`)}
                 className="cursor-pointer w-full text-left flex flex-col px-4 py-3.5 gap-3 active:bg-[rgba(13,20,15,0.04)] transition-colors"
               >
                 {/* Row 1: Avatar + Nama + Status */}
@@ -280,7 +270,7 @@ export function HewanClient({
           {paged.map((h, i) => (
             <motion.button
               key={h.id}
-              onClick={() => navigate(h.id)}
+              onClick={() => router.push(`/hewan/${h.id}`)}
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: Math.min(i * 0.015, 0.4), duration: 0.3 }}

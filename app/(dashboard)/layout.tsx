@@ -9,7 +9,6 @@ import UserDropdown from '@/components/Layout/UserDropdown'
 import NotificationDropdown from '@/components/Layout/NotificationDropdown'
 import { MobileMenuProvider } from '@/components/Layout/MobileMenuContext'
 import MobileMenuButton from '@/components/Layout/MobileMenuButton'
-import { NavigationLoadingProvider } from '@/components/Layout/NavigationLoadingContext'
 
 import { palette } from '@/components/KostaUI'
 
@@ -51,9 +50,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
         userId={session.id}
       />
 
-      {/* Main area — relative so the navigation overlay positions within it, not over the sidebar */}
-      <NavigationLoadingProvider>
-        <div className="flex-1 min-w-0 flex flex-col relative">
+      {/* Main area */}
+      <div className="flex-1 min-w-0 flex flex-col">
         {/* Header */}
         <header
           className="sticky top-0 z-30 px-4 sm:px-6 lg:px-10 py-3 lg:py-4 flex items-center justify-between gap-3"
@@ -149,7 +147,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
           {children}
         </main>
       </div>
-      </NavigationLoadingProvider>
     </div>
     </MobileMenuProvider>
   )

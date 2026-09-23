@@ -20,14 +20,19 @@ export default async function LaporanPage(props: { searchParams: Promise<{ [key:
   const beratFarmFilter = farmId ? { hewan: { farmId } } : {}
 
   const isGlobal = !farmId
-  let farmName = ''
-  if (farmId) {
-    const f = await prisma.farm.findUnique({ where: { id: farmId }, select: { nama: true } })
-    if (f) farmName = f.nama
-  }
 
-  // ─── ACTION ITEMS ──────────────────────────────────────────
-  const [kehamilanAktif, jadwalMedis, inbreedingAlerts] = await Promise.all([
+  // ─── ALL QUERIES IN ONE PARALLEL BATCH ─────────────────────
+  const [
+    farmResult,
+    kehamilanAktif, jadwalMedis, inbreedingAlerts,
+    hewanMasuk, hewanKeluar, mutasiData,
+    medisData, breedingData, beratData,
+  ] = await Promise.all([
+    // Farm name lookup
+    farmId
+      ? prisma.farm.findUnique({ where: { id: farmId }, select: { nama: true } })
+      : Promise.resolve(null),
+    // Action items
     prisma.reproduksi.findMany({
       where: { status: 'HAMIL', ...reproduksiFarmFilter },
       include: {
@@ -49,29 +54,19 @@ export default async function LaporanPage(props: { searchParams: Promise<{ [key:
       orderBy: { tanggalKawin: 'desc' },
       take: 5,
     }),
-  ])
-
-  // ─── LAPORAN 1: KELUAR-MASUK TERNAK ───────────────────────
-  const [hewanMasuk, hewanKeluar, mutasiData] = await Promise.all([
-    // Masuk: hewan terdaftar (sorted by createdAt)
+    // Laporan 1: Keluar-Masuk
     prisma.hewan.findMany({
       where: { ...hewanFarmFilter },
       include: { farm: { select: { nama: true } } },
       orderBy: { createdAt: 'desc' },
       take: 100,
     }),
-    // Keluar: hewan yang tercatat mati
     prisma.kematianHewan.findMany({
-      where: {
-        ...(farmId ? { hewan: { farmId } } : {}),
-      },
-      include: {
-        hewan: { include: { farm: { select: { nama: true } } } },
-      },
+      where: { ...(farmId ? { hewan: { farmId } } : {}) },
+      include: { hewan: { include: { farm: { select: { nama: true } } } } },
       orderBy: { tanggalMati: 'desc' },
       take: 100,
     }),
-    // Mutasi antar farm (data tersimpan, UI di-hide sementara)
     prisma.transferHewan.findMany({
       where: farmId ? { OR: [{ fromFarmId: farmId }, { toFarmId: farmId }] } : {},
       include: {
@@ -82,62 +77,45 @@ export default async function LaporanPage(props: { searchParams: Promise<{ [key:
       orderBy: { tanggal: 'desc' },
       take: 100,
     }),
+    // Laporan 2: Kesehatan & Medis
+    prisma.rekamMedis.findMany({
+      where: medisFarmFilter,
+      include: {
+        hewan: {
+          select: { tag: true, nama: true, kategori: true, farm: { select: { nama: true } } },
+        },
+      },
+      orderBy: { tanggal: 'desc' },
+      take: 200,
+    }),
+    // Laporan 3: Breeding
+    prisma.reproduksi.findMany({
+      where: reproduksiFarmFilter,
+      include: {
+        induk: { select: { tag: true, nama: true, berat: true, farm: { select: { nama: true } } } },
+        pejantan: { select: { tag: true, nama: true, berat: true } },
+        anak: { select: { tag: true, nama: true, kelamin: true, berat: true } },
+      },
+      orderBy: { tanggalKawin: 'desc' },
+      take: 100,
+    }),
+    // Laporan 4: Pertumbuhan Bobot
+    prisma.beratBadan.findMany({
+      where: beratFarmFilter,
+      include: {
+        hewan: {
+          select: {
+            id: true, tag: true, nama: true, kategori: true, kelamin: true,
+            tanggalLahir: true, farm: { select: { nama: true } },
+          },
+        },
+      },
+      orderBy: [{ hewanId: 'asc' }, { tanggal: 'asc' }],
+      take: 500,
+    }),
   ])
 
-  // ─── LAPORAN 2: KESEHATAN & MEDIS ──────────────────────────
-  const medisData = await prisma.rekamMedis.findMany({
-    where: medisFarmFilter,
-    include: {
-      hewan: {
-        select: {
-          tag: true,
-          nama: true,
-          kategori: true,
-          farm: { select: { nama: true } },
-        },
-      },
-    },
-    orderBy: { tanggal: 'desc' },
-    take: 200,
-  })
-
-  // ─── LAPORAN 3: BREEDING ────────────────────────────────────
-  const breedingData = await prisma.reproduksi.findMany({
-    where: reproduksiFarmFilter,
-    include: {
-      induk: {
-        select: {
-          tag: true, nama: true, berat: true,
-          farm: { select: { nama: true } },
-        },
-      },
-      pejantan: {
-        select: { tag: true, nama: true, berat: true },
-      },
-      anak: {
-        select: { tag: true, nama: true, kelamin: true, berat: true },
-      },
-    },
-    orderBy: { tanggalKawin: 'desc' },
-    take: 100,
-  })
-
-  // ─── LAPORAN 4: PERTUMBUHAN BOBOT ──────────────────────────
-  const beratData = await prisma.beratBadan.findMany({
-    where: beratFarmFilter,
-    include: {
-      hewan: {
-        select: {
-          id: true,
-          tag: true, nama: true, kategori: true, kelamin: true,
-          tanggalLahir: true,
-          farm: { select: { nama: true } },
-        },
-      },
-    },
-    orderBy: [{ hewanId: 'asc' }, { tanggal: 'asc' }],
-    take: 500,
-  })
+  const farmName = farmResult?.nama ?? ''
 
   // Group berat per hewan
   const beratPerHewan = new Map<string, {

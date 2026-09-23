@@ -20,30 +20,51 @@ export default async function AdminLaporanPage() {
     orderBy: { nama: 'asc' },
   })
 
-  const farmDetailList = await Promise.all(
-    farms.map(async (farm) => {
-      const [totalHewan, mati, hamil, totalMedis, lahir] = await Promise.all([
-        prisma.hewan.count({ where: { farmId: farm.id } }),
-        prisma.kematianHewan.count({ where: { hewan: { farmId: farm.id } } }),
-        prisma.reproduksi.count({ where: { induk: { farmId: farm.id }, status: 'HAMIL' } }),
-        prisma.rekamMedis.count({ where: { hewan: { farmId: farm.id } } }),
-        prisma.reproduksi.count({ where: { induk: { farmId: farm.id }, status: 'LAHIR' } }),
-      ])
-      const aktif = totalHewan - mati
-      const mortalityRate = totalHewan > 0 ? Math.round((mati / totalHewan) * 100) : 0
-      return {
-        ...farm,
-        aktif,
-        mati,
-        terjual: 0,
-        hamil,
-        totalMedis,
-        lahir,
-        mortalityRate,
-        totalHewan,
-      }
-    })
-  )
+  // ── Batch counts via groupBy instead of N+1 per-farm queries ──
+  const [
+    hewanCounts, kematianCounts, hamilCounts, medisCounts, lahirCounts,
+  ] = await Promise.all([
+    prisma.hewan.groupBy({ by: ['farmId'], _count: true }),
+    prisma.$queryRawUnsafe<Array<{ farmId: string; count: bigint }>>(
+      `SELECT h."farmId", COUNT(*)::bigint as count FROM "KematianHewan" k JOIN "Hewan" h ON k."hewanId" = h."id" GROUP BY h."farmId"`
+    ),
+    prisma.$queryRawUnsafe<Array<{ farmId: string; count: bigint }>>(
+      `SELECT h."farmId", COUNT(*)::bigint as count FROM "Reproduksi" r JOIN "Hewan" h ON r."indukId" = h."id" WHERE r."status" = 'HAMIL' GROUP BY h."farmId"`
+    ),
+    prisma.$queryRawUnsafe<Array<{ farmId: string; count: bigint }>>(
+      `SELECT h."farmId", COUNT(*)::bigint as count FROM "RekamMedis" rm JOIN "Hewan" h ON rm."hewanId" = h."id" GROUP BY h."farmId"`
+    ),
+    prisma.$queryRawUnsafe<Array<{ farmId: string; count: bigint }>>(
+      `SELECT h."farmId", COUNT(*)::bigint as count FROM "Reproduksi" r JOIN "Hewan" h ON r."indukId" = h."id" WHERE r."status" = 'LAHIR' GROUP BY h."farmId"`
+    ),
+  ])
+
+  const hewanMap = new Map(hewanCounts.map(h => [h.farmId, h._count]))
+  const kematianMap = new Map(kematianCounts.map(k => [k.farmId, Number(k.count)]))
+  const hamilMap = new Map(hamilCounts.map(h => [h.farmId, Number(h.count)]))
+  const medisMap = new Map(medisCounts.map(m => [m.farmId, Number(m.count)]))
+  const lahirMap = new Map(lahirCounts.map(l => [l.farmId, Number(l.count)]))
+
+  const farmDetailList = farms.map(farm => {
+    const totalHewan = hewanMap.get(farm.id) ?? 0
+    const mati = kematianMap.get(farm.id) ?? 0
+    const hamil = hamilMap.get(farm.id) ?? 0
+    const totalMedis = medisMap.get(farm.id) ?? 0
+    const lahir = lahirMap.get(farm.id) ?? 0
+    const aktif = totalHewan - mati
+    const mortalityRate = totalHewan > 0 ? Math.round((mati / totalHewan) * 100) : 0
+    return {
+      ...farm,
+      aktif,
+      mati,
+      terjual: 0,
+      hamil,
+      totalMedis,
+      lahir,
+      mortalityRate,
+      totalHewan,
+    }
+  })
 
 
   const now = new Date()
