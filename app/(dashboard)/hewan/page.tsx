@@ -22,9 +22,7 @@ export default async function HewanPage(props: { searchParams: Promise<{ [key: s
         orderBy: { tanggal: 'desc' },
         take: 3
       },
-      rekamMedis: {
-        select: { id: true } // only counting length is needed
-      },
+      _count: { select: { rekamMedis: true } }, // count only, no row fetch
       kematian: { select: { tanggalMati: true } }, // for status badge: ada = mati, null = hidup
     },
     orderBy: { createdAt: 'desc' }

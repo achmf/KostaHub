@@ -23,8 +23,10 @@ export default async function MedisPage(props: {
     where: farmId ? { farmId } : {},
     include: {
       rekamMedis: {
-        orderBy: { tanggal: 'desc' }
-      }
+        orderBy: { tanggal: 'desc' },
+        take: 10,
+      },
+      _count: { select: { rekamMedis: true } },
     },
     orderBy: {
       createdAt: 'desc'
@@ -32,6 +34,7 @@ export default async function MedisPage(props: {
   })
 
   const medisList = hewans.flatMap(h => h.rekamMedis)
+  const totalMedis = hewans.reduce((sum, h) => sum + h._count.rekamMedis, 0)
 
   const vaccinCount = medisList.filter((m) =>
     m.diagnosis.toLowerCase().includes('vaksin')
@@ -43,7 +46,7 @@ export default async function MedisPage(props: {
     <div>
       <KostaPageHeader
         title="Riwayat Kesehatan"
-        description={`${medisList.length} catatan medis tersimpan. Semua diagnosis, obat, dan tindakan terlacak per individu.`}
+        description={`${totalMedis} catatan medis tersimpan. Semua diagnosis, obat, dan tindakan terlacak per individu.`}
         action={
           <Link href="/medis/tambah">
             <KostaButton className="px-3 md:px-4">
@@ -56,7 +59,7 @@ export default async function MedisPage(props: {
       {/* Stat cards */}
       <div className="grid grid-cols-12 gap-3 sm:gap-4 mb-6">
         {[
-          { l: 'Catatan bulan ini', v: medisList.length, tone: palette.moss },
+          { l: 'Catatan bulan ini', v: totalMedis, tone: palette.moss },
           { l: 'Vaksinasi PMK', v: vaccinCount, tone: palette.ochre },
           { l: 'Tindakan unik', v: uniqueDiagnoses, tone: palette.ink },
           { l: 'Dokter terlibat', v: uniqueDoctors, tone: palette.emerald },

@@ -12,35 +12,44 @@ export default async function MapPage(props: { searchParams: Promise<{ [key: str
   let rawFarms: Awaited<ReturnType<typeof prisma.farm.findMany>>
   const hewanByFarm: Record<string, { kematian: { hewanId: string } | null; kategori: string }[]> = {}
 
-
   if (session.role === 'SUPER_ADMIN') {
-    // Super admin: lihat semua farm atau filter by farmId query param
     const farmId = searchParams.farmId
-    rawFarms = farmId
-      ? await prisma.farm.findMany({ where: { id: farmId, deletedAt: null } })
-      : await prisma.farm.findMany({ where: { deletedAt: null } })
-  } else {
-    // Owner/Petugas/Dokter: ambil SEMUA farm via UserFarm relation — bukan hanya activeFarmId
-    const userFarms = await prisma.userFarm.findMany({
-      where: { userId: session.id },
-      select: { farmId: true },
-    })
-    const farmIds = userFarms.map(uf => uf.farmId)
-    rawFarms = farmIds.length > 0
-      ? await prisma.farm.findMany({ where: { id: { in: farmIds }, deletedAt: null } })
-      : []
-  }
-
-  // Fetch hewan counts per farm
-  if (rawFarms.length > 0) {
-    const farmIds = rawFarms.map(f => f.id)
-    const hewanList = await prisma.hewan.findMany({
-      where: { farmId: { in: farmIds } },
-      select: { farmId: true, kematian: { select: { hewanId: true } }, kategori: true },
-    })
+    const farmWhere = farmId ? { id: farmId, deletedAt: null } : { deletedAt: null }
+    // Parallel: farms + hewan in one batch
+    const [farms, hewanList] = await Promise.all([
+      prisma.farm.findMany({ where: farmWhere }),
+      prisma.hewan.findMany({
+        where: farmId ? { farmId } : {},
+        select: { farmId: true, kematian: { select: { hewanId: true } }, kategori: true },
+      }),
+    ])
+    rawFarms = farms
     for (const h of hewanList) {
       if (!hewanByFarm[h.farmId]) hewanByFarm[h.farmId] = []
       hewanByFarm[h.farmId].push({ kematian: h.kematian, kategori: h.kategori })
+    }
+  } else {
+    // Owner/Petugas/Dokter: single query with nested includes instead of 3 sequential queries
+    const userFarms = await prisma.userFarm.findMany({
+      where: { userId: session.id },
+      include: {
+        farm: true,
+      },
+    })
+    rawFarms = userFarms
+      .map(uf => uf.farm)
+      .filter(f => f.deletedAt === null)
+
+    if (rawFarms.length > 0) {
+      const farmIds = rawFarms.map(f => f.id)
+      const hewanList = await prisma.hewan.findMany({
+        where: { farmId: { in: farmIds } },
+        select: { farmId: true, kematian: { select: { hewanId: true } }, kategori: true },
+      })
+      for (const h of hewanList) {
+        if (!hewanByFarm[h.farmId]) hewanByFarm[h.farmId] = []
+        hewanByFarm[h.farmId].push({ kematian: h.kematian, kategori: h.kategori })
+      }
     }
   }
 

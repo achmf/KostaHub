@@ -10,21 +10,20 @@ export default async function StaffPage() {
   if (!session.activeFarmId && session.role === 'OWNER') redirect('/')
 
   const farmId = session.activeFarmId!
-  const userFarmMembers = await prisma.userFarm.findMany({
-    where: { farmId },
-    include: {
-      user: true,
-    },
-  })
+  const [userFarmMembers, farm] = await Promise.all([
+    prisma.userFarm.findMany({
+      where: { farmId },
+      include: { user: true },
+    }),
+    prisma.farm.findUnique({
+      where: { id: farmId },
+      select: { nama: true },
+    }),
+  ])
   const staff = userFarmMembers
     .map((uf) => uf.user)
     .filter((u) => ['PETUGAS'].includes(u.role) && u.approvalStatus === 'APPROVED' && !u.deletedAt)
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-
-  const farm = await prisma.farm.findUnique({
-    where: { id: farmId },
-    select: { nama: true },
-  })
 
   return (
     <div>

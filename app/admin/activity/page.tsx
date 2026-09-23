@@ -4,88 +4,58 @@ import AdminActivityClient from '@/components/Admin/AdminActivityClient'
 export const metadata = { title: 'Activity Log — Admin KostaHub' }
 
 export default async function ActivityPage() {
-  // Aggregate recent activities from existing models
-
-  // 1. Recent hewan added
-  const recentHewan = await prisma.hewan.findMany({
-    take: 30,
-    orderBy: { createdAt: 'desc' },
-    select: {
-      id: true,
-      tag: true,
-      nama: true,
-      createdAt: true,
-      farm: { select: { id: true, nama: true } },
-    },
-  })
-
-  // 2. Recent rekam medis
-  const recentMedis = await prisma.rekamMedis.findMany({
-    take: 30,
-    orderBy: { createdAt: 'desc' },
-    select: {
-      id: true,
-      tanggal: true,
-      createdAt: true,
-      kategori: true,
-      diagnosis: true,
-      hewan: {
-        select: {
-          tag: true,
-          farm: { select: { id: true, nama: true } },
+  // All 5 queries are independent — run in parallel
+  const [recentHewan, recentMedis, recentFarms, recentUsers, recentReproduksi] = await Promise.all([
+    // 1. Recent hewan added
+    prisma.hewan.findMany({
+      take: 30,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true, tag: true, nama: true, createdAt: true,
+        farm: { select: { id: true, nama: true } },
+      },
+    }),
+    // 2. Recent rekam medis
+    prisma.rekamMedis.findMany({
+      take: 30,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true, tanggal: true, createdAt: true, kategori: true, diagnosis: true,
+        hewan: { select: { tag: true, farm: { select: { id: true, nama: true } } } },
+      },
+    }),
+    // 3. Recent farm registrations
+    prisma.farm.findMany({
+      take: 30,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true, nama: true, status: true, createdAt: true,
+        members: {
+          where: { user: { role: 'OWNER' } },
+          take: 1,
+          select: { user: { select: { name: true } } },
         },
       },
-    },
-  })
-
-  // 3. Recent farm registrations (all statuses)
-  const recentFarms = await prisma.farm.findMany({
-    take: 30,
-    orderBy: { createdAt: 'desc' },
-    select: {
-      id: true,
-      nama: true,
-      status: true,
-      createdAt: true,
-      members: {
-        where: { user: { role: 'OWNER' } },
-        take: 1,
-        select: { user: { select: { name: true } } },
+    }),
+    // 4. Recent user registrations
+    prisma.user.findMany({
+      take: 20,
+      orderBy: { createdAt: 'desc' },
+      where: { deletedAt: null },
+      select: {
+        id: true, name: true, role: true, createdAt: true, approvalStatus: true,
       },
-    },
-  })
-
-  // 4. Recent user registrations
-  const recentUsers = await prisma.user.findMany({
-    take: 20,
-    orderBy: { createdAt: 'desc' },
-    where: { deletedAt: null },
-    select: {
-      id: true,
-      name: true,
-      role: true,
-      createdAt: true,
-      approvalStatus: true,
-    },
-  })
-
-  // 5. Recent reproduksi events
-  const recentReproduksi = await prisma.reproduksi.findMany({
-    take: 20,
-    orderBy: { createdAt: 'desc' },
-    select: {
-      id: true,
-      status: true,
-      createdAt: true,
-      tanggalKawin: true,
-      induk: {
-        select: {
-          tag: true,
-          farm: { select: { id: true, nama: true } },
-        },
+    }),
+    // 5. Recent reproduksi events
+    prisma.reproduksi.findMany({
+      take: 20,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true, status: true, createdAt: true, tanggalKawin: true,
+        induk: { select: { tag: true, farm: { select: { id: true, nama: true } } } },
       },
-    },
-  })
+    }),
+  ])
 
   // Build unified activity items
   type ActivityItem = {

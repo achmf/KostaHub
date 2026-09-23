@@ -8,14 +8,10 @@ export default async function PrintPage() {
   const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
 
   const [
-    totalFarm,
-    farmAktif,
-    totalUser,
-    totalHewan,
-    totalMati,
-    pendingApprovals,
-    farmBulanIni,
-    hewanBulanIni,
+    totalFarm, farmAktif, totalUser, totalHewan, totalMati,
+    pendingApprovals, farmBulanIni, hewanBulanIni,
+    totalLahir, totalGagal,
+    farms, kategoriStats,
   ] = await Promise.all([
     prisma.farm.count(),
     prisma.farm.count({ where: { status: 'AKTIF' } }),
@@ -25,30 +21,22 @@ export default async function PrintPage() {
     prisma.farm.count({ where: { status: 'NONAKTIF', deletedAt: null, rejectionReason: null } }),
     prisma.farm.count({ where: { createdAt: { gte: thisMonthStart } } }),
     prisma.hewan.count({ where: { createdAt: { gte: thisMonthStart } } }),
+    prisma.reproduksi.count({ where: { status: 'LAHIR' } }),
+    prisma.reproduksi.count({ where: { status: 'GAGAL' } }),
+    prisma.farm.findMany({
+      select: {
+        id: true, nama: true, status: true, alamat: true, createdAt: true,
+        _count: { select: { hewan: true, members: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    }),
+    prisma.hewan.groupBy({ by: ['kategori'], _count: true }),
   ])
 
   const mortalityRate = totalHewan > 0 ? Math.round((totalMati / totalHewan) * 100) : 0
-
-  const [totalLahir, totalGagal] = await Promise.all([
-    prisma.reproduksi.count({ where: { status: 'LAHIR' } }),
-    prisma.reproduksi.count({ where: { status: 'GAGAL' } }),
-  ])
   const totalRepro = totalLahir + totalGagal
   const birthSuccessRate = totalRepro > 0 ? Math.round((totalLahir / totalRepro) * 100) : 0
-
-  const farms = await prisma.farm.findMany({
-    select: {
-      id: true, nama: true, status: true, alamat: true, createdAt: true,
-      _count: { select: { hewan: true, members: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 50,
-  })
-
-  const kategoriStats = await prisma.hewan.groupBy({
-    by: ['kategori'],
-    _count: true,
-  })
 
   return (
     <AdminPrintClient
