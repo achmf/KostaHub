@@ -8,7 +8,7 @@ import {
   FileSpreadsheet, Download, Stethoscope, Calendar, Shield, Search,
   CircleAlert, PawPrint, ArrowUpDown, ArrowUp, ArrowDown,
   Syringe, FlaskConical, Pill, Heart, Scissors,
-  Baby, Scale, TrendingUp, TrendingDown, Minus,
+  Dna, Scale, TrendingUp, TrendingDown, Minus,
   ArrowRightLeft, PackagePlus, PackageMinus, Skull,
   ShoppingCart, ChevronDown, ChevronUp, ChevronRight, ShieldAlert,
 } from 'lucide-react'
