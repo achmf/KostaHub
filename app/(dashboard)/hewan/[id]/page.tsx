@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
@@ -37,6 +38,26 @@ const PENYEBAB_LABEL: Record<string, string> = {
   LAINNYA: 'Lainnya',
 }
 
+// ── Deferred silsilah — streams in after hero is painted ──────────────────────
+async function SilsilahSection({ hewanId }: { hewanId: string }) {
+  const tree = await buildSilsilahTree(hewanId)
+  return <SilsilahTree tree={tree} />
+}
+
+function SilsilahSkeleton() {
+  return (
+    <div className="animate-pulse space-y-3 py-2">
+      {[80, 60, 70, 50].map((w, i) => (
+        <div
+          key={i}
+          className="h-8 rounded-lg"
+          style={{ width: `${w}%`, background: 'rgba(13,20,15,0.06)' }}
+        />
+      ))}
+    </div>
+  )
+}
+
 export default async function HewanDetailPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params
   const session = await getSession()
@@ -58,13 +79,9 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
   if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.activeFarmId) redirect('/hewan')
 
   const isMati = !!hewan.kematian
-
-  const [umurBulan, silsilahTree] = await Promise.all([
-    Promise.resolve(Math.max(0, Math.floor(
-      (Date.now() - hewan.tanggalLahir.getTime()) / (1000 * 60 * 60 * 24 * 30)
-    ))),
-    buildSilsilahTree(hewanId),
-  ])
+  const umurBulan = Math.max(0, Math.floor(
+    (Date.now() - hewan.tanggalLahir.getTime()) / (1000 * 60 * 60 * 24 * 30)
+  ))
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -196,7 +213,7 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
       {/* Medical records */}
       <RekamMedisHistory records={hewan.rekamMedis} />
 
-      {/* Silsilah / Family Tree */}
+      {/* Silsilah — deferred via Suspense so hero renders immediately */}
       <KostaCard className="p-5 sm:p-6 mt-5">
         <div className="flex items-center gap-2 mb-1">
           <GitBranch size={13} style={{ color: LOCAL_PALETTE.moss }} />
@@ -205,7 +222,9 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
         <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'rgba(13,20,15,0.5)', marginBottom: 20 }}>
           Pohon silsilah dihitung dari semua leluhur yang tercatat di sistem.
         </p>
-        <SilsilahTree tree={silsilahTree} />
+        <Suspense fallback={<SilsilahSkeleton />}>
+          <SilsilahSection hewanId={hewanId} />
+        </Suspense>
       </KostaCard>
 
       <HybridTagManager hewanId={hewan.id} tagStr={hewan.tag} existingTags={hewan.tagsRfid} />
