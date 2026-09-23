@@ -3,9 +3,10 @@
 import { useState, useMemo, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Plus, X, Search, Filter, Loader2 } from 'lucide-react'
+import { Plus, X, Search, Filter } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useNavigationLoading } from '@/components/Layout/NavigationLoadingContext'
 
 
 import PaginationControl from '@/components/Admin/PaginationControl'
@@ -72,10 +73,12 @@ export function HewanClient({
   const [farmFilter, setFarmFilter] = useState<string>('ALL')
   const [pendingId, setPendingId] = useState<string | null>(null)
   const router = useRouter()
+  const startNavigation = useNavigationLoading()
 
   function navigate(id: string) {
     if (pendingId) return
     setPendingId(id)
+    startNavigation()
     router.push(`/hewan/${id}`)
   }
 
@@ -177,15 +180,8 @@ export function HewanClient({
             <KostaCard className="overflow-hidden">
               <button
                 onClick={() => navigate(h.id)}
-                disabled={!!pendingId}
-                className="relative cursor-pointer w-full text-left flex flex-col px-4 py-3.5 gap-3 active:bg-[rgba(13,20,15,0.04)] transition-colors disabled:cursor-wait"
+                className="cursor-pointer w-full text-left flex flex-col px-4 py-3.5 gap-3 active:bg-[rgba(13,20,15,0.04)] transition-colors"
               >
-                {/* Loading overlay */}
-                {pendingId === h.id && (
-                  <div className="absolute inset-0 flex items-center justify-center rounded-xl" style={{ background: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(2px)', zIndex: 10 }}>
-                    <Loader2 size={22} className="animate-spin" style={{ color: palette.moss }} />
-                  </div>
-                )}
                 {/* Row 1: Avatar + Nama + Status */}
                 <div className="flex items-center justify-between w-full gap-3 min-w-0">
                   <div className="flex items-center gap-3 min-w-0">
@@ -285,19 +281,12 @@ export function HewanClient({
             <motion.button
               key={h.id}
               onClick={() => navigate(h.id)}
-              disabled={!!pendingId}
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: Math.min(i * 0.015, 0.4), duration: 0.3 }}
-              className={`relative cursor-pointer w-full text-left grid px-5 py-3 gap-0 items-center transition-colors disabled:cursor-wait ${pendingId === h.id ? 'bg-[rgba(13,20,15,0.04)]' : 'hover:bg-[rgba(13,20,15,0.025)]'} ${isSuperAdmin ? 'grid-cols-[1.6fr_0.8fr_0.6fr_0.8fr_0.6fr_0.8fr_0.6fr]' : 'grid-cols-[1.6fr_0.8fr_0.6fr_0.8fr_0.6fr_0.6fr]'}`}
+              className={`cursor-pointer w-full text-left grid px-5 py-3 gap-0 items-center transition-colors hover:bg-[rgba(13,20,15,0.025)] ${isSuperAdmin ? 'grid-cols-[1.6fr_0.8fr_0.6fr_0.8fr_0.6fr_0.8fr_0.6fr]' : 'grid-cols-[1.6fr_0.8fr_0.6fr_0.8fr_0.6fr_0.6fr]'}`}
               style={{ borderBottom: `1px solid ${palette.border}` }}
             >
-              {/* Loading overlay */}
-              {pendingId === h.id && (
-                <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(2px)', zIndex: 10 }}>
-                  <Loader2 size={20} className="animate-spin" style={{ color: palette.moss }} />
-                </div>
-              )}
               <div className="flex items-center gap-3 min-w-0">
                 {h.fotoUrl ? (
                   <div className="w-9 h-9 rounded-full overflow-hidden shrink-0" style={{ border: `1px solid ${palette.border}` }}>
