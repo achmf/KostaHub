@@ -105,22 +105,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </div>
 
           <div className="flex items-center gap-2 md:gap-3 shrink-0">
-            {/* Search pill */}
-            <div
-              className="hidden md:flex items-center gap-2 px-3 py-2 rounded-full"
-              style={{
-                background: 'rgba(13,20,15,0.04)',
-                border: `1px solid ${palette.border}`,
-              }}
-            >
-              <Search size={14} style={{ opacity: 0.5 }} />
-              <input
-                placeholder="Cari tag, nama, dokter…"
-                className="bg-transparent outline-none w-44"
-                style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}
-                suppressHydrationWarning
-              />
-            </div>
+            {/* Search pill dihapus dari navbar, sekarang ada di tiap page */}
 
             {/* Farm selector — super admin only (fallback, karena SUPER_ADMIN diredirect ke /admin) */}
             {session.role === 'SUPER_ADMIN' && (

@@ -3,15 +3,11 @@ import { Plus, Heart } from 'lucide-react'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { KostaPageHeader, KostaCard, Badge, KostaButton, KostaSectionLabel, palette, KostaEmptyState } from '@/components/KostaUI'
+import { KostaPageHeader, KostaCard, palette, KostaButton, KostaSectionLabel } from '@/components/KostaUI'
+import ReproduksiClient from './ReproduksiClient'
 
 
 
-function StatusBadge({ status }: { status: string }) {
-  if (status === 'HAMIL') return <Badge variant="amber">Hamil</Badge>
-  if (status === 'LAHIR') return <Badge variant="emerald">Lahir</Badge>
-  return <Badge variant="rose">Gagal</Badge>
-}
 
 export default async function ReproduksiPage(props: {
   searchParams: Promise<{ [key: string]: string | undefined }>
@@ -88,161 +84,8 @@ export default async function ReproduksiPage(props: {
         ))}
       </div>
 
-      {/* ── MOBILE: tiap pasangan kawin = KostaCard terpisah ── */}
-      {reproduksiList.length === 0 && (
-        <KostaCard className="overflow-hidden md:hidden">
-          <KostaEmptyState
-            title="Belum ada data reproduksi"
-            hint="Catat perkawinan untuk mulai melacak kehamilan dan kelahiran."
-          />
-        </KostaCard>
-      )}
-      <div className="flex flex-col gap-2 md:hidden">
-        {reproduksiList.map((r) => {
-          const days = Math.ceil(
-            (new Date(r.estimasiLahir).getTime() - Date.now()) / 86400000
-          )
-          return (
-            <KostaCard key={r.id} className="overflow-hidden">
-              <div className="px-4 py-3.5 flex flex-col gap-3">
-                {/* Row 1: Induk + Status */}
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-xs opacity-50 mb-0.5" style={{ fontFamily: "'JetBrains Mono',monospace", letterSpacing: '0.08em' }}>
-                      INDUK ♀
-                    </div>
-                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13.5, fontWeight: 500, color: palette.ink }}>
-                      {r.induk.nama || 'Tanpa Nama'}
-                    </div>
-                    <div className="opacity-55" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>
-                      {r.induk.tag}
-                    </div>
-                  </div>
-                  <StatusBadge status={r.status} />
-                </div>
-
-                {/* Row 2: Pejantan */}
-                <div style={{ borderTop: `1px solid rgba(13,20,15,0.06)`, paddingTop: 10 }}>
-                  <div className="text-xs opacity-50 mb-0.5" style={{ fontFamily: "'JetBrains Mono',monospace", letterSpacing: '0.08em' }}>
-                    PEJANTAN ♂
-                  </div>
-                  <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: palette.ink }}>
-                    {r.pejantan.nama || 'Tanpa Nama'}
-                  </div>
-                  <div className="opacity-55" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>
-                    {r.pejantan.tag}
-                  </div>
-                </div>
-
-                {/* Row 3: Tanggal */}
-                <div className="flex gap-4" style={{ borderTop: `1px solid rgba(13,20,15,0.06)`, paddingTop: 10 }}>
-                  <div>
-                    <div className="text-xs opacity-50 mb-0.5" style={{ fontFamily: "'JetBrains Mono',monospace", letterSpacing: '0.08em' }}>
-                      TGL KAWIN
-                    </div>
-                    <div
-                      style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}
-                      className="bg-black/5 px-2 py-0.5 rounded"
-                    >
-                      {new Date(r.tanggalKawin).toLocaleDateString('id-ID')}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs opacity-50 mb-0.5" style={{ fontFamily: "'JetBrains Mono',monospace", letterSpacing: '0.08em' }}>
-                      EST. LAHIR
-                    </div>
-                    <div
-                      style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}
-                      className="bg-black/5 px-2 py-0.5 rounded"
-                    >
-                      {new Date(r.estimasiLahir).toLocaleDateString('id-ID')}
-                    </div>
-                    {r.status === 'HAMIL' && (
-                      <div className="opacity-60 mt-1" style={{ fontFamily: "'Inter',sans-serif", fontSize: 11 }}>
-                        {days > 0 ? `${days} hari lagi` : `${Math.abs(days)} hari lewat`}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </KostaCard>
-          )
-        })}
-      </div>
-
-      {/* ── DESKTOP: original KostaCard table (unchanged) ── */}
-      <KostaCard className="overflow-hidden hidden md:block">
-        <div
-          className="px-5 py-3 grid grid-cols-[1.4fr_1.4fr_0.9fr_1fr_0.7fr_0.8fr] gap-3"
-          style={{
-            background: 'rgba(13,20,15,0.03)',
-            borderBottom: `1px solid ${palette.border}`,
-            fontFamily: "'JetBrains Mono',monospace",
-            fontSize: 10,
-            letterSpacing: '0.12em',
-            color: 'rgba(13,20,15,0.55)',
-          }}
-        >
-          <div>INDUK ♀</div>
-          <div>PEJANTAN ♂</div>
-          <div>TGL KAWIN</div>
-          <div>ESTIMASI LAHIR</div>
-          <div>FARM</div>
-          <div>STATUS</div>
-        </div>
-        {reproduksiList.length === 0 && (
-          <KostaEmptyState
-            title="Belum ada data reproduksi"
-            hint="Catat perkawinan untuk mulai melacak kehamilan dan kelahiran."
-          />
-        )}
-        {reproduksiList.map((r) => {
-          const days = Math.ceil(
-            (new Date(r.estimasiLahir).getTime() - Date.now()) / 86400000
-          )
-          return (
-            <div
-              key={r.id}
-              className="px-5 py-3.5 grid grid-cols-[1.4fr_1.4fr_0.9fr_1fr_0.7fr_0.8fr] gap-3 items-center hover:bg-[rgba(13,20,15,0.025)]"
-              style={{ borderBottom: `1px solid ${palette.border}` }}
-            >
-              <div>
-                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
-                  {r.induk.nama || 'Tanpa Nama'}
-                </div>
-                <div className="opacity-55" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>
-                  {r.induk.tag}
-                </div>
-              </div>
-              <div>
-                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
-                  {r.pejantan.nama || 'Tanpa Nama'}
-                </div>
-                <div className="opacity-55" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>
-                  {r.pejantan.tag}
-                </div>
-              </div>
-              <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>
-                {new Date(r.tanggalKawin).toLocaleDateString('id-ID')}
-              </div>
-              <div>
-                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>
-                  {new Date(r.estimasiLahir).toLocaleDateString('id-ID')}
-                </div>
-                {r.status === 'HAMIL' && (
-                  <div className="opacity-60" style={{ fontFamily: "'Inter',sans-serif", fontSize: 11 }}>
-                    {days > 0 ? `${days} hari lagi` : `${Math.abs(days)} hari lewat`}
-                  </div>
-                )}
-              </div>
-              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>—</div>
-              <div>
-                <StatusBadge status={r.status} />
-              </div>
-            </div>
-          )
-        })}
-      </KostaCard>
+      {/* ── Client Component List ── */}
+      <ReproduksiClient reproduksiList={reproduksiList} />
     </div>
   )
 }

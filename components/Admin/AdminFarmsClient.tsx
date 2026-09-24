@@ -6,6 +6,9 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { switchFarm } from '@/actions/switchFarm'
 import PaginationControl from './PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
+import { useSearchParams } from 'next/navigation'
+import { SearchBar } from '@/components/Layout/SearchBar'
+import { FilterSheet } from '@/components/Layout/FilterSheet'
 
 const palette = {
   cream: '#F2EDE0',
@@ -32,21 +35,45 @@ interface FarmData {
 const PER_PAGE = 12
 
 export default function AdminFarmsClient({ farms }: { farms: FarmData[] }) {
-  const { paged: currentFarms, page, totalPages, onPrev, onNext } = usePagination(farms, PER_PAGE)
+  const searchParams = useSearchParams()
+  const q = searchParams.get('q')?.toLowerCase() || ''
+  const statusFilter = searchParams.get('status') || 'ALL'
 
-  if (farms.length === 0) {
-    return (
-      <EmptyState
-        icon={Building2}
-        title="Belum ada farm terdaftar"
-        description="Farm yang didaftarkan owner akan muncul di sini."
-      />
-    )
-  }
+  const filteredFarms = farms.filter(f => {
+    const matchQ = !q || f.nama.toLowerCase().includes(q) || (f.alamat?.toLowerCase().includes(q) ?? false)
+    const matchStatus = statusFilter === 'ALL' || f.status === statusFilter
+    return matchQ && matchStatus
+  })
+
+  const { paged: currentFarms, page, totalPages, onPrev, onNext } = usePagination(filteredFarms, PER_PAGE)
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <SearchBar placeholder="Cari nama farm atau alamat..." />
+        <FilterSheet 
+          filters={[
+            {
+              paramName: 'status',
+              title: 'Status Farm',
+              options: [
+                { value: 'ALL', label: 'Semua Status' },
+                { value: 'AKTIF', label: 'Aktif' },
+                { value: 'NONAKTIF', label: 'Nonaktif' }
+              ]
+            }
+          ]} 
+        />
+      </div>
+
+      {filteredFarms.length === 0 ? (
+        <EmptyState
+          icon={Building2}
+          title="Tidak ada farm"
+          description="Belum ada farm yang sesuai dengan pencarian atau filter."
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {currentFarms.map((farm) => {
           const isAktif = farm.status === 'AKTIF'
           const isNonaktif = farm.status === 'NONAKTIF'
@@ -131,15 +158,20 @@ export default function AdminFarmsClient({ farms }: { farms: FarmData[] }) {
           )
         })}
       </div>
+      )}
 
-      <PaginationControl 
-        page={page}
-        totalPages={totalPages}
-        onPrev={onPrev}
-        onNext={onNext}
-        totalItems={farms.length}
-        perPage={PER_PAGE}
-      />
+      {filteredFarms.length > 0 && (
+        <div className="mt-8">
+          <PaginationControl 
+            page={page}
+            totalPages={totalPages}
+            onPrev={onPrev}
+            onNext={onNext}
+            totalItems={filteredFarms.length}
+            perPage={PER_PAGE}
+          />
+        </div>
+      )}
     </>
   )
 }

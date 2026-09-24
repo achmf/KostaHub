@@ -3,8 +3,10 @@
 import { Badge, KostaCard, KostaEmptyState, palette } from '@/components/KostaUI'
 import { ChevronRight, Stethoscope } from 'lucide-react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import PaginationControl from '@/components/Admin/PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
+import { SearchBar } from '@/components/Layout/SearchBar'
 
 interface RekamMedis {
   id: string
@@ -27,7 +29,15 @@ interface HewanMedis {
 
 
 export function HewanMedisList({ hewans }: { hewans: HewanMedis[] }) {
-  const { paged, page, totalPages, onPrev, onNext } = usePagination(hewans, 15)
+  const searchParams = useSearchParams()
+  const q = searchParams.get('q') || ''
+
+  const filteredHewans = hewans.filter(h => {
+    if (!q) return true
+    return `${h.tag} ${h.nama || ''}`.toLowerCase().includes(q.toLowerCase())
+  })
+
+  const { paged, page, totalPages, onPrev, onNext } = usePagination(filteredHewans, 15)
 
   if (hewans.length === 0) {
     return (
@@ -47,7 +57,7 @@ export function HewanMedisList({ hewans }: { hewans: HewanMedis[] }) {
             totalPages={totalPages}
             onPrev={onPrev}
             onNext={onNext}
-            totalItems={hewans.length}
+            totalItems={filteredHewans.length}
             perPage={15}
           />
         </div>
@@ -57,6 +67,10 @@ export function HewanMedisList({ hewans }: { hewans: HewanMedis[] }) {
 
   return (
     <>
+      <div className="mb-5 flex items-center justify-between gap-4">
+        <SearchBar placeholder="Cari tag atau nama hewan..." />
+      </div>
+
       {/* ── MOBILE: tiap hewan = KostaCard terpisah (mirip Populasi) ── */}
       <div className="flex flex-col gap-2 md:hidden">
         {paged.map((h) => {
@@ -218,7 +232,7 @@ export function HewanMedisList({ hewans }: { hewans: HewanMedis[] }) {
               totalPages={totalPages}
               onPrev={onPrev}
               onNext={onNext}
-              totalItems={hewans.length}
+              totalItems={filteredHewans.length}
               perPage={15}
             />
           </div>

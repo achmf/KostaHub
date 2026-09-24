@@ -2,7 +2,7 @@ import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
-import { ArrowLeft, Edit, Scale, Calendar, MapPin, Activity, GitBranch, Skull } from 'lucide-react'
+import { ArrowLeft, Edit, Scale, Calendar, MapPin, Activity, GitBranch } from 'lucide-react'
 import Link from 'next/link'
 import { Badge, KostaCard, KostaSectionLabel, KostaButton } from '@/components/KostaUI'
 
@@ -157,8 +157,7 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
         <KostaCard className="p-5 sm:p-6 mb-5" style={{ borderColor: 'rgba(181,68,59,0.25)', background: 'rgba(181,68,59,0.04)' }}>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Skull size={14} style={{ color: LOCAL_PALETTE.danger }} />
+              <div className="mb-3">
                 <KostaSectionLabel>CATATAN KEMATIAN</KostaSectionLabel>
               </div>
               <div className="space-y-1.5">
