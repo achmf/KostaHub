@@ -37,7 +37,7 @@ export default function ReproduksiClient({ reproduksiList }: { reproduksiList: a
 
   return (
     <>
-      <div className="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="mb-5 flex flex-row items-center justify-between gap-3 sm:gap-4">
         <SearchBar placeholder="Cari tag atau nama induk/pejantan..." />
         <FilterSheet 
           filters={[

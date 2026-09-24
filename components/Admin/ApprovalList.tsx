@@ -28,6 +28,7 @@ import { useConfirm } from "@/components/ConfirmProvider";
 import { useToast } from "@/components/ToastProvider";
 import { useSearchParams } from "next/navigation";
 import { SearchBar } from "@/components/Layout/SearchBar";
+import { FilterSheet } from "@/components/Layout/FilterSheet";
 
 const palette = {
   cream: "#F2EDE0",
@@ -252,6 +253,7 @@ export default function ApprovalList({
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
   const searchParams = useSearchParams();
   const q = searchParams.get('q')?.toLowerCase() || '';
+  const roleFilter = searchParams.get('role') || 'ALL';
 
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -381,6 +383,8 @@ export default function ApprovalList({
 
   const visibleUsers = users.filter((u) => {
     if (removedIds.has(u.id)) return false;
+    const matchRole = roleFilter === 'ALL' || u.role === roleFilter;
+    if (!matchRole) return false;
     if (!q) return true;
     return u.name.toLowerCase().includes(q) || (u.farm?.nama.toLowerCase().includes(q) ?? false);
   });
@@ -394,8 +398,21 @@ export default function ApprovalList({
 
   return (
     <div className="space-y-3 relative">
-      <div className="mb-5">
+      <div className="mb-5 flex flex-row items-center justify-between gap-3 sm:gap-4">
         <SearchBar placeholder="Cari nama owner atau nama farm..." />
+        <FilterSheet 
+          filters={[
+            {
+              paramName: 'role',
+              title: 'Role User',
+              options: [
+                { value: 'ALL', label: 'Semua Role' },
+                { value: 'OWNER', label: 'Owner' },
+                { value: 'PETUGAS', label: 'Petugas' }
+              ]
+            }
+          ]} 
+        />
       </div>
 
       {/* Bulk Toolbar */}

@@ -232,7 +232,7 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
       </AnimatePresence>
 
       {/* Search Bar & Filter */}
-      <div className="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="mb-5 flex flex-row items-center justify-between gap-3 sm:gap-4">
         <SearchBar placeholder="Cari nama, email, atau telepon..." />
         <FilterSheet 
           filters={[

@@ -10,6 +10,9 @@ import {
 } from 'lucide-react'
 import PaginationControl from './PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
+import { useSearchParams } from 'next/navigation'
+import { SearchBar } from '@/components/Layout/SearchBar'
+import { FilterSheet } from '@/components/Layout/FilterSheet'
 
 const palette = {
   cream: '#F2EDE0',
@@ -217,11 +220,13 @@ export default function AdminMapClient({
   owners: string[]
   canEdit?: boolean
 }) {
+  const searchParams = useSearchParams()
+  const search = searchParams.get('q') || ''
+  const filterStatus = searchParams.get('status') || 'ALL'
+  const filterOwner = searchParams.get('owner') || 'ALL'
+
   const [farms, setFarms] = useState<AdminFarm[]>(initialFarms)
   const [selectedFarm, setSelectedFarm] = useState<AdminFarm | null>(null)
-  const [search, setSearch] = useState('')
-  const [filterStatus, setFilterStatus] = useState<'ALL' | 'AKTIF' | 'NONAKTIF'>('ALL')
-  const [filterOwner, setFilterOwner] = useState<string>('ALL')
   const [layer, setLayer] = useState<MapLayer>('street')
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
@@ -391,59 +396,30 @@ export default function AdminMapClient({
               className="shrink-0 flex flex-col rounded-2xl overflow-hidden min-h-0 max-lg:w-full!"
               style={{ background: '#fff', border: `1px solid ${palette.border}` }}
             >
-              {/* Filters */}
-              <div className="p-3 space-y-2" style={{ borderBottom: `1px solid ${palette.border}` }}>
-                {/* Search */}
-                <label className="flex items-center gap-2 px-3 py-2 rounded-lg"
-                  style={{ background: 'rgba(13,20,15,0.04)', border: `1px solid ${palette.border}` }}>
-                  <Search size={13} style={{ color: palette.muted }} />
-                  <input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Cari nama farm, owner…"
-                    className="flex-1 bg-transparent outline-none text-sm"
-                    style={{ fontFamily: "'Inter',sans-serif", color: palette.ink }}
-                  />
-                </label>
-
-                {/* Status filter */}
-                <div className="flex gap-1.5">
-                  {(['ALL', 'AKTIF', 'NONAKTIF'] as const).map((s) => (
-                    <button key={s} onClick={() => setFilterStatus(s)}
-                      className="cursor-pointer flex-1 py-1.5 min-h-10 lg:min-h-0 rounded-lg transition-all"
-                      style={{
-                        fontFamily: "'JetBrains Mono',monospace",
-                        fontSize: 9,
-                        letterSpacing: '0.1em',
-                        background: filterStatus === s ? palette.forest : 'rgba(13,20,15,0.05)',
-                        color: filterStatus === s ? palette.cream : palette.muted,
-                        border: `1px solid ${filterStatus === s ? palette.forest : 'transparent'}`,
-                      }}>
-                      {s === 'ALL' ? 'SEMUA' : s}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Owner filter */}
-                {owners.length > 0 && (
-                  <select
-                    value={filterOwner}
-                    onChange={(e) => setFilterOwner(e.target.value)}
-                    className="w-full px-3 py-2 min-h-10 lg:min-h-0 rounded-lg outline-none"
-                    style={{
-                      fontFamily: "'Inter',sans-serif",
-                      fontSize: 12,
-                      color: palette.ink,
-                      background: 'rgba(13,20,15,0.04)',
-                      border: `1px solid ${palette.border}`,
-                    }}
-                  >
-                    <option value="ALL">Semua Owner</option>
-                    {owners.map((o) => (
-                      <option key={o} value={o}>{o}</option>
-                    ))}
-                  </select>
-                )}
+              {/* Search + filter */}
+              <div className="p-4 flex flex-row items-center justify-between gap-3 sm:gap-4" style={{ borderBottom: `1px solid ${palette.border}` }}>
+                <SearchBar placeholder="Cari nama farm, owner…" />
+                <FilterSheet 
+                  filters={[
+                    {
+                      paramName: 'status',
+                      title: 'Status Farm',
+                      options: [
+                        { value: 'ALL', label: 'SEMUA' },
+                        { value: 'AKTIF', label: 'AKTIF' },
+                        { value: 'NONAKTIF', label: 'NONAKTIF' },
+                      ]
+                    },
+                    ...(owners.length > 0 ? [{
+                      paramName: 'owner',
+                      title: 'Owner',
+                      options: [
+                        { value: 'ALL', label: 'Semua Owner' },
+                        ...owners.map(o => ({ value: o, label: o }))
+                      ]
+                    }] : [])
+                  ]} 
+                />
               </div>
 
               {/* Farm list */}
