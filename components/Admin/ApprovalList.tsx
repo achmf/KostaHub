@@ -56,6 +56,7 @@ type PendingUser = {
   name: string;
   email: string;
   phone: string | null;
+  role: string;
   createdAt: Date;
   // New multi-farm structure (from UserFarm junction)
   farms?: { farm: FarmData }[];

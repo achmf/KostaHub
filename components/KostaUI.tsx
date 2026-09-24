@@ -18,6 +18,7 @@ const palette = {
   rose: '#B5443B',
   amber: '#D9A23C',
   emerald: '#3F7A4E',
+  muted: 'rgba(13,20,15,0.6)',
 }
 
 export { palette }
