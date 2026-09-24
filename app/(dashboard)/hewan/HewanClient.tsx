@@ -160,7 +160,7 @@ export function HewanClient({
       />
 
       {/* Search & Filter Bar */}
-      <div className="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="mb-5 flex flex-row items-center justify-between gap-3 sm:gap-4">
         <SearchBar placeholder="Cari tag (KST-…), atau nama..." />
         <FilterSheet filters={filterGroups} />
       </div>

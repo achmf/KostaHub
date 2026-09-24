@@ -254,7 +254,7 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
         </div>
       </KostaCard>
 
-      <div className="mb-4 flex items-center justify-between gap-4 mt-5">
+      <div className="mb-5 flex flex-row items-center justify-between gap-3 sm:gap-4 mt-5">
         <SearchBar placeholder="Cari tag atau nama ternak..." />
       </div>
 
@@ -448,7 +448,7 @@ function LaporanMedis({ data }: { data: any[] }) {
         ))}
       </div>
 
-      <div className="mb-4 flex items-center justify-between gap-4 mt-2">
+      <div className="mb-5 flex flex-row items-center justify-between gap-3 sm:gap-4 mt-2">
         <SearchBar placeholder="Cari tag, diagnosis, atau dokter..." />
       </div>
 
@@ -613,7 +613,7 @@ function LaporanBreeding({ data }: { data: any[] }) {
         ))}
       </div>
 
-      <div className="mb-4 flex items-center justify-between gap-4 mt-5">
+      <div className="mb-5 flex flex-row items-center justify-between gap-3 sm:gap-4 mt-5">
         <SearchBar placeholder="Cari tag induk atau pejantan..." />
       </div>
 
@@ -784,7 +784,7 @@ function LaporanPertumbuhan({ data }: { data: any[] }) {
         ))}
       </div>
 
-      <div className="mb-4 flex items-center justify-between gap-4 mt-5">
+      <div className="mb-5 flex flex-row items-center justify-between gap-3 sm:gap-4 mt-5">
         <SearchBar placeholder="Cari tag atau nama ternak..." />
       </div>
 

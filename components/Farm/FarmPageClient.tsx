@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { Plus, MapPin, Users, Trash2, X } from 'lucide-react'
@@ -11,6 +11,9 @@ import PaginationControl from '@/components/Admin/PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
 import { useConfirm } from '@/components/ConfirmProvider'
 import { useToast } from '@/components/ToastProvider'
+import { useSearchParams } from 'next/navigation'
+import { SearchBar } from '@/components/Layout/SearchBar'
+import { FilterSheet } from '@/components/Layout/FilterSheet'
 
 interface Farm {
   id: string
@@ -30,11 +33,23 @@ export default function FarmPageClient({ farms: initialFarms }: { farms: Farm[] 
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
   
+  const searchParams = useSearchParams()
+  const q = searchParams.get('q')?.toLowerCase() || ''
+  const filterStatus = searchParams.get('status') || 'ALL'
+
   const { confirm: showConfirm } = useConfirm()
   const { showToast } = useToast()
 
+  const filteredFarms = useMemo(() => {
+    return farms.filter((f) => {
+      const matchSearch = !q || f.nama.toLowerCase().includes(q) || (f.alamat?.toLowerCase().includes(q) ?? false)
+      const matchStatus = filterStatus === 'ALL' || f.status === filterStatus
+      return matchSearch && matchStatus
+    })
+  }, [farms, q, filterStatus])
+
   const PER_PAGE = 12
-  const { paged: currentFarms, page, totalPages, onPrev, onNext } = usePagination(farms, PER_PAGE)
+  const { paged: currentFarms, page, totalPages, onPrev, onNext } = usePagination(filteredFarms, PER_PAGE)
 
   // Kunci scroll halaman & tutup dengan Escape selama modal terbuka
   useEffect(() => {
@@ -92,6 +107,28 @@ export default function FarmPageClient({ farms: initialFarms }: { farms: Farm[] 
         }
       />
 
+      <div className="mb-5 flex flex-row items-center justify-between gap-3 sm:gap-4">
+        <SearchBar placeholder="Cari nama farm atau alamat..." />
+        <FilterSheet 
+          filters={[
+            {
+              paramName: 'status',
+              title: 'Status Farm',
+              options: [
+                { value: 'ALL', label: 'Semua Status' },
+                { value: 'AKTIF', label: 'Aktif' },
+                { value: 'NONAKTIF', label: 'Non-aktif' },
+              ]
+            }
+          ]} 
+        />
+      </div>
+
+      {filteredFarms.length === 0 ? (
+        <div className="text-center py-12">
+          <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, color: palette.muted }}>Tidak ada farm yang sesuai.</p>
+        </div>
+      ) : (
       <div className="grid grid-cols-12 gap-4">
         {currentFarms.map((farm, i) => {
           const accent = i === 0 || i === 3
@@ -197,15 +234,16 @@ export default function FarmPageClient({ farms: initialFarms }: { farms: Farm[] 
           )
         })}
       </div>
+      )}
 
-      {farms.length > 0 && (
+      {filteredFarms.length > 0 && (
         <div className="mt-6">
           <PaginationControl
             page={page}
             totalPages={totalPages}
             onPrev={onPrev}
             onNext={onNext}
-            totalItems={farms.length}
+            totalItems={filteredFarms.length}
             perPage={PER_PAGE}
           />
         </div>
