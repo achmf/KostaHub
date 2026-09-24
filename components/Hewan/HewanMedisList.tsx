@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation'
 import PaginationControl from '@/components/Admin/PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
 import { SearchBar } from '@/components/Layout/SearchBar'
+import { FilterSheet } from '@/components/Layout/FilterSheet'
 
 interface RekamMedis {
   id: string
@@ -31,8 +32,11 @@ interface HewanMedis {
 export function HewanMedisList({ hewans }: { hewans: HewanMedis[] }) {
   const searchParams = useSearchParams()
   const q = searchParams.get('q') || ''
+  const kelaminFilter = searchParams.get('kelamin') || 'ALL'
 
   const filteredHewans = hewans.filter(h => {
+    const matchKelamin = kelaminFilter === 'ALL' || h.kelamin === kelaminFilter
+    if (!matchKelamin) return false
     if (!q) return true
     return `${h.tag} ${h.nama || ''}`.toLowerCase().includes(q.toLowerCase())
   })
@@ -67,8 +71,21 @@ export function HewanMedisList({ hewans }: { hewans: HewanMedis[] }) {
 
   return (
     <>
-      <div className="mb-5 flex items-center justify-between gap-4">
+      <div className="mb-5 flex flex-row items-center justify-between gap-3 sm:gap-4">
         <SearchBar placeholder="Cari tag atau nama hewan..." />
+        <FilterSheet 
+          filters={[
+            {
+              paramName: 'kelamin',
+              title: 'Jenis Kelamin',
+              options: [
+                { value: 'ALL', label: 'Semua Kelamin' },
+                { value: 'JANTAN', label: 'Jantan' },
+                { value: 'BETINA', label: 'Betina' }
+              ]
+            }
+          ]} 
+        />
       </div>
 
       {/* ── MOBILE: tiap hewan = KostaCard terpisah (mirip Populasi) ── */}

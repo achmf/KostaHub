@@ -10,6 +10,9 @@ import { KostaPageHeader, KostaCard, KostaButton, KostaSectionLabel, Badge, Kost
 import { LineChart, Line, ResponsiveContainer, Tooltip, XAxis } from 'recharts'
 import PaginationControl from '@/components/Admin/PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
+import { useSearchParams } from 'next/navigation'
+import { SearchBar } from '@/components/Layout/SearchBar'
+import { FilterSheet } from '@/components/Layout/FilterSheet'
 
 type HewanBerat = {
   id: string
@@ -32,9 +35,10 @@ const KATEGORI_LABEL: Record<string, string> = {
 // trendData is now dynamic inside the component
 
 export default function BeratPageClient({ hewanList }: { hewanList: HewanBerat[] }) {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const [kat, setKat] = useState<string>('ALL')
+  const searchParams = useSearchParams()
+  const searchQuery = searchParams.get('q') || ''
+  const kat = searchParams.get('kategori') || 'ALL'
+  
   const [timeRange, setTimeRange] = useState('1y')
   const [customStart, setCustomStart] = useState('')
   const [customEnd, setCustomEnd] = useState('')
@@ -142,20 +146,6 @@ export default function BeratPageClient({ hewanList }: { hewanList: HewanBerat[]
     setPage(0)
   }, [searchQuery, kat, setPage])
 
-  // Drawer filter: Escape menutup, scroll halaman dikunci selama terbuka
-  useEffect(() => {
-    if (!isFilterOpen) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setIsFilterOpen(false) }
-    const prevOverflow = document.body.style.overflow
-    document.addEventListener('keydown', onKey)
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = prevOverflow
-    }
-  }, [isFilterOpen])
-
-  const activeFilterCount = kat !== 'ALL' ? 1 : 0
   const cats = ['ALL', 'INDUKAN', 'PEJANTAN', 'ANAKAN', 'DARA', 'JANTAN_MUDA']
 
   const avg = Math.round(
@@ -347,24 +337,20 @@ export default function BeratPageClient({ hewanList }: { hewanList: HewanBerat[]
         </div>
       </div>
       {/* Search & Filter Row — visible on all viewports */}
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="relative flex-1 min-w-0 sm:flex-none sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[rgba(13,20,15,0.4)]" size={14} />
-          <input
-            type="text"
-            placeholder="Cari nama, tag, atau kategori..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-lg text-[13px] bg-[rgba(13,20,15,0.03)] border border-[rgba(13,20,15,0.1)] outline-none focus:border-[rgba(63,91,58,0.5)] focus:ring-1 focus:ring-[rgba(63,91,58,0.5)] transition-all"
-            style={{ fontFamily: "'Inter', sans-serif" }}
-          />
-        </div>
-        <div className="shrink-0">
-          <KostaButton variant="outline" onClick={() => setIsFilterOpen(true)}>
-            <Filter size={13} /> 
-            Filter {activeFilterCount > 0 && <span className="ml-1 w-4 h-4 rounded-full bg-[rgba(13,20,15,0.1)] flex items-center justify-center text-[10px]">{activeFilterCount}</span>}
-          </KostaButton>
-        </div>
+      <div className="mb-5 flex flex-row items-center justify-between gap-3 sm:gap-4">
+        <SearchBar placeholder="Cari nama, tag, atau kategori..." />
+        <FilterSheet 
+          filters={[
+            {
+              paramName: 'kategori',
+              title: 'Kategori Hewan',
+              options: cats.map(c => ({
+                value: c,
+                label: c === 'ALL' ? 'Semua' : KATEGORI_LABEL[c] ?? c
+              }))
+            }
+          ]} 
+        />
       </div>
 
       {/* ── DESKTOP: KostaCard with table layout ── */}
@@ -544,85 +530,6 @@ export default function BeratPageClient({ hewanList }: { hewanList: HewanBerat[]
           </div>
         )}
       </div>
-
-      {/* Filter Drawer */}
-      {typeof document !== 'undefined' &&
-        createPortal(
-          <AnimatePresence>
-            {isFilterOpen && (
-              <>
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-40"
-                  style={{ background: 'rgba(13,20,15,0.2)', backdropFilter: 'blur(2px)' }}
-                  onClick={() => setIsFilterOpen(false)}
-                />
-                <motion.div
-                  initial={{ x: '100%' }}
-                  animate={{ x: 0 }}
-                  exit={{ x: '100%' }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 40 }}
-                  className="fixed top-0 right-0 bottom-0 w-full max-w-sm z-50 flex flex-col shadow-2xl"
-                  style={{ background: palette.cream, borderLeft: `1px solid ${palette.border}` }}
-                >
-                  <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: `1px solid ${palette.border}` }}>
-                    <h3 style={{ fontFamily: "'Fraunces',serif", fontSize: 20, color: palette.ink }}>Filter Hewan</h3>
-                    <button onClick={() => setIsFilterOpen(false)} aria-label="Tutup filter" className="cursor-pointer -mr-1 w-10 h-10 flex items-center justify-center rounded-full hover:bg-[rgba(13,20,15,0.05)]">
-                      <X size={16} />
-                    </button>
-                  </div>
-                  
-                  <div className="flex-1 overflow-y-auto p-6 space-y-8">
-                    {/* Kategori */}
-                    <div>
-                      <KostaSectionLabel className="mb-3">KATEGORI</KostaSectionLabel>
-                      <div className="flex flex-wrap gap-2">
-                        {cats.map((c) => (
-                          <button
-                            key={c}
-                            onClick={() => setKat(c)}
-                            className="cursor-pointer px-4 py-2.5 sm:py-2 rounded-full border transition-colors"
-                            style={{
-                              fontFamily: "'Inter',sans-serif", fontSize: 12,
-                              background: kat === c ? palette.ink : 'transparent',
-                              color: kat === c ? palette.cream : palette.ink,
-                              borderColor: kat === c ? palette.ink : palette.border
-                            }}
-                          >
-                            {c === 'ALL' ? 'Semua' : KATEGORI_LABEL[c] ?? c}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-5" style={{ borderTop: `1px solid ${palette.border}` }}>
-                    <div className="flex gap-3">
-                      <KostaButton 
-                        variant="outline" 
-                        className="flex-1 justify-center"
-                        onClick={() => {
-                          setKat('ALL')
-                        }}
-                      >
-                        Reset
-                      </KostaButton>
-                      <KostaButton 
-                        className="flex-1 justify-center"
-                        onClick={() => setIsFilterOpen(false)}
-                      >
-                        Terapkan
-                      </KostaButton>
-                    </div>
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>,
-          document.body
-        )}
     </div>
   )
 }

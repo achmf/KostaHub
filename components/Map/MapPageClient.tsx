@@ -412,7 +412,7 @@ export default function MapPageClient({ farms: initialFarms, role }: { farms: Fa
               style={{ background: '#fff', border: `1px solid ${palette.border}` }}
             >
               {/* Search + filter */}
-              <div className="p-4 space-y-3" style={{ borderBottom: `1px solid ${palette.border}` }}>
+              <div className="p-4 flex flex-row items-center justify-between gap-3 sm:gap-4" style={{ borderBottom: `1px solid ${palette.border}` }}>
                 <SearchBar placeholder="Cari nama farm…" />
                 <FilterSheet 
                   filters={[
