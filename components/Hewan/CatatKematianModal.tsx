@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Skull, AlertTriangle } from 'lucide-react'
+import { X, AlertTriangle } from 'lucide-react'
 import { KostaButton, KostaSectionLabel, palette } from '@/components/KostaUI'
 import { catatKematian } from '@/actions/kematian'
 import { DatePickerField } from '@/components/ui/DatePickerField'
@@ -82,10 +82,7 @@ export function CatatKematianModal({ hewanId, hewanNama, hewanTag, onClose }: Pr
           <div className="px-6 pt-6 pb-5" style={{ background: '#B5443B', color: '#fff' }}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-                  style={{ background: 'rgba(255,255,255,0.15)' }}>
-                  <Skull size={16} />
-                </div>
+
                 <div>
                   <KostaSectionLabel style={{ color: 'rgba(255,255,255,0.65)' }}>CATAT KEMATIAN</KostaSectionLabel>
                   <div style={{ fontFamily: "'Fraunces',serif", fontSize: 20, lineHeight: 1.1, marginTop: 4 }}>

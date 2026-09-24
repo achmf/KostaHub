@@ -2,14 +2,16 @@
 
 import Link from 'next/link'
 import { useState, useMemo } from 'react'
+import { useSearchParams } from 'next/navigation'
 import PaginationControl from '@/components/Admin/PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
+import { SearchBar } from '@/components/Layout/SearchBar'
 import {
   FileSpreadsheet, Download, Stethoscope, Calendar, Shield, Search,
   CircleAlert, PawPrint, ArrowUpDown, ArrowUp, ArrowDown,
   Syringe, FlaskConical, Pill, Heart, Scissors,
   Dna, Scale, TrendingUp, TrendingDown, Minus,
-  ArrowRightLeft, PackagePlus, PackageMinus, Skull,
+  ArrowRightLeft, PackagePlus, PackageMinus,
   ShoppingCart, ChevronDown, ChevronUp, ChevronRight, ShieldAlert,
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -179,8 +181,8 @@ export default function LaporanClient({ data, isGlobal, farmName, farmId }: { da
 // ─── LAPORAN 1: STATUS & RIWAYAT TERNAK ────────────────────────
 function LaporanKeluarMasuk({ data }: { data: any }) {
   const [activeSection, setActiveSection] = useState<'aktif' | 'masuk' | 'mati' | 'mutasi'>('aktif')
-
-  const [search, setSearch] = useState('')
+  const searchParams = useSearchParams()
+  const q = searchParams.get('q')?.toLowerCase() || ''
 
   // hewanKeluar = semua kematian records (synthetic status: 'MATI')
   const hewanMasuk = data.hewanMasuk ?? []
@@ -194,7 +196,7 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
   const sections = [
     { key: 'aktif' as const, label: 'Ternak Hidup', icon: <PackagePlus size={13} />, count: hewanAktif.length, color: palette.moss },
     { key: 'masuk' as const, label: 'Ternak Masuk', icon: <PackagePlus size={13} />, count: hewanMasuk.length, color: palette.ink },
-    { key: 'mati' as const, label: 'Ternak Mati', icon: <Skull size={13} />, count: hewanMati.length, color: palette.rose },
+    { key: 'mati' as const, label: 'Ternak Mati', icon: <PackageMinus size={13} />, count: hewanMati.length, color: palette.rose },
     { key: 'mutasi' as const, label: 'Mutasi / Transfer', icon: <ArrowRightLeft size={13} />, count: mutasi.length, color: '#5B7FA6' },
   ]
 
@@ -211,7 +213,6 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
   const activeData = getActiveData()
 
   const filteredData = useMemo(() => {
-    const q = search.toLowerCase()
     return activeData.filter((item: any) => {
       if (activeSection === 'mutasi') {
         return !q || item.tag?.toLowerCase().includes(q) || item.nama?.toLowerCase().includes(q) ||
@@ -219,7 +220,7 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
       }
       return !q || item.tag?.toLowerCase().includes(q) || item.nama?.toLowerCase().includes(q)
     }).slice(0, 50)
-  }, [activeData, search, activeSection])
+  }, [activeData, q, activeSection])
 
   const pagination = usePagination(filteredData, 20)
 
@@ -231,7 +232,7 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
           {sections.map(s => (
             <button
               key={s.key}
-              onClick={() => { setActiveSection(s.key); setSearch('') }}
+              onClick={() => { setActiveSection(s.key) }}
               className="cursor-pointer rounded-xl px-4 py-3 flex items-center gap-2 transition-all shrink-0 whitespace-nowrap sm:whitespace-normal"
               style={{
                 background: activeSection === s.key ? s.color : 'transparent',
@@ -253,21 +254,11 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
         </div>
       </KostaCard>
 
+      <div className="mb-4 flex items-center justify-between gap-4 mt-5">
+        <SearchBar placeholder="Cari tag atau nama ternak..." />
+      </div>
+
       <KostaCard className="overflow-hidden">
-        {/* Search bar */}
-        <div className="px-5 py-3 flex items-center gap-3 border-b" style={{ borderColor: palette.border }}>
-          <Search size={13} style={{ opacity: 0.4 }} />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Cari tag atau nama ternak..."
-            className="flex-1 min-w-0 bg-transparent outline-none"
-            style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}
-          />
-          {search && (
-            <button type="button" onClick={() => setSearch('')} aria-label="Hapus pencarian" className="cursor-pointer opacity-40 hover:opacity-70 text-xs w-10 h-10 -my-3 -mr-3 shrink-0 flex items-center justify-center">✕</button>
-          )}
-        </div>
 
         {filteredData.length === 0 && <NoResults />}
 
@@ -404,20 +395,20 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
 // ─── LAPORAN 2: KESEHATAN & MEDIS ──────────────────────────
 function LaporanMedis({ data }: { data: any[] }) {
   const [filterKategori, setFilterKategori] = useState<string>('ALL')
-  const [search, setSearch] = useState('')
+  const searchParams = useSearchParams()
+  const q = searchParams.get('q')?.toLowerCase() || ''
 
   const kategoris = ['ALL', 'VAKSINASI', 'VITAMIN', 'PENGOBATAN', 'PEMERIKSAAN', 'PERAWATAN_LUKA', 'LAINNYA']
 
   const filtered = useMemo(() => {
     return (data ?? []).filter((m: any) => {
       const matchKat = filterKategori === 'ALL' || m.kategori === filterKategori
-      const q = search.toLowerCase()
       const matchSearch = !q || m.hewanTag?.toLowerCase().includes(q) ||
         m.hewanNama?.toLowerCase().includes(q) || m.diagnosis?.toLowerCase().includes(q) ||
         m.obat?.toLowerCase().includes(q) || m.namaDokter?.toLowerCase().includes(q)
       return matchKat && matchSearch
     })
-  }, [data, filterKategori, search])
+  }, [data, filterKategori, q])
 
   const medisP = usePagination(filtered, 20)
 
@@ -457,16 +448,12 @@ function LaporanMedis({ data }: { data: any[] }) {
         ))}
       </div>
 
+      <div className="mb-4 flex items-center justify-between gap-4 mt-2">
+        <SearchBar placeholder="Cari tag, diagnosis, atau dokter..." />
+      </div>
+
       <KostaCard className="overflow-hidden">
         <div className="px-5 py-3 flex flex-wrap items-center gap-x-3 gap-y-2 border-b" style={{ borderColor: palette.border }}>
-          <Search size={13} style={{ opacity: 0.4 }} />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Cari tag, diagnosis, dokter..."
-            className="flex-1 min-w-[160px] bg-transparent outline-none"
-            style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}
-          />
           {filterKategori !== 'ALL' && (
             <button
               type="button"
@@ -576,19 +563,19 @@ function LaporanMedis({ data }: { data: any[] }) {
 // ─── LAPORAN 3: BREEDING ────────────────────────────────────
 function LaporanBreeding({ data }: { data: any[] }) {
   const [filterStatus, setFilterStatus] = useState<string>('ALL')
-  const [search, setSearch] = useState('')
+  const searchParams = useSearchParams()
+  const q = searchParams.get('q')?.toLowerCase() || ''
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const filtered = useMemo(() => {
     return (data ?? []).filter((r: any) => {
       const matchStatus = filterStatus === 'ALL' || (filterStatus === 'inbreeding' ? r.inbreedingWarning : r.status === filterStatus)
-      const q = search.toLowerCase()
       const matchSearch = !q || r.indukTag?.toLowerCase().includes(q) ||
         r.pejantanTag?.toLowerCase().includes(q) || r.indukNama?.toLowerCase().includes(q) ||
         r.pejantanNama?.toLowerCase().includes(q)
       return matchStatus && matchSearch
     })
-  }, [data, filterStatus, search])
+  }, [data, filterStatus, q])
 
   const breedingP = usePagination(filtered, 15)
 
@@ -626,16 +613,12 @@ function LaporanBreeding({ data }: { data: any[] }) {
         ))}
       </div>
 
+      <div className="mb-4 flex items-center justify-between gap-4 mt-5">
+        <SearchBar placeholder="Cari tag induk atau pejantan..." />
+      </div>
+
       <KostaCard className="overflow-hidden">
         <div className="px-5 py-3 flex items-center gap-3 border-b" style={{ borderColor: palette.border }}>
-          <Search size={13} style={{ opacity: 0.4 }} />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Cari tag induk atau pejantan..."
-            className="flex-1 min-w-0 bg-transparent outline-none"
-            style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}
-          />
           <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.4 }}>{filtered.length} kartu</span>
         </div>
 
@@ -750,13 +733,13 @@ function LaporanBreeding({ data }: { data: any[] }) {
 
 // ─── LAPORAN 4: PERTUMBUHAN BOBOT ──────────────────────────
 function LaporanPertumbuhan({ data }: { data: any[] }) {
-  const [search, setSearch] = useState('')
+  const searchParams = useSearchParams()
+  const q = searchParams.get('q')?.toLowerCase() || ''
   const [sortBy, setSortBy] = useState<'adg' | 'selisih' | 'beratAkhir'>('adg')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const sorted = useMemo(() => {
-    const q = search.toLowerCase()
     return (data ?? [])
       .filter((d: any) =>
         !q || d.hewan?.tag?.toLowerCase().includes(q) || d.hewan?.nama?.toLowerCase().includes(q)
@@ -765,7 +748,7 @@ function LaporanPertumbuhan({ data }: { data: any[] }) {
         const diff = a[sortBy] - b[sortBy]
         return sortDir === 'desc' ? -diff : diff
       })
-  }, [data, search, sortBy, sortDir])
+  }, [data, q, sortBy, sortDir])
 
   const pertumbuhanP = usePagination(sorted, 15)
 
@@ -801,16 +784,12 @@ function LaporanPertumbuhan({ data }: { data: any[] }) {
         ))}
       </div>
 
+      <div className="mb-4 flex items-center justify-between gap-4 mt-5">
+        <SearchBar placeholder="Cari tag atau nama ternak..." />
+      </div>
+
       <KostaCard className="overflow-hidden">
         <div className="px-5 py-3 flex items-center gap-3 border-b" style={{ borderColor: palette.border }}>
-          <Search size={13} style={{ opacity: 0.4 }} />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Cari tag atau nama ternak..."
-            className="flex-1 min-w-0 bg-transparent outline-none"
-            style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}
-          />
           <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.4 }}>{sorted.length} ternak</span>
         </div>
 

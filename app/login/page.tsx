@@ -6,6 +6,7 @@ import { login } from '@/actions/auth'
 import { motion } from 'framer-motion'
 import { ArrowUpRight } from 'lucide-react'
 import { GoatMark } from '@/components/GoatMark'
+import { KostaSpinner } from '@/components/KostaUI'
 
 const palette = {
   cream: '#F2EDE0',
@@ -224,7 +225,7 @@ export default function LoginPage() {
                 cursor: isPending ? 'not-allowed' : 'pointer',
               }}
             >
-              {isPending ? 'Memproses…' : 'Masuk'}
+              {isPending ? <KostaSpinner size="sm" color="cream" /> : 'Masuk'}
               {!isPending && (
                 <span
                   className="w-7 h-7 rounded-full flex items-center justify-center transition-transform group-hover:rotate-45"

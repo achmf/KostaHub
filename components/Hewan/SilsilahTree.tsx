@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, ChevronRight } from 'lucide-react'
+import Link from 'next/link'
 import type { SilsilahNode } from '@/lib/silsilah'
 import { palette } from '@/components/KostaUI'
 
@@ -30,23 +31,26 @@ function SilsilahNodeCard({ node, side = 'root', depth = 0 }: NodeProps) {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: depth * 0.05 }}
-        className="px-3 py-2 min-w-[112px] max-w-[140px] sm:px-4 sm:py-2.5 sm:min-w-[140px] sm:max-w-[180px]"
+        className={`px-3 py-2 min-w-[112px] max-w-[140px] sm:px-4 sm:py-2.5 sm:min-w-[140px] sm:max-w-[180px] ${depth !== 0 ? 'group hover:-translate-y-0.5 transition-transform cursor-pointer' : ''}`}
         style={{
           background: depth === 0 ? palette.forest : '#fff',
           border: `1.5px solid ${depth === 0 ? 'transparent' : accentColor}`,
           borderRadius: 14,
           position: 'relative',
           boxShadow: depth === 0 ? '0 4px 20px rgba(27,42,31,0.25)' : '0 1px 6px rgba(13,20,15,0.07)',
-          cursor: hasParents ? 'pointer' : 'default',
-        }}
-        onClick={() => {
-          if (!hasParents) return
-          setIsBapakOpen((v) => !v)
-          setIsIndukOpen((v) => !v)
         }}
       >
+        {depth !== 0 && (
+          <Link 
+            href={`/hewan/${node.id}`} 
+            className="absolute inset-0 z-10" 
+            style={{ borderRadius: 14 }}
+            aria-label={`Lihat profil ${node.nama || node.tag}`}
+          />
+        )}
+
         {/* Gender icon + side indicator */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4, position: 'relative', zIndex: 20 }}>
           <span style={{
             fontFamily: "'JetBrains Mono',monospace",
             fontSize: 9,
@@ -57,9 +61,32 @@ function SilsilahNodeCard({ node, side = 'root', depth = 0 }: NodeProps) {
             {node.kelamin === 'JANTAN' ? '♂ Jantan' : '♀ Induk'}
           </span>
           {hasParents && (
-            <span style={{ color: depth === 0 ? 'rgba(242,237,224,0.55)' : accentColor, lineHeight: 1 }}>
+            <button
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setIsBapakOpen((v) => !v)
+                setIsIndukOpen((v) => !v)
+              }}
+              style={{
+                color: depth === 0 ? 'rgba(242,237,224,0.55)' : accentColor,
+                lineHeight: 1,
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '4px',
+                margin: '-4px', // Increase hit area
+                borderRadius: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'background 0.2s',
+              }}
+              className={depth === 0 ? "hover:bg-white/10" : "hover:bg-black/5"}
+              title={(isBapakOpen || isIndukOpen) ? "Tutup Silsilah" : "Buka Silsilah"}
+            >
               {(isBapakOpen || isIndukOpen) ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
-            </span>
+            </button>
           )}
         </div>
 
@@ -71,18 +98,25 @@ function SilsilahNodeCard({ node, side = 'root', depth = 0 }: NodeProps) {
           color: depth === 0 ? 'rgba(242,237,224,0.75)' : 'rgba(13,20,15,0.55)',
           marginBottom: 3,
           overflowWrap: 'anywhere',
+          position: 'relative', 
+          zIndex: 5
         }}>
           {node.tag}
         </div>
 
         {/* Name */}
-        <div style={{
-          fontFamily: "'Fraunces',serif",
-          fontSize: 15,
-          letterSpacing: '-0.01em',
-          lineHeight: 1.15,
-          color: depth === 0 ? palette.cream : palette.ink,
-        }}>
+        <div 
+          className={depth !== 0 ? "transition-colors group-hover:text-black" : ""}
+          style={{
+            fontFamily: "'Fraunces',serif",
+            fontSize: 15,
+            letterSpacing: '-0.01em',
+            lineHeight: 1.15,
+            color: depth === 0 ? palette.cream : palette.ink,
+            position: 'relative', 
+            zIndex: 5
+          }}
+        >
           {node.nama || '—'}
         </div>
 
@@ -92,6 +126,8 @@ function SilsilahNodeCard({ node, side = 'root', depth = 0 }: NodeProps) {
           fontSize: 10,
           color: depth === 0 ? 'rgba(242,237,224,0.45)' : 'rgba(13,20,15,0.4)',
           marginTop: 4,
+          position: 'relative', 
+          zIndex: 5
         }}>
           {new Date(node.tanggalLahir).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
         </div>

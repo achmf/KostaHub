@@ -4,6 +4,9 @@ import { Users, Clock, CheckCircle2, XCircle } from 'lucide-react'
 import { EmptyState } from '@/components/ui/EmptyState'
 import PaginationControl from './PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
+import { useSearchParams } from 'next/navigation'
+import { SearchBar } from '@/components/Layout/SearchBar'
+import { FilterSheet } from '@/components/Layout/FilterSheet'
 
 const palette = {
   ink: '#0D140F',
@@ -30,12 +33,45 @@ const approvalBadge: Record<string, { label: string; color: string; bg: string; 
 const PER_PAGE = 10
 
 export default function AdminUsersClient({ users }: { users: any[] }) {
-  const { paged: currentUsers, page, totalPages, onPrev, onNext } = usePagination(users, PER_PAGE)
+  const searchParams = useSearchParams()
+  const q = searchParams.get('q')?.toLowerCase() || ''
+  const roleFilter = searchParams.get('role') || 'ALL'
+
+  const filteredUsers = users.filter(u => {
+    const matchQ = !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+    const matchRole = roleFilter === 'ALL' || u.role === roleFilter
+    return matchQ && matchRole
+  })
+
+  const { paged: currentUsers, page, totalPages, onPrev, onNext } = usePagination(filteredUsers, PER_PAGE)
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${palette.border}`, background: '#fff' }}>
-      {/* Mobile: kartu per user (tabel tampil mulai md) */}
-      <div className="md:hidden">
+    <div>
+      <div className="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <SearchBar placeholder="Cari nama atau email..." />
+        <FilterSheet 
+          filters={[
+            {
+              paramName: 'role',
+              title: 'Role User',
+              options: [
+                { value: 'ALL', label: 'Semua Role' },
+                { value: 'OWNER', label: 'Owner' },
+                { value: 'PETUGAS', label: 'Petugas' },
+                { value: 'SUPER_ADMIN', label: 'Super Admin' },
+                { value: 'DINAS', label: 'Dinas' }
+              ]
+            }
+          ]} 
+        />
+      </div>
+
+      <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${palette.border}`, background: '#fff' }}>
+        {currentUsers.length === 0 && (
+          <EmptyState title="Tidak ada user" description="Belum ada data user yang sesuai pencarian." />
+        )}
+        {/* Mobile: kartu per user (tabel tampil mulai md) */}
+        <div className="md:hidden">
         {currentUsers.map((user, i) => {
           const rb = roleBadge[user.role] || { label: user.role, color: palette.ink, bg: 'rgba(13,20,15,0.06)' }
           return (
@@ -179,26 +215,27 @@ export default function AdminUsersClient({ users }: { users: any[] }) {
         </table>
       </div>
 
-      {users.length === 0 && (
+      {filteredUsers.length === 0 && (
         <EmptyState
           icon={Users}
-          title="Belum ada user"
-          description="User yang mendaftar ke sistem akan muncul di sini."
+          title="Tidak ada user"
+          description="Belum ada user yang sesuai dengan pencarian atau filter."
         />
       )}
 
-      {users.length > 0 && (
+      {filteredUsers.length > 0 && (
         <div className="px-5 pb-5">
           <PaginationControl 
             page={page}
             totalPages={totalPages}
             onPrev={onPrev}
             onNext={onNext}
-            totalItems={users.length}
+            totalItems={filteredUsers.length}
             perPage={PER_PAGE}
           />
         </div>
       )}
+    </div>
     </div>
   )
 }

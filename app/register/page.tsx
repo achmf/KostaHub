@@ -7,6 +7,7 @@ import {
   ArrowUpRight, User, Phone, Mail, Lock, ShieldCheck,
 } from 'lucide-react'
 import { GoatMark } from '@/components/GoatMark'
+import { KostaSpinner } from '@/components/KostaUI'
 import Link from 'next/link'
 
 const palette = {
@@ -262,7 +263,7 @@ export default function RegisterPage() {
                 cursor: isPending ? 'not-allowed' : 'pointer',
               }}
             >
-              {isPending ? 'Membuat akun…' : 'Buat Akun'}
+              {isPending ? <KostaSpinner size="sm" color="cream" /> : 'Buat Akun'}
               {!isPending && (
                 <span
                   className="w-7 h-7 rounded-full flex items-center justify-center transition-transform group-hover:rotate-45"
