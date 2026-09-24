@@ -5,6 +5,9 @@ import { Heart } from 'lucide-react'
 import { KostaCard, Badge, KostaEmptyState, palette } from '@/components/KostaUI'
 import PaginationControl from '@/components/Admin/PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
+import { useSearchParams } from 'next/navigation'
+import { SearchBar } from '@/components/Layout/SearchBar'
+import { FilterSheet } from '@/components/Layout/FilterSheet'
 
 
 
@@ -17,11 +20,43 @@ function StatusBadge({ status }: { status: string }) {
 const PER_PAGE = 10
 
 export default function ReproduksiClient({ reproduksiList }: { reproduksiList: any[] }) {
-  const { paged: currentItems, page, totalPages, onPrev, onNext } = usePagination(reproduksiList, PER_PAGE)
+  const searchParams = useSearchParams()
+  const q = searchParams.get('q')?.toLowerCase() || ''
+  const statusFilter = searchParams.get('status') || 'ALL'
+
+  const filteredList = reproduksiList.filter(r => {
+    const matchQ = !q || r.induk?.nama?.toLowerCase().includes(q) ||
+           r.induk?.tag?.toLowerCase().includes(q) ||
+           r.pejantan?.nama?.toLowerCase().includes(q) ||
+           r.pejantan?.tag?.toLowerCase().includes(q)
+    const matchStatus = statusFilter === 'ALL' || r.status === statusFilter
+    return matchQ && matchStatus
+  })
+
+  const { paged: currentItems, page, totalPages, onPrev, onNext } = usePagination(filteredList, PER_PAGE)
 
   return (
-    <KostaCard className="overflow-hidden">
-      <div
+    <>
+      <div className="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <SearchBar placeholder="Cari tag atau nama induk/pejantan..." />
+        <FilterSheet 
+          filters={[
+            {
+              paramName: "status", 
+              title: "Status Reproduksi",
+              options: [
+                { value: 'ALL', label: 'Semua Status' },
+                { value: 'HAMIL', label: 'Hamil' },
+                { value: 'LAHIR', label: 'Lahir' },
+                { value: 'GAGAL', label: 'Gagal' }
+              ]
+            }
+          ]} 
+        />
+      </div>
+
+      <KostaCard className="overflow-hidden">
+        <div
         className="hidden md:grid px-5 py-3 grid-cols-[1.4fr_1.4fr_0.9fr_1fr_0.7fr_0.8fr] gap-3"
         style={{
           background: 'rgba(13,20,15,0.03)',
@@ -115,18 +150,19 @@ export default function ReproduksiClient({ reproduksiList }: { reproduksiList: a
         )
       })}
 
-      {reproduksiList.length > 0 && (
+      {filteredList.length > 0 && (
         <div className="p-5 mt-auto">
           <PaginationControl 
             page={page}
             totalPages={totalPages}
             onPrev={onPrev}
             onNext={onNext}
-            totalItems={reproduksiList.length}
+            totalItems={filteredList.length}
             perPage={PER_PAGE}
           />
         </div>
       )}
     </KostaCard>
+    </>
   )
 }

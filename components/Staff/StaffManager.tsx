@@ -8,7 +8,9 @@ import { KostaButton, KostaEmptyState, palette } from '@/components/KostaUI'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import PaginationControl from '@/components/Admin/PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { SearchBar } from '@/components/Layout/SearchBar'
+import { FilterSheet } from '@/components/Layout/FilterSheet'
 import { useConfirm } from '@/components/ConfirmProvider'
 import { useToast } from '@/components/ToastProvider'
 
@@ -34,8 +36,18 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
   const router = useRouter()
   const { confirm: showConfirm } = useConfirm()
   const { showToast } = useToast()
+  const searchParams = useSearchParams()
+  const q = searchParams.get('q')?.toLowerCase() || ''
+  const roleFilter = searchParams.get('role') || 'ALL'
+
+  const filteredStaff = staff.filter(s => {
+    const matchQ = !q || s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q) || (s.phone && s.phone.includes(q))
+    const matchRole = roleFilter === 'ALL' || s.role === roleFilter
+    return matchQ && matchRole
+  })
+
   const PER_PAGE = 10
-  const { paged, page, totalPages, onPrev, onNext } = usePagination(staff, PER_PAGE)
+  const { paged, page, totalPages, onPrev, onNext } = usePagination(filteredStaff, PER_PAGE)
 
   async function handleCreate(formData: FormData) {
     setError('')
@@ -219,8 +231,26 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
         )}
       </AnimatePresence>
 
+      {/* Search Bar & Filter */}
+      <div className="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <SearchBar placeholder="Cari nama, email, atau telepon..." />
+        <FilterSheet 
+          filters={[
+            {
+              paramName: 'role',
+              title: 'Role Staff',
+              options: [
+                { value: 'ALL', label: 'Semua Role' },
+                { value: 'PETUGAS', label: 'Petugas' },
+                { value: 'OWNER', label: 'Owner' }
+              ]
+            }
+          ]} 
+        />
+      </div>
+
       {/* Staff list */}
-      {staff.length === 0 ? (
+      {filteredStaff.length === 0 ? (
         <div
           className="rounded-2xl"
           style={{ background: '#fff', border: `1px solid ${palette.border}` }}
@@ -290,13 +320,13 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
             )
           })}
 
-          {staff.length > 0 && (
+          {filteredStaff.length > 0 && (
             <PaginationControl
               page={page}
               totalPages={totalPages}
               onPrev={onPrev}
               onNext={onNext}
-              totalItems={staff.length}
+              totalItems={filteredStaff.length}
               perPage={PER_PAGE}
             />
           )}

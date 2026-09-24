@@ -26,6 +26,8 @@ import PaginationControl from "./PaginationControl";
 import { usePagination } from "@/hooks/usePagination";
 import { useConfirm } from "@/components/ConfirmProvider";
 import { useToast } from "@/components/ToastProvider";
+import { useSearchParams } from "next/navigation";
+import { SearchBar } from "@/components/Layout/SearchBar";
 
 const palette = {
   cream: "#F2EDE0",
@@ -248,6 +250,8 @@ export default function ApprovalList({
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [rejectingUser, setRejectingUser] = useState<PendingUser | null>(null);
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
+  const searchParams = useSearchParams();
+  const q = searchParams.get('q')?.toLowerCase() || '';
 
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -375,7 +379,11 @@ export default function ApprovalList({
     });
   }
 
-  const visibleUsers = users.filter((u) => !removedIds.has(u.id));
+  const visibleUsers = users.filter((u) => {
+    if (removedIds.has(u.id)) return false;
+    if (!q) return true;
+    return u.name.toLowerCase().includes(q) || (u.farm?.nama.toLowerCase().includes(q) ?? false);
+  });
   const PER_PAGE = 10;
   const { paged, page, totalPages, onPrev, onNext } = usePagination(
     visibleUsers,
@@ -386,6 +394,10 @@ export default function ApprovalList({
 
   return (
     <div className="space-y-3 relative">
+      <div className="mb-5">
+        <SearchBar placeholder="Cari nama owner atau nama farm..." />
+      </div>
+
       {/* Bulk Toolbar */}
       {userRole !== "DINAS" && (
         <div className="flex items-center justify-between gap-3 mb-2">

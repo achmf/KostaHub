@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Plus, X, Search, Filter } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 
 import PaginationControl from '@/components/Admin/PaginationControl'
@@ -19,6 +19,8 @@ import {
   KostaSectionLabel,
   palette,
 } from '@/components/KostaUI'
+import { SearchBar } from '@/components/Layout/SearchBar'
+import { FilterSheet } from '@/components/Layout/FilterSheet'
 
 type HewanWithRelations = {
   id: string
@@ -64,25 +66,13 @@ export function HewanClient({
   hewanList: HewanWithRelations[]
   isSuperAdmin: boolean
 }) {
-  const [q, setQ] = useState('')
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const [kat, setKat] = useState<string>('ALL')
-  const [statusFilter, setStatusFilter] = useState<string>('ALL')
-  const [kelaminFilter, setKelaminFilter] = useState<string>('ALL')
-  const [farmFilter, setFarmFilter] = useState<string>('ALL')
+  const searchParams = useSearchParams()
+  const q = searchParams.get('q') || ''
+  const kat = searchParams.get('kategori') || 'ALL'
+  const statusFilter = searchParams.get('status') || 'ALL'
+  const kelaminFilter = searchParams.get('kelamin') || 'ALL'
+  const farmFilter = searchParams.get('farm') || 'ALL'
   const router = useRouter()
-
-  // Drawer filter: Escape menutup + kunci scroll halaman di belakangnya
-  useEffect(() => {
-    if (!isFilterOpen) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setIsFilterOpen(false) }
-    document.addEventListener('keydown', onKey)
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = ''
-    }
-  }, [isFilterOpen])
 
   const filtered = useMemo(() => {
     return hewanList.filter((h) => {
@@ -113,6 +103,46 @@ export function HewanClient({
     return Array.from(farmMap.entries()).map(([id, nama]) => ({ id, nama }))
   }, [hewanList, isSuperAdmin])
 
+  const filterGroups = [
+    {
+      paramName: 'kategori',
+      title: 'Kategori',
+      options: [
+        { value: 'ALL', label: 'Semua' },
+        ...cats.filter(c => c !== 'ALL').map(c => ({ value: c, label: KATEGORI_LABEL[c] ?? c }))
+      ]
+    },
+    {
+      paramName: 'status',
+      title: 'Status',
+      options: [
+        { value: 'ALL', label: 'Semua' },
+        { value: 'HIDUP', label: 'Hidup' },
+        { value: 'MATI', label: 'Mati' }
+      ]
+    },
+    {
+      paramName: 'kelamin',
+      title: 'Kelamin',
+      options: [
+        { value: 'ALL', label: 'Semua' },
+        { value: 'JANTAN', label: 'Jantan' },
+        { value: 'BETINA', label: 'Betina' }
+      ]
+    }
+  ]
+
+  if (isSuperAdmin && uniqueFarms.length > 0) {
+    filterGroups.push({
+      paramName: 'farm',
+      title: 'Farm',
+      options: [
+        { value: 'ALL', label: 'Semua' },
+        ...uniqueFarms.map(f => ({ value: f.id, label: f.nama.replace('Farm ', '') }))
+      ]
+    })
+  }
+
   return (
     <div>
       <KostaPageHeader
@@ -120,11 +150,6 @@ export function HewanClient({
         description={`${filtered.length} ekor ditampilkan. Klik baris untuk membuka profil lengkap.`}
         action={
           <div className="flex gap-2 w-full sm:w-auto">
-            <KostaButton variant="outline" onClick={() => setIsFilterOpen(true)} className="flex-1 sm:flex-none justify-center">
-              <Filter size={13} /> 
-              <span>Filter</span>
-              {activeFilterCount > 0 && <span className="ml-1 w-4 h-4 rounded-full bg-[rgba(13,20,15,0.1)] flex items-center justify-center text-[10px]">{activeFilterCount}</span>}
-            </KostaButton>
             <Link href="/hewan/tambah" className="flex-1 sm:flex-none">
               <KostaButton className="w-full sm:w-auto justify-center">
                 <Plus size={13} /> <span>Tambah Hewan</span>
@@ -134,24 +159,11 @@ export function HewanClient({
         }
       />
 
-      {/* Search Bar only */}
-      <KostaCard className="p-4 mb-5 flex items-center">
-        <div
-          className="flex items-center gap-2 px-3 py-2 rounded-full w-full"
-          style={{ background: 'rgba(13,20,15,0.04)', border: `1px solid ${palette.border}` }}
-        >
-          <Search size={14} style={{ opacity: 0.5 }} />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Cari tag (KST-…), atau nama..."
-            aria-label="Cari hewan"
-            enterKeyHint="search"
-            className="bg-transparent outline-none flex-1 min-w-0"
-            style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}
-          />
-        </div>
-      </KostaCard>
+      {/* Search & Filter Bar */}
+      <div className="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <SearchBar placeholder="Cari tag (KST-…), atau nama..." />
+        <FilterSheet filters={filterGroups} />
+      </div>
 
       {/* Mobile: individual separated cards */}
       <div className="flex flex-col gap-2 md:hidden">
@@ -341,165 +353,6 @@ export function HewanClient({
           </div>
         )}
       </KostaCard>
-
-      {/* Filter Drawer */}
-      {typeof document !== 'undefined' &&
-        createPortal(
-          <AnimatePresence>
-            {isFilterOpen && (
-              <>
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-40"
-                  style={{ background: 'rgba(13,20,15,0.2)', backdropFilter: 'blur(2px)' }}
-                  onClick={() => setIsFilterOpen(false)}
-                />
-                <motion.div
-                  initial={{ x: '100%' }}
-                  animate={{ x: 0 }}
-                  exit={{ x: '100%' }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 40 }}
-                  className="fixed top-0 right-0 bottom-0 w-full max-w-sm z-50 flex flex-col shadow-2xl"
-                  style={{ background: palette.cream, borderLeft: `1px solid ${palette.border}` }}
-                >
-                  <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: `1px solid ${palette.border}` }}>
-                    <h3 style={{ fontFamily: "'Fraunces',serif", fontSize: 20, color: palette.ink }}>Filter Hewan</h3>
-                    <button onClick={() => setIsFilterOpen(false)} aria-label="Tutup" className="cursor-pointer w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center rounded-full hover:bg-[rgba(13,20,15,0.05)]">
-                      <X size={16} />
-                    </button>
-                  </div>
-                  
-                  <div className="flex-1 overflow-y-auto p-6 space-y-8">
-                    {/* Kategori */}
-                    <div>
-                      <KostaSectionLabel className="mb-3">KATEGORI</KostaSectionLabel>
-                      <div className="flex flex-wrap gap-2">
-                        {cats.map((c) => (
-                          <button
-                            key={c}
-                            onClick={() => setKat(c)}
-                            className="cursor-pointer px-4 py-2.5 sm:py-2 rounded-full border transition-colors"
-                            style={{
-                              fontFamily: "'Inter',sans-serif", fontSize: 12,
-                              background: kat === c ? palette.ink : 'transparent',
-                              color: kat === c ? palette.cream : palette.ink,
-                              borderColor: kat === c ? palette.ink : palette.border
-                            }}
-                          >
-                            {c === 'ALL' ? 'Semua' : KATEGORI_LABEL[c] ?? c}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Status */}
-                    <div>
-                      <KostaSectionLabel className="mb-3">STATUS</KostaSectionLabel>
-                      <div className="flex flex-wrap gap-2">
-                        {statuses.map((s) => (
-                          <button
-                            key={s}
-                            onClick={() => setStatusFilter(s)}
-                            className="cursor-pointer px-4 py-2.5 sm:py-2 rounded-full border transition-colors"
-                            style={{
-                              fontFamily: "'Inter',sans-serif", fontSize: 12,
-                              background: statusFilter === s ? palette.ink : 'transparent',
-                              color: statusFilter === s ? palette.cream : palette.ink,
-                              borderColor: statusFilter === s ? palette.ink : palette.border
-                            }}
-                          >
-                          {s === 'ALL' ? 'Semua' : s === 'HIDUP' ? 'Hidup' : 'Mati'}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Kelamin */}
-                    <div>
-                      <KostaSectionLabel className="mb-3">KELAMIN</KostaSectionLabel>
-                      <div className="flex flex-wrap gap-2">
-                        {kelamins.map((k) => (
-                          <button
-                            key={k}
-                            onClick={() => setKelaminFilter(k)}
-                            className="cursor-pointer px-4 py-2.5 sm:py-2 rounded-full border transition-colors"
-                            style={{
-                              fontFamily: "'Inter',sans-serif", fontSize: 12,
-                              background: kelaminFilter === k ? palette.ink : 'transparent',
-                              color: kelaminFilter === k ? palette.cream : palette.ink,
-                              borderColor: kelaminFilter === k ? palette.ink : palette.border
-                            }}
-                          >
-                            {k === 'ALL' ? 'Semua' : k === 'JANTAN' ? 'Jantan' : 'Betina'}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Farm (Super Admin only) */}
-                    {isSuperAdmin && uniqueFarms.length > 0 && (
-                      <div>
-                        <KostaSectionLabel className="mb-3">FARM</KostaSectionLabel>
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            onClick={() => setFarmFilter('ALL')}
-                            className="cursor-pointer px-4 py-2.5 sm:py-2 rounded-full border transition-colors"
-                            style={{
-                              fontFamily: "'Inter',sans-serif", fontSize: 12,
-                              background: farmFilter === 'ALL' ? palette.ink : 'transparent',
-                              color: farmFilter === 'ALL' ? palette.cream : palette.ink,
-                              borderColor: farmFilter === 'ALL' ? palette.ink : palette.border
-                            }}
-                          >
-                            Semua
-                          </button>
-                          {uniqueFarms.map((f) => (
-                            <button
-                              key={f.id}
-                              onClick={() => setFarmFilter(f.id)}
-                              className="cursor-pointer px-4 py-2.5 sm:py-2 rounded-full border transition-colors"
-                              style={{
-                                fontFamily: "'Inter',sans-serif", fontSize: 12,
-                                background: farmFilter === f.id ? palette.ink : 'transparent',
-                                color: farmFilter === f.id ? palette.cream : palette.ink,
-                                borderColor: farmFilter === f.id ? palette.ink : palette.border
-                              }}
-                            >
-                              {f.nama.replace('Farm ', '')}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="p-5" style={{ borderTop: `1px solid ${palette.border}` }}>
-                    <div className="flex gap-3">
-                      <KostaButton 
-                        variant="outline" 
-                        className="flex-1 justify-center"
-                        onClick={() => {
-                          setKat('ALL'); setStatusFilter('ALL'); setKelaminFilter('ALL'); setFarmFilter('ALL')
-                        }}
-                      >
-                        Reset
-                      </KostaButton>
-                      <KostaButton 
-                        className="flex-1 justify-center"
-                        onClick={() => setIsFilterOpen(false)}
-                      >
-                        Terapkan
-                      </KostaButton>
-                    </div>
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>,
-          document.body
-        )}
     </div>
   )
 }

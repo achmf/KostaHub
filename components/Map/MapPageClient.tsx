@@ -10,6 +10,9 @@ import {
 } from 'lucide-react'
 import PaginationControl from '@/components/Admin/PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { SearchBar } from '@/components/Layout/SearchBar'
+import { FilterSheet } from '@/components/Layout/FilterSheet'
 
 import { palette as corePalette } from '@/components/KostaUI'
 
@@ -221,10 +224,12 @@ function RadiusPanel({
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function MapPageClient({ farms: initialFarms, role }: { farms: Farm[]; role: string }) {
+  const searchParams = useSearchParams()
+  const q = searchParams.get('q')?.toLowerCase() || ''
+  const filterStatus = searchParams.get('status') || 'ALL'
+
   const [farms, setFarms] = useState<Farm[]>(initialFarms)
   const [selectedFarm, setSelectedFarm] = useState<Farm | null>(null)
-  const [search, setSearch] = useState('')
-  const [filterStatus, setFilterStatus] = useState<'ALL' | 'AKTIF' | 'NONAKTIF'>('ALL')
   const [layer, setLayer] = useState<MapLayer>('street')
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
@@ -238,12 +243,12 @@ export default function MapPageClient({ farms: initialFarms, role }: { farms: Fa
 
   const filteredFarms = useMemo(() => {
     return farms.filter(f => {
-      const matchSearch = f.nama.toLowerCase().includes(search.toLowerCase()) ||
-        (f.alamat?.toLowerCase().includes(search.toLowerCase()) ?? false)
+      const matchSearch = f.nama.toLowerCase().includes(q) ||
+        (f.alamat?.toLowerCase().includes(q) ?? false)
       const matchStatus = filterStatus === 'ALL' || f.status === filterStatus
       return matchSearch && matchStatus
     })
-  }, [farms, search, filterStatus])
+  }, [farms, q, filterStatus])
 
   const PER_PAGE = 20
   const { paged: currentFarms, page, totalPages, onPrev, onNext } = usePagination(filteredFarms, PER_PAGE)
@@ -408,36 +413,20 @@ export default function MapPageClient({ farms: initialFarms, role }: { farms: Fa
             >
               {/* Search + filter */}
               <div className="p-4 space-y-3" style={{ borderBottom: `1px solid ${palette.border}` }}>
-                <label className="flex items-center gap-2 px-3 py-2 rounded-lg"
-                  style={{ background: 'rgba(13,20,15,0.04)', border: `1px solid ${palette.border}` }}>
-                  <Search size={13} style={{ color: palette.muted }} />
-                  <input
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    placeholder="Cari nama farm…"
-                    className="flex-1 bg-transparent outline-none text-sm"
-                    style={{ fontFamily: "'Inter',sans-serif", color: palette.ink }}
-                  />
-                </label>
-                <div className="flex gap-2">
-                  {(['ALL', 'AKTIF', 'NONAKTIF'] as const).map(s => (
-                    <button
-                      key={s}
-                      onClick={() => setFilterStatus(s)}
-                      className="cursor-pointer flex-1 py-1.5 min-h-10 lg:min-h-0 rounded-lg transition-all"
-                      style={{
-                        fontFamily: "'JetBrains Mono',monospace",
-                        fontSize: 9,
-                        letterSpacing: '0.1em',
-                        background: filterStatus === s ? palette.forest : 'rgba(13,20,15,0.05)',
-                        color: filterStatus === s ? palette.cream : palette.muted,
-                        border: `1px solid ${filterStatus === s ? palette.forest : 'transparent'}`,
-                      }}
-                    >
-                      {s === 'ALL' ? 'SEMUA' : s}
-                    </button>
-                  ))}
-                </div>
+                <SearchBar placeholder="Cari nama farm…" />
+                <FilterSheet 
+                  filters={[
+                    {
+                      paramName: 'status',
+                      title: 'Status Farm',
+                      options: [
+                        { value: 'ALL', label: 'Semua Status' },
+                        { value: 'AKTIF', label: 'Aktif' },
+                        { value: 'NONAKTIF', label: 'Nonaktif' }
+                      ]
+                    }
+                  ]} 
+                />
               </div>
 
               {/* Farm list */}

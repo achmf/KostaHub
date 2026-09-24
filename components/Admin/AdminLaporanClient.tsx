@@ -2,6 +2,9 @@
 
 import PaginationControl from './PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
+import { useSearchParams } from 'next/navigation'
+import { SearchBar } from '@/components/Layout/SearchBar'
+import { FilterSheet } from '@/components/Layout/FilterSheet'
 
 const palette = {
   ink: '#0D140F',
@@ -32,10 +35,38 @@ type FarmDetail = {
 const PER_PAGE = 10
 
 export default function AdminLaporanClient({ farmDetailList }: { farmDetailList: FarmDetail[] }) {
-  const { paged: currentFarms, page, totalPages, onPrev, onNext } = usePagination(farmDetailList, PER_PAGE)
+  const searchParams = useSearchParams()
+  const q = searchParams.get('q')?.toLowerCase() || ''
+  const statusFilter = searchParams.get('status') || 'ALL'
+
+  const filteredFarms = farmDetailList.filter(f => {
+    const matchQ = !q || f.nama.toLowerCase().includes(q)
+    const matchStatus = statusFilter === 'ALL' || f.status === statusFilter
+    return matchQ && matchStatus
+  })
+
+  const { paged: currentFarms, page, totalPages, onPrev, onNext } = usePagination(filteredFarms, PER_PAGE)
 
   return (
-    <div className="rounded-2xl overflow-hidden mb-6" style={{ border: `1px solid ${palette.border}`, background: '#fff' }}>
+    <>
+      <div className="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <SearchBar placeholder="Cari nama farm..." />
+        <FilterSheet 
+          filters={[
+            {
+              paramName: 'status',
+              title: 'Status Farm',
+              options: [
+                { value: 'ALL', label: 'Semua Status' },
+                { value: 'AKTIF', label: 'Aktif' },
+                { value: 'NONAKTIF', label: 'Nonaktif' }
+              ]
+            }
+          ]} 
+        />
+      </div>
+
+      <div className="rounded-2xl overflow-hidden mb-6" style={{ border: `1px solid ${palette.border}`, background: '#fff' }}>
       <div className="px-6 py-4" style={{ borderBottom: `1px solid ${palette.border}`, background: 'rgba(13,20,15,0.02)' }}>
         <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.2em', color: 'rgba(13,20,15,0.45)' }}>
           DATA DETAIL PER FARM
@@ -174,18 +205,19 @@ export default function AdminLaporanClient({ farmDetailList }: { farmDetailList:
         </table>
       </div>
 
-      {farmDetailList.length > 0 && (
+      {filteredFarms.length > 0 && (
         <div className="px-5 pb-5 mt-4">
           <PaginationControl 
             page={page}
             totalPages={totalPages}
             onPrev={onPrev}
             onNext={onNext}
-            totalItems={farmDetailList.length}
+            totalItems={filteredFarms.length}
             perPage={PER_PAGE}
           />
         </div>
       )}
     </div>
+    </>
   )
 }
