@@ -13,7 +13,7 @@ export default async function ApprovalsPage() {
       members: {
         include: {
           user: {
-            select: { id: true, name: true, email: true, phone: true, createdAt: true },
+            select: { id: true, name: true, email: true, phone: true, createdAt: true, role: true },
           },
         },
         where: { user: { role: 'OWNER', deletedAt: null } },
@@ -32,6 +32,7 @@ export default async function ApprovalsPage() {
       name: ownerMember?.user?.name ?? '(Owner tidak diketahui)',
       email: ownerMember?.user?.email ?? '',
       phone: ownerMember?.user?.phone ?? null,
+      role: ownerMember?.user?.role ?? 'OWNER',
       createdAt: farm.createdAt,
       farm: {
         id: farm.id,
