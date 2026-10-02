@@ -2,7 +2,7 @@ import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
-import { ArrowLeft, Edit, Scale, Calendar, MapPin, Activity, GitBranch } from 'lucide-react'
+import { ArrowLeft, Edit, Scale, Calendar, MapPin, Stethoscope, GitBranch } from 'lucide-react'
 import Link from 'next/link'
 import { Badge, KostaCard, KostaSectionLabel, KostaButton } from '@/components/KostaUI'
 
@@ -138,7 +138,7 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
               { icon: <Calendar size={12} />, l: 'TANGGAL LAHIR', v: hewan.tanggalLahir.toLocaleDateString('id-ID'), sub: `${umurBulan} bulan` },
               { icon: <Scale size={12} />, l: 'BERAT TERKINI', v: hewan.berat ? `${hewan.berat} kg` : '—', sub: 'tertimbang terakhir' },
               { icon: <MapPin size={12} />, l: 'FARM', v: hewan.farm.nama.replace('Farm ', ''), sub: 'lokasi terdaftar' },
-              { icon: <Activity size={12} />, l: 'REKAM MEDIS', v: `${hewan.rekamMedis.length}`, sub: 'catatan tersimpan' },
+              { icon: <Stethoscope size={12} />, l: 'REKAM MEDIS', v: `${hewan.rekamMedis.length}`, sub: 'catatan tersimpan' },
             ].map((c) => (
               <div key={c.l} className="p-3 rounded-xl transition-all duration-300 hover:shadow-md hover:-translate-y-1 hover:border-black/10 bg-white" style={{ border: `1px solid ${LOCAL_PALETTE.border}` }}>
                 <div className="flex items-center gap-1.5 opacity-60" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.15em' }}>

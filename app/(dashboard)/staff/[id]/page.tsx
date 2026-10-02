@@ -5,7 +5,7 @@ import { ProfileInfoCard } from '@/components/Profile/ProfileInfoCard'
 import ClientEditStaffForm from '@/components/Staff/ClientEditStaffForm'
 import { ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
-import { palette } from '@/components/KostaUI'
+import { palette } from '@/lib/palette'
 
 export default async function StaffProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

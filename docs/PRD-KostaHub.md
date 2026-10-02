@@ -1,5 +1,7 @@
 # KostaHub — Product Requirements Document
 
+> **Skripsi:** Rancang Bangun Sistem Informasi Manajemen Peternakan Kambing Kosta Berbasis Web (Studi Kasus: Koni Farm)
+>
 > Versi: 1.0 (Production)
 > Terakhir diperbarui: Oktober 2026
 > Stack: Next.js 16 · React 19 · Prisma 6 · PostgreSQL (Neon) · TypeScript 5 · Tailwind CSS v4
@@ -8,7 +10,7 @@
 
 ## 1. Ringkasan Produk
 
-**KostaHub** adalah aplikasi manajemen peternakan kambing berbasis web. Sistem ini dirancang untuk membantu peternak (Owner), petugas lapangan (Petugas), dan dinas pengawas (Dinas) dalam mengelola ternak secara terpusat — mulai dari pencatatan individu hewan, rekam medis, reproduksi, penimbangan berat badan, hingga laporan dan peta GIS.
+**KostaHub** adalah aplikasi manajemen peternakan kambing Kosta berbasis web dengan studi kasus pada **Koni Farm**. Sistem ini dirancang untuk membantu peternak (Owner), petugas lapangan (Petugas), dan dinas pengawas (Dinas) dalam mengelola ternak secara terpusat — mulai dari pencatatan individu hewan, rekam medis, reproduksi, penimbangan berat badan, hingga laporan dan peta GIS.
 
 Selain itu, terdapat panel **Super Admin** untuk mengelola seluruh peternakan (multi-farm) secara regional, menyetujui pendaftaran farm baru, memantau aktivitas, dan mengakses laporan lintas farm.
 
@@ -131,14 +133,19 @@ Sistem memiliki 4 role utama yang didefinisikan di database:
 
 | Method | Path | Fungsi |
 |--------|------|--------|
-| `GET` | `/api/notifikasi` | Fetch notifikasi + auto-generate dari kondisi farm |
-| `POST` | `/api/notifikasi/read` | Mark notifikasi sebagai sudah dibaca |
+| `GET` | `/api/notifikasi` | Notifikasi farm aktif + auto-generate (tanpa farm aktif: kosong; Super Admin: lintas farm, read-only) |
+| `POST` | `/api/notifikasi/read` | Tandai satu notifikasi / semua notifikasi farm aktif sudah dibaca |
 | `POST` | `/api/check-inbreeding` | Cek potensi kawin sedarah (inbreeding detection) |
+| `GET` | `/api/hewan/[id]/silsilah` | Pohon silsilah hewan |
 | `GET` | `/api/farm/laporan/export` | Export laporan farm ke file `.xlsx` |
-| `POST` | `/api/push` | Kirim push notification ke subscriber |
-| `GET/POST` | `/api/push/subscribe` | Subscribe/unsubscribe Web Push |
-| `POST` | `/api/admin/send-announcement` | Kirim pengumuman ke semua subscriber |
-| `GET` | `/api/hewan/[id]/foto` | Upload/update foto hewan |
+| `GET` | `/api/admin/export`, `/api/admin/export/laporan` | Export regional (Super Admin) |
+| `GET` | `/api/admin/pending-count` | Jumlah farm menunggu persetujuan (badge admin) |
+| `GET` | `/api/profil` | Data profil user login |
+| `POST/DELETE` | `/api/push/subscribe` | Simpan / hapus langganan Web Push perangkat ini (tabel `PushSubscription`) |
+| `GET` | `/api/cron/notifikasi` | Dipanggil Vercel Cron harian (06:00 WIB); butuh header `Authorization: Bearer <CRON_SECRET>` |
+| `GET` | `/api/files/[...key]` | Akses file privat (foto hewan, sertifikat): cek hak akses → redirect ke URL presigned 5 menit |
+
+Pengumuman admin dan upload foto/sertifikat memakai **Server Action** (`sendAnnouncement`, `uploadFotoHewan`, `createFarmRegistration`), bukan API route.
 
 ---
 
@@ -224,7 +231,7 @@ Tidak ada Next.js middleware file. Proteksi dilakukan di layout dan page level:
 - **Catat kematian** — form dengan penyebab (Penyakit/Kecelakaan/Usia Tua/Melahirkan/Lainnya) + catatan
 - **Update foto** — upload foto dari detail page
 
-**Foto:** Disimpan di Vercel Blob atau lokal `/public/uploads/`
+**Foto:** Dikompres di browser (maks 1280px JPEG), lalu disimpan di bucket privat Neon `uploads` dengan key `hewan/<hewanId>/<uuid>.<ext>`. Jenis file dicek dari isinya (JPG/PNG/WEBP). Ditampilkan lewat `/api/files/...` yang memeriksa akses farm.
 
 ### 5.3 Rekam Medis (`/medis`)
 
@@ -263,10 +270,11 @@ Jika `butuhNotifikasi = true` dan `tanggalLanjut` diisi, sistem akan auto-genera
 - Estimasi lahir (auto-hitung 5 bulan dari tanggal kawin, bisa diubah)
 - Status awal: `HAMIL`
 
-**Update status reproduksi:**
-- `HAMIL` → `LAHIR`: Form input data anak yang lahir (tag anak, opsional link ke record hewan baru)
-- `HAMIL` → `GAGAL`: Catatan kegagalan
-- Anak yang lahir bisa langsung diregistrasi ke sistem sebagai hewan baru
+**Catat hasil kehamilan** (tombol "Catat hasil" pada baris berstatus `HAMIL`; tidak tersedia untuk DINAS):
+- `HAMIL` → `LAHIR`: tanggal lahir + 1–3 anak (tag, kelamin, berat lahir opsional). Dalam satu transaksi, tiap anak dibuat sebagai `Hewan` kategori `ANAKAN` dengan `indukId`/`bapakId` dari perkawinan ini (silsilah & cek inbreeding langsung terisi), berat lahir dicatat di `BeratBadan`, lalu `anakId` = anak pertama dan `anakTag` = semua tag anak
+- `HAMIL` → `GAGAL`: menandai keguguran; pengingat kelahiran berhenti
+- Validasi: tag unik di farm, tanggal lahir tidak di masa depan dan tidak sebelum tanggal kawin
+- Success rate = lahir ÷ (lahir + gagal); kehamilan yang masih berjalan tidak dihitung
 
 **Inbreeding Detection:**
 - Algoritma traversal ancestor via `lib/silsilah.ts` → `getAncestorIds()`
@@ -287,19 +295,22 @@ Jika `butuhNotifikasi = true` dan `tanggalLanjut` diisi, sistem akan auto-genera
 **Sistem notifikasi dua lapis:**
 
 **Layer 1 — In-app notifikasi (database):**
-- Data di-fetch client-side via `GET /api/notifikasi`
-- Setiap kali di-fetch, sistem otomatis men-generate notifikasi baru dari kondisi farm:
-  - **MEDIS**: Rekam medis dengan `tanggalLanjut` ≤ 3 hari ke depan
+- Data di-fetch client-side via `GET /api/notifikasi` (selalu dibatasi farm aktif)
+- Generator (`lib/notifikasi-generator.ts`) membuat notifikasi baru dari kondisi farm:
+  - **MEDIS**: Rekam medis dengan `tanggalLanjut` ≤ 3 hari ke depan (hewan masih hidup)
   - **LAHIR**: Reproduksi `HAMIL` dengan `estimasiLahir` ≤ 7 hari ke depan
-  - **BERAT**: Hewan hidup yang tidak diupdate >30 hari
-- Filter tampilan: ALL / MEDIS / VAKSIN / LAHIR / BERAT / CUSTOM
-- Mark as read per notifikasi atau bulk
+  - **BERAT**: Hewan hidup (umur data > 30 hari) yang tidak punya penimbangan dalam 30 hari terakhir; maksimal satu pengingat per hewan per bulan
+- Generator dijalankan saat: (1) `GET /api/notifikasi`, (2) setelah input rekam medis/reproduksi, (3) Vercel Cron harian untuk semua farm aktif
+- Dedup dijamin database: kolom `refKey` (mis. `MEDIS-<id>`) + `@@unique([farmId, refKey])` dengan `createManyAndReturn({ skipDuplicates: true })` — aman walau dipanggil bersamaan
+- Filter tampilan: ALL / MEDIS / LAHIR / BERAT
+- Mark as read per notifikasi atau semua notifikasi farm aktif
 
-**Layer 2 — Web Push Notification (browser):**
-- VAPID-based push via `web-push`
-- User bisa subscribe notifikasi browser dari halaman Profil
-- Super Admin bisa kirim push announcement manual dari `/admin/announcements`
-- Push dikirim ke semua subscriber saat ada pengumuman baru
+**Layer 2 — Web Push Notification (browser/HP):**
+- VAPID-based push via `web-push`; langganan per perangkat disimpan di tabel `PushSubscription`
+- Aktifkan/matikan dari halaman `/notifikasi` (ikon lonceng); jika izin diblokir browser, ditampilkan petunjuk cara mengizinkan
+- Yang dikirim push: notifikasi baru dari generator (ke Owner & Petugas farm tersebut; > 3 notifikasi sekaligus diringkas jadi satu) dan pengumuman Super Admin (ke Owner & Petugas semua farm aktif)
+- Langganan perangkat dihapus saat logout (HP bersama tidak menerima notifikasi user sebelumnya); langganan kedaluwarsa (HTTP 404/410) dibersihkan otomatis
+- iPhone: push hanya berjalan jika KostaHub dipasang ke Layar Utama (PWA, iOS 16.4+)
 
 ### 5.7 Peta GIS (`/map`)
 
@@ -354,7 +365,7 @@ Jika `butuhNotifikasi = true` dan `tanggalLanjut` diisi, sistem akan auto-genera
 
 - Lihat dan edit data profil: nama, email, nomor telepon
 - Ganti password (verifikasi password lama)
-- Subscribe/unsubscribe Web Push notification
+- (Push notification diaktifkan/dimatikan dari halaman `/notifikasi`, lihat 5.6)
 - Tampilan QR Code user ID
 
 ### 5.10 Kelola Staff (`/staff`)
@@ -412,7 +423,7 @@ Jika `butuhNotifikasi = true` dan `tanggalLanjut` diisi, sistem akan auto-genera
 - List semua farm berstatus `NONAKTIF` (pending approval)
 - Informasi per card: nama farm, owner, alamat, deskripsi, tanggal daftar, sertifikat farm
 - Action: **Approve** (set status AKTIF) atau **Reject** (isi alasan penolakan)
-- Jika ditolak: Owner mendapat notifikasi dan bisa merevisi via `/farms/revisi/[farmId]`
+- Owner melihat hasilnya saat login di halaman `/status` (termasuk alasan penolakan); jika ditolak, Owner bisa merevisi via `/farms/revisi/[farmId]`. Tidak ada notifikasi email.
 
 ### 6.5 Laporan Regional (`/admin/laporan`)
 
@@ -436,7 +447,7 @@ Jika `butuhNotifikasi = true` dan `tanggalLanjut` diisi, sistem akan auto-genera
 
 ### 6.7 Pengumuman (`/admin/announcements`)
 
-- Super Admin: form kirim pengumuman (judul + pesan) → terkirim sebagai push notification ke semua subscriber browser
+- Super Admin: form kirim pengumuman (judul + pesan) → tersimpan sebagai notifikasi `CUSTOM` di tiap farm aktif dan dikirim sebagai push notification ke Owner & Petugas yang mengaktifkan push
 - Semua role: lihat riwayat pengumuman yang pernah dikirim
 
 ---
@@ -649,19 +660,21 @@ User ←→ RekamMedis    (dokter internal, optional)
 ### 10.3 RFID Tag Management
 
 - Setiap hewan bisa memiliki banyak `TagRfid` records (riwayat)
-- Hanya satu tag berstatus `AKTIF` per hewan pada satu waktu
-- Pembacaan RFID via Web NFC API (`hooks/useWebNFC.ts`):
-  - Hanya tersedia di Chrome for Android
-  - `NDEFReader` API untuk baca UID chip NFC
-  - Komponen `HybridTagManager` di halaman detail hewan: scan atau input manual
-- UID disimpan sebagai string unik di `TagRfid.rfidUid`
+- Hanya satu tag berstatus `AKTIF` per hewan: mendaftarkan tag baru otomatis mencopot tag lama (`DICOPOT`) dalam satu transaksi (`actions/rfid.ts`)
+- Web NFC (`hooks/useWebNFC.ts`, hanya Chrome Android, HTTPS):
+  - **Scan dari daftar hewan**: tombol "Scan NFC" di samping pencarian `/hewan` → jika tag berisi URL profil (hasil "Tulis NFC") langsung dibuka; jika tidak, dicari dari UID chip → buka profil hewan
+  - **Daftarkan tag**: di `HybridTagManager` (detail hewan) tekan "Scan NFC" lalu tempel tag; atau RFID Stick Reader / ketik UID
+  - "Tulis NFC" menyimpan URL profil ke tag sehingga HP mana pun bisa membuka profil tanpa aplikasi
+- UID disimpan sebagai string unik di `TagRfid.rfidUid`; pencocokan mengabaikan pemisah & huruf besar/kecil (`04:8f:21` = `048F21`), jadi tag dari HP dan reader USB saling kompatibel
+- Pencarian `/hewan` juga mencocokkan UID tag aktif (untuk reader USB yang "mengetik" UID)
+- Akses: hanya untuk hewan di farm aktif; DINAS tidak bisa mendaftarkan tag
 
 ### 10.4 Notifikasi Otomatis (Auto-Generator)
 
-Setiap `GET /api/notifikasi` memanggil `generateNotifikasiOtomatis()`:
-- Deduplication via message key: `[ref:MEDIS-{id}]`, `[ref:LAHIR-{id}]`, `[ref:BERAT-{id}]`
-- Hanya create jika belum ada notifikasi dengan key yang sama
-- Max 20 item per kategori per run (throttle untuk performa)
+`generateNotifikasiOtomatis(farmId)` dipanggil dari `GET /api/notifikasi`, setelah mutasi rekam medis/reproduksi (`after()`), dan cron harian `GET /api/cron/notifikasi` (semua farm aktif, 5 farm paralel):
+- Dedup via kolom `refKey` (`MEDIS-<id>`, `LAHIR-<id>`, `BERAT-<hewanId>-<YYYY-MM>`) + `@@unique([farmId, refKey])`; insert memakai `createManyAndReturn({ skipDuplicates: true })` sehingga hanya notifikasi yang benar-benar baru yang di-push
+- Max 20 item per kategori per run
+- Notifikasi lama (sebelum kolom `refKey`) diisi lewat `prisma/sql/2026-10-02_backfill_notifikasi_refkey.sql`
 
 ### 10.5 Export Excel
 
@@ -683,18 +696,15 @@ Setiap `GET /api/notifikasi` memanggil `generateNotifikasiOtomatis()`:
 
 | Variable | Deskripsi |
 |----------|-----------|
-| `DATABASE_URL` | PostgreSQL connection string (Neon) |
-| `DIRECT_URL` | Direct PostgreSQL URL untuk Prisma migration |
+| `DATABASE_URL` | PostgreSQL connection string (Neon, pooled) |
+| `DATABASE_URL_UNPOOLED` | Koneksi langsung (non-pooled) untuk perubahan skema |
 | `JWT_SECRET` | Secret key untuk JWT signing |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | VAPID public key untuk Web Push |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | VAPID public key untuk Web Push (ditanam saat build) |
 | `VAPID_PRIVATE_KEY` | VAPID private key untuk Web Push |
-| `VAPID_EMAIL` | Email VAPID (format: `mailto:admin@...`) |
-| `BLOB_READ_WRITE_TOKEN` | Token untuk Vercel Blob (upload foto) |
-| `SMTP_HOST` | SMTP server untuk email notifikasi |
-| `SMTP_PORT` | SMTP port |
-| `SMTP_USER` | SMTP username |
-| `SMTP_PASS` | SMTP password |
-| `NEXT_PUBLIC_APP_URL` | Base URL aplikasi (untuk email links) |
+| `VAPID_EMAIL` | Kontak VAPID (format: `mailto:admin@...`) |
+| `CRON_SECRET` | Rahasia untuk `/api/cron/notifikasi` (Vercel Cron mengirim `Bearer <CRON_SECRET>`) |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Kredensial S3 object storage Neon (bucket `uploads`) |
+| `AWS_ENDPOINT_URL_S3` / `AWS_REGION` | Endpoint & region object storage Neon |
 
 ---
 
@@ -709,6 +719,9 @@ Setiap `GET /api/notifikasi` memanggil `generateNotifikasiOtomatis()`:
 - Print stylesheet tersedia di halaman Laporan (`/laporan`)
 - Service layer di `services/` memisahkan business logic dari action handlers
 - Validasi form menggunakan Zod di `lib/validations/`
-- Upload file: disimpan di `public/uploads/` (lokal) — belum menggunakan cloud storage untuk foto hewan
-- Web Push menggunakan standar VAPID; service worker di `public/sw.js`
+- Upload file (foto hewan, sertifikat farm): bucket privat Neon `uploads` via S3 API (`lib/storage.ts`, `aws4fetch`); dilayani lewat `/api/files/...` dengan cek akses + URL presigned. File lama di `public/uploads/` tetap bisa dibuka.
+- Web Push menggunakan standar VAPID; service worker di `public/sw.js` hanya menangani push dan halaman offline (`/offline.html`) — halaman & API tidak di-cache agar data selalu segar dan tidak bocor antar user
+- PWA: `app/manifest.ts` + ikon di `public/icons/` dan `app/apple-icon.png`; bisa dipasang ke layar utama Android/iOS
+- Region fungsi Vercel `sin1` (Singapura, sama dengan database Neon) diatur di `vercel.json`
+- Tampilan hanya mode terang (dark mode tidak didukung)
 - `tsconfig.tsbuildinfo` dan `.agents/` di-ignore git (file build cache dan AI config)

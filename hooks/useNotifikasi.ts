@@ -14,19 +14,10 @@ export type NotifikasiItem = {
 }
 
 const POLL_INTERVAL = 60_000 // 60 detik
-const VAPID_PUBLIC = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ''
-
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
-  const rawData = window.atob(base64)
-  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)))
-}
 
 export function useNotifikasi() {
   const [list, setList] = useState<NotifikasiItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [pushEnabled, setPushEnabled] = useState(false)
   const prevIdsRef = useRef<Set<string>>(new Set())
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -66,69 +57,6 @@ export function useNotifikasi() {
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [fetchNotifikasi])
 
-  // Register Service Worker
-  useEffect(() => {
-    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return
-
-    navigator.serviceWorker
-      .register('/sw.js', { scope: '/' })
-      .then((reg) => {
-        console.log('[SW] Registered:', reg.scope)
-        // Check if already subscribed
-        reg.pushManager.getSubscription().then((sub) => {
-          if (sub) setPushEnabled(true)
-        })
-      })
-      .catch((err) => console.error('[SW] Registration failed:', err))
-  }, [])
-
-  const requestPushPermission = useCallback(async () => {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      toast.error('Browser ini tidak mendukung Push Notification')
-      return false
-    }
-
-    const permission = await Notification.requestPermission()
-    if (permission !== 'granted') {
-      toast.error('Izin notifikasi ditolak. Aktifkan di pengaturan browser.')
-      return false
-    }
-
-    try {
-      const reg = await navigator.serviceWorker.ready
-      let sub = await reg.pushManager.getSubscription()
-      if (sub) {
-        await sub.unsubscribe() // Clear old subscription to avoid VAPID mismatch error
-      }
-      
-       
-      sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC) as any,
-      })
-
-      await fetch('/api/push/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscription: sub.toJSON() }),
-      })
-
-      setPushEnabled(true)
-      toast.success('Push Notification aktif! Anda akan menerima notifikasi otomatis.')
-      return true
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err)
-      console.warn('[Push] Subscribe failed:', msg)
-      // Push service error sering terjadi di dev (HTTP) atau browser tertentu
-      toast.warning(
-        'Push Notification tidak tersedia di lingkungan ini. ' +
-        'Notifikasi tetap aktif via polling setiap 60 detik.',
-        { duration: 6000 }
-      )
-      return false
-    }
-  }, [])
-
   const markRead = useCallback(async (id: string) => {
     const res = await fetch('/api/notifikasi/read', {
       method: 'POST',
@@ -161,8 +89,6 @@ export function useNotifikasi() {
     list,
     loading,
     unreadCount,
-    pushEnabled,
-    requestPushPermission,
     markRead,
     markAllRead,
     refetch,

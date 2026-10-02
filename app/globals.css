@@ -4,8 +4,6 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
-
 @theme inline {
   /* Figma Make — KostaHub Palette */
   --color-cream:             #F2EDE0;
@@ -169,40 +167,6 @@ body { overflow-x: clip; }
   --sidebar-accent-foreground: #0D140F;
   --sidebar-border: rgba(13, 20, 15, 0.10);
   --sidebar-ring: #1B2A1F;
-}
-
-.dark {
-  --background: #0D140F;
-  --foreground: #F2EDE0;
-  --card: #1B2A1F;
-  --card-foreground: #F2EDE0;
-  --popover: #1B2A1F;
-  --popover-foreground: #F2EDE0;
-  --primary: #F2EDE0;
-  --primary-foreground: #0D140F;
-  --secondary: rgba(242, 237, 224, 0.15);
-  --secondary-foreground: #F2EDE0;
-  --muted: rgba(242, 237, 224, 0.15);
-  --muted-foreground: rgba(242, 237, 224, 0.65);
-  --accent: rgba(242, 237, 224, 0.15);
-  --accent-foreground: #F2EDE0;
-  --destructive: #F2B2AD;
-  --border: rgba(242, 237, 224, 0.15);
-  --input: rgba(242, 237, 224, 0.15);
-  --ring: #F2EDE0;
-  --chart-1: #8AD29F;
-  --chart-2: #EBC39A;
-  --chart-3: #F2B2AD;
-  --chart-4: #F5D38A;
-  --chart-5: #A3C19A;
-  --sidebar: #1B2A1F;
-  --sidebar-foreground: #F2EDE0;
-  --sidebar-primary: #F2EDE0;
-  --sidebar-primary-foreground: #0D140F;
-  --sidebar-accent: rgba(242, 237, 224, 0.15);
-  --sidebar-accent-foreground: #F2EDE0;
-  --sidebar-border: rgba(242, 237, 224, 0.15);
-  --sidebar-ring: #F2EDE0;
 }
 
 @layer base {

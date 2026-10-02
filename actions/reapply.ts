@@ -2,30 +2,18 @@
 
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
-import { sendReapplyNotificationEmail } from '@/lib/email'
+import { simpanFile } from '@/lib/storage'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 
-// ── Helper: upload sertifikat farm ──────────────────────────────────────────
+// ── Helper: upload sertifikat farm (tanpa file baru → tetap pakai yang lama) ─
 async function uploadSertifikat(
-  file: File,
-  fallbackUrl: string | null
-): Promise<string | null> {
-  if (!file || file.size === 0) return fallbackUrl
-  try {
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    const uploadDir = path.join(process.cwd(), 'public/uploads')
-    await mkdir(uploadDir, { recursive: true })
-    const ext = file.name.split('.').pop() || 'png'
-    const fileName = `${Date.now()}-${Math.round(Math.random() * 1000)}.${ext}`
-    await writeFile(path.join(uploadDir, fileName), buffer)
-    return `/uploads/${fileName}`
-  } catch {
-    return fallbackUrl
-  }
+  file: File | null,
+  urlLama: string | null
+): Promise<{ url: string | null } | { error: string }> {
+  if (!file || file.size === 0) return { url: urlLama }
+  const hasil = await simpanFile(file, 'sertifikat', { izinkanPdf: true, maksMB: 4 })
+  return 'error' in hasil ? { error: `Sertifikat: ${hasil.error}` } : hasil
 }
 
 // ── Revisi farm yang ditolak berdasarkan farmId eksplisit ────────────────────
@@ -73,9 +61,9 @@ export async function reapplyFarmById(formData: FormData) {
     if (isNaN(parsedLng)) return { error: 'Longitude harus berupa angka' }
   }
 
-  const sertifikatUrl = farmSertifikat
-    ? await uploadSertifikat(farmSertifikat, farm.sertifikatUrl)
-    : farm.sertifikatUrl
+  const upload = await uploadSertifikat(farmSertifikat, farm.sertifikatUrl)
+  if ('error' in upload) return { error: upload.error }
+  const sertifikatUrl = upload.url
 
   // Update farm: reset rejectionReason → kembali ke status pending (menunggu re-review)
   await prisma.farm.update({
@@ -92,7 +80,6 @@ export async function reapplyFarmById(formData: FormData) {
     },
   })
 
-  await sendReapplyNotificationEmail(session.name, farmNama)
   revalidatePath('/farms')
 
   return { success: true }
@@ -154,9 +141,9 @@ export async function reapplyRegistration(formData: FormData) {
     if (isNaN(parsedLng)) return { error: 'Longitude harus berupa angka' }
   }
 
-  const sertifikatUrl = farmSertifikat
-    ? await uploadSertifikat(farmSertifikat, farm.sertifikatUrl)
-    : farm.sertifikatUrl
+  const upload = await uploadSertifikat(farmSertifikat, farm.sertifikatUrl)
+  if ('error' in upload) return { error: upload.error }
+  const sertifikatUrl = upload.url
 
   await prisma.farm.update({
     where: { id: farm.id },
@@ -172,7 +159,6 @@ export async function reapplyRegistration(formData: FormData) {
     },
   })
 
-  await sendReapplyNotificationEmail(session.name, farmNama)
   revalidatePath('/farms')
 
   return { success: true }

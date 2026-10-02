@@ -2,7 +2,9 @@
 
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { pushToFarms } from '@/lib/push'
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 
 async function requireSuperAdmin() {
   const session = await getSession()
@@ -48,6 +50,16 @@ export async function sendAnnouncement(data: { title: string; message: string })
       farmId: f.id,
     })),
   })
+
+  // Push dikirim setelah respons supaya admin tidak menunggu
+  after(() =>
+    pushToFarms(activeFarms.map((f) => f.id), {
+      title: `Pengumuman: ${title}`,
+      body: message,
+      url: '/notifikasi',
+      tag: `pengumuman-${Date.now()}`,
+    })
+  )
 
   revalidatePath('/admin/announcements')
   return { success: true, count: activeFarms.length }

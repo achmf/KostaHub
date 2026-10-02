@@ -5,6 +5,7 @@ import { Edit3 } from 'lucide-react'
 import EditFarmModal from '@/components/Admin/EditFarmModal'
 import AdminFarmActions from '@/components/Admin/AdminFarmActions'
 import { palette } from '@/components/KostaUI'
+import { switchFarm } from '@/actions/switchFarm'
 
 interface AdminFarmProfileActionsProps {
   farm: {
@@ -27,9 +28,26 @@ export default function AdminFarmProfileActions({ farm, canEdit = true, owners =
   if (!canEdit) return null
 
   return (
-    <div className="flex flex-col gap-3 sm:items-end">
+    <div className="flex flex-col gap-3">
       {/* Mobile: grid 2 kolom — "Buka Dashboard" penuh di atas, Edit & Hapus berdampingan */}
       <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center">
+        <form action={switchFarm.bind(null, farm.id)} className="col-span-2 sm:col-span-1">
+          <button
+            type="submit"
+            className="w-full flex items-center justify-center gap-2 min-h-10 sm:min-h-0 px-4 py-2 rounded-xl transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{
+              background: palette.forest,
+              color: palette.cream,
+              fontFamily: "'Inter',sans-serif",
+              fontSize: 13,
+              fontWeight: 500,
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            Masuk Dashboard
+          </button>
+        </form>
         <button
           onClick={() => setIsEditModalOpen(true)}
           className="flex items-center justify-center gap-2 min-h-10 sm:min-h-0 px-4 py-2 rounded-xl transition-all hover:-translate-y-0.5 active:translate-y-0"

@@ -9,9 +9,12 @@ export async function POST(req: NextRequest) {
   const body = await req.json() as { id?: string; all?: boolean }
 
   if (body.all) {
-    // Mark all as read for this farm
+    // Hanya farm aktif — tanpa farm aktif tidak ada yang boleh ditandai massal
+    if (!session.activeFarmId) {
+      return NextResponse.json({ error: 'Pilih farm terlebih dahulu' }, { status: 400 })
+    }
     await prisma.notifikasi.updateMany({
-      where: session.activeFarmId ? { farmId: session.activeFarmId as string } : {},
+      where: { farmId: session.activeFarmId },
       data: { isRead: true },
     })
     return NextResponse.json({ success: true, updated: 'all' })

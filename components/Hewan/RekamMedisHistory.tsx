@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { KostaCard, KostaSectionLabel, Badge, KostaDialog, KostaButton, KostaEmptyState, palette } from '@/components/KostaUI'
-import { Activity, Calendar, User, Pill, FileText, ImageIcon } from 'lucide-react'
+import { Calendar, User, Pill, FileText, ImageIcon, Stethoscope } from 'lucide-react'
 import Image from 'next/image'
 import PaginationControl from '@/components/Admin/PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
@@ -52,7 +52,7 @@ export function RekamMedisHistory({ records }: { records: RekamMedis[] }) {
                 className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-110 transition-transform duration-300"
                 style={{ background: 'rgba(199,135,62,0.12)', color: palette.ochre }}
               >
-                <Activity size={16} />
+                <Stethoscope size={16} />
               </div>
               <div className="flex-1 min-w-0 pt-0.5">
                 <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink }}>{m.diagnosis}</div>

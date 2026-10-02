@@ -2,10 +2,12 @@
 
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
-import { withAuth } from '@/lib/auth'
+import { after } from 'next/server'
+import { withMutationAuth } from '@/lib/auth'
 import { invalidateMedis } from '@/lib/cache-invalidation'
+import { generateNotifikasiOtomatis } from '@/lib/notifikasi-generator'
 
-export const tambahRekamMedis = withAuth(async (session, formData: FormData) => {
+export const tambahRekamMedis = withMutationAuth(async (session, formData: FormData) => {
   const hewanId = formData.get('hewanId') as string
   if (!hewanId) return { error: 'Hewan tidak dipilih' }
 
@@ -44,6 +46,9 @@ export const tambahRekamMedis = withAuth(async (session, formData: FormData) => 
       tanggalLanjut,
     }
   })
+
+  // Jadwal kontrol dalam 3 hari → notifikasi + push langsung, tidak menunggu polling/cron
+  if (tanggalLanjut) after(() => generateNotifikasiOtomatis(hewan.farmId))
 
   invalidateMedis()
   redirect('/medis')
