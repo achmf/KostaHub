@@ -3,7 +3,7 @@ import { getSession } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { ArrowLeft, Edit, Calendar, Activity, Eye, Plus } from 'lucide-react'
 import Link from 'next/link'
-import { Badge, KostaCard, KostaButton, palette } from '@/components/KostaUI'
+import { Badge, KostaCard, KostaButton } from '@/components/KostaUI'
 import { RekamMedisHistory } from '@/components/Hewan/RekamMedisHistory'
 
 
