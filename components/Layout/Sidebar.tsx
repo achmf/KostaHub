@@ -6,10 +6,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import {
   LayoutDashboard,
+  Activity,
   Users,
-  Users2,
   Stethoscope,
-  Heart,
+  Dna,
   Scale,
   FileBarChart,
   Bell,
@@ -39,13 +39,13 @@ type NavItemDef = NavItem & { roles?: string[] }
 
 const allNav: NavItemDef[] = [
   { href: '/', label: 'Dasbor', icon: LayoutDashboard, group: 'OPERASIONAL' },
-  { href: '/hewan', label: 'Populasi', icon: Users, group: 'OPERASIONAL' },
+  { href: '/hewan', label: 'Populasi', icon: Activity, group: 'OPERASIONAL' },
   { href: '/medis', label: 'Rekam Medis', icon: Stethoscope, group: 'OPERASIONAL' },
-  { href: '/reproduksi', label: 'Reproduksi', icon: Heart, group: 'OPERASIONAL' },
+  { href: '/reproduksi', label: 'Reproduksi', icon: Dna, group: 'OPERASIONAL' },
   { href: '/berat', label: 'Berat Badan', icon: Scale, group: 'OPERASIONAL' },
   { href: '/laporan', label: 'Laporan', icon: FileBarChart, group: 'ANALITIK', roles: ['OWNER', 'SUPER_ADMIN'] },
   { href: '/map', label: 'Peta GIS', icon: Map, group: 'ANALITIK', roles: ['OWNER', 'SUPER_ADMIN'] },
-  { href: '/staff', label: 'Kelola Staff', icon: Users2, group: 'MANAJEMEN', roles: ['OWNER'] },
+  { href: '/staff', label: 'Kelola Staff', icon: Users, group: 'MANAJEMEN', roles: ['OWNER'] },
   { href: '/farm', label: 'Manajemen Farm', icon: Building2, group: 'ADMIN', roles: ['SUPER_ADMIN'] },
   { href: '/admin', label: 'Backoffice', icon: Shield, group: 'ADMIN', roles: ['SUPER_ADMIN', 'DINAS'] },
 ]

@@ -96,7 +96,11 @@ function FocusMap({ farm }: { farm: Farm | null }) {
   const map = useMap()
   useEffect(() => {
     if (farm?.lat && farm?.lng) {
-      map.flyTo([farm.lat, farm.lng], 15, { duration: 1.2 })
+      try {
+        map.flyTo([farm.lat, farm.lng], 15, { duration: 1.2 })
+      } catch {
+        // map may have been unmounted during navigation
+      }
     }
   }, [farm, map])
   return null
@@ -124,13 +128,17 @@ function InitBounds({ farms }: { farms: Farm[] }) {
 function LayerController({ layer }: { layer: MapLayer }) {
   const map = useMap()
   useEffect(() => {
-    map.eachLayer(l => {
-      if ((l as L.TileLayer).options?.attribution !== undefined && l instanceof L.TileLayer) {
-        map.removeLayer(l)
-      }
-    })
-    const tile = TILE_LAYERS[layer]
-    L.tileLayer(tile.url, { attribution: tile.attribution, maxZoom: 19 }).addTo(map)
+    try {
+      map.eachLayer(l => {
+        if ((l as L.TileLayer).options?.attribution !== undefined && l instanceof L.TileLayer) {
+          map.removeLayer(l)
+        }
+      })
+      const tile = TILE_LAYERS[layer]
+      L.tileLayer(tile.url, { attribution: tile.attribution, maxZoom: 19 }).addTo(map)
+    } catch {
+      // map may have been unmounted
+    }
   }, [layer, map])
   return null
 }
@@ -138,10 +146,21 @@ function LayerController({ layer }: { layer: MapLayer }) {
 function MapResizer() {
   const map = useMap()
   useEffect(() => {
+    let container: HTMLElement | null = null
+    try {
+      container = map.getContainer()
+    } catch {
+      return
+    }
+    if (!container) return
     const observer = new ResizeObserver(() => {
-      map.invalidateSize()
+      try {
+        map.invalidateSize()
+      } catch {
+        // map unmounted during resize
+      }
     })
-    observer.observe(map.getContainer())
+    observer.observe(container)
     return () => observer.disconnect()
   }, [map])
   return null
@@ -240,6 +259,7 @@ export default function FarmMap({
 
   return (
     <MapContainer
+      key="owner-leaflet-map"
       center={initialCenter}
       zoom={12}
       style={{ height: '100%', width: '100%' }}

@@ -3,7 +3,8 @@ import { Plus } from 'lucide-react'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { KostaPageHeader, KostaButton, KostaSectionLabel, palette } from '@/components/KostaUI'
+import { KostaPageHeader, KostaButton, KostaSectionLabel } from '@/components/KostaUI'
+import { palette } from '@/lib/palette'
 import { HewanMedisList } from '@/components/Hewan/HewanMedisList'
 
 

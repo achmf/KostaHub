@@ -3,8 +3,8 @@
 import { useState, useRef, useTransition } from 'react'
 import { Camera, Loader2, UploadCloud } from 'lucide-react'
 import Image from 'next/image'
-import { uploadFotoHewanLocal } from '@/actions/upload'
-import { updateFotoHewan } from '@/actions/hewan'
+import { uploadFotoHewan } from '@/actions/upload'
+import { kompresGambar } from '@/lib/kompres-gambar'
 import { palette } from '@/components/KostaUI'
 
 interface HewanAvatarProfileProps {
@@ -31,27 +31,22 @@ export function HewanAvatarProfile({ hewanId, fotoUrl, nama, tag }: HewanAvatarP
     setPreview(objectUrl)
     setError(null)
 
-    const formData = new FormData()
-    formData.append('file', file)
-
     startTransition(async () => {
-      // 1. Upload file
-      const uploadRes = await uploadFotoHewanLocal(formData)
-      if (uploadRes?.error) {
-        setError(uploadRes.error)
-        setPreview(fotoUrl) // Revert
-        return
-      }
-
-      if (uploadRes?.url) {
-        // 2. Update DB
-        const updateRes = await updateFotoHewan(hewanId, uploadRes.url)
-        if (updateRes?.error) {
-          setError(updateRes.error)
-          setPreview(fotoUrl)
-        } else {
-          setPreview(uploadRes.url) // Update to real URL
+      try {
+        const formData = new FormData()
+        formData.append('file', await kompresGambar(file))
+        const res = await uploadFotoHewan(hewanId, formData)
+        if ('error' in res) {
+          setError(res.error)
+          setPreview(fotoUrl) // Revert
+          return
         }
+        setPreview(res.url)
+      } catch {
+        setError('Gagal mengunggah foto. Periksa koneksi lalu coba lagi.')
+        setPreview(fotoUrl)
+      } finally {
+        URL.revokeObjectURL(objectUrl)
       }
     })
   }

@@ -3,7 +3,6 @@
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
-import { sendApprovalEmail, sendRejectionEmail } from '@/lib/email'
 import { invalidateAdmin, invalidateFarm } from '@/lib/cache-invalidation'
 
 async function requireSuperAdmin() {
@@ -18,16 +17,8 @@ async function requireSuperAdmin() {
 export async function approveRegistration(farmId: string) {
   await requireSuperAdmin()
 
-  const farm = await prisma.farm.findUnique({
-    where: { id: farmId },
-    include: {
-      members: {
-        include: { user: { select: { id: true, name: true, email: true } } },
-        where: { user: { role: 'OWNER' } },
-        take: 1,
-      },
-    },
-  })
+  // Owner melihat hasilnya langsung di halaman /status saat login
+  const farm = await prisma.farm.findUnique({ where: { id: farmId }, select: { status: true } })
 
   if (!farm || farm.status !== 'NONAKTIF') {
     return { error: 'Farm tidak ditemukan atau sudah diproses' }
@@ -37,12 +28,6 @@ export async function approveRegistration(farmId: string) {
     where: { id: farmId },
     data: { status: 'AKTIF', rejectionReason: null },
   })
-
-  // Kirim notifikasi ke owner
-  const owner = farm.members[0]?.user
-  if (owner) {
-    await sendApprovalEmail(owner.email, owner.name)
-  }
 
   invalidateAdmin()
   invalidateFarm()
@@ -54,16 +39,8 @@ export async function approveRegistration(farmId: string) {
 export async function rejectRegistration(farmId: string, reason?: string) {
   await requireSuperAdmin()
 
-  const farm = await prisma.farm.findUnique({
-    where: { id: farmId },
-    include: {
-      members: {
-        include: { user: { select: { id: true, name: true, email: true } } },
-        where: { user: { role: 'OWNER' } },
-        take: 1,
-      },
-    },
-  })
+  // Alasan penolakan tampil ke owner di halaman /status
+  const farm = await prisma.farm.findUnique({ where: { id: farmId }, select: { status: true } })
 
   if (!farm || farm.status !== 'NONAKTIF') {
     return { error: 'Farm tidak ditemukan atau sudah diproses' }
@@ -74,12 +51,6 @@ export async function rejectRegistration(farmId: string, reason?: string) {
     data: { rejectionReason: reason ?? null },
     // status tetap NONAKTIF — owner bisa reapply
   })
-
-  // Kirim notifikasi ke owner
-  const owner = farm.members[0]?.user
-  if (owner) {
-    await sendRejectionEmail(owner.email, owner.name, reason)
-  }
 
   invalidateAdmin()
   revalidatePath('/admin/approvals')

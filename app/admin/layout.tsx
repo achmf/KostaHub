@@ -32,6 +32,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <AdminSidebar
         name={session.name}
         email={session.email ?? ''}
+        role={session.role}
         pendingCount={pendingCount}
       />
 

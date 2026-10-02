@@ -34,25 +34,30 @@ const palette = {
 
 const nav = [
   { href: '/admin', label: 'Dashboard & Analitik', icon: LayoutDashboard, group: 'OVERVIEW', exact: true },
-  { href: '/admin/approvals', label: 'Persetujuan', icon: ShieldCheck, group: 'MANAJEMEN', badgeKey: 'approvals' },
+  // MANAJEMEN — Persetujuan & Users hanya untuk SUPER_ADMIN
+  { href: '/admin/approvals', label: 'Persetujuan', icon: ShieldCheck, group: 'MANAJEMEN', badgeKey: 'approvals', roles: ['SUPER_ADMIN'] },
   { href: '/admin/farms', label: 'Semua Farm', icon: Building2, group: 'MANAJEMEN' },
   { href: '/admin/map', label: 'Peta GIS', icon: MapPin, group: 'MANAJEMEN' },
-  { href: '/admin/users', label: 'Semua User', icon: Users, group: 'MANAJEMEN' },
+  { href: '/admin/users', label: 'Semua User', icon: Users, group: 'MANAJEMEN', roles: ['SUPER_ADMIN'] },
   { href: '/admin/activity', label: 'Activity Log', icon: Activity, group: 'MANAJEMEN' },
-  { href: '/admin/announcements', label: 'Pengumuman', icon: Megaphone, group: 'MANAJEMEN' },
+  // Pengumuman: DINAS hanya bisa lihat riwayat, tapi kirim tidak bisa — sembunyikan
+  { href: '/admin/announcements', label: 'Pengumuman', icon: Megaphone, group: 'MANAJEMEN', roles: ['SUPER_ADMIN'] },
   { href: '/admin/laporan', label: 'Laporan', icon: FileText, group: 'LAPORAN' },
 ]
 
-const groups = Array.from(new Set(nav.map((n) => n.group)))
 
 interface AdminSidebarProps {
   name: string
   email: string
+  role: string
   pendingCount?: number
 }
 
-export default function AdminSidebar({ name, email, pendingCount: initialPendingCount = 0 }: AdminSidebarProps) {
+export default function AdminSidebar({ name, email, role, pendingCount: initialPendingCount = 0 }: AdminSidebarProps) {
   const pathname = usePathname()
+  // Filter nav items berdasarkan role
+  const filteredNav = nav.filter((n) => !n.roles || n.roles.includes(role))
+  const groups = Array.from(new Set(filteredNav.map((n) => n.group)))
   const [pendingCount, setPendingCount] = useState(initialPendingCount)
   const [isOpen, setIsOpen] = useState(true)
   const { isOpen: isMobileOpen, setIsOpen: setIsMobileOpen } = useMobileMenu()
@@ -144,7 +149,7 @@ export default function AdminSidebar({ name, email, pendingCount: initialPending
       {/* Navigation */}
       <nav className="px-3 flex-1 overflow-y-auto overflow-x-hidden" style={{ scrollbarWidth: 'none' }}>
         {groups.map((g) => {
-          const groupNavs = nav.filter((n) => n.group === g)
+          const groupNavs = filteredNav.filter((n) => n.group === g)
           if (groupNavs.length === 0) return null
 
           return (

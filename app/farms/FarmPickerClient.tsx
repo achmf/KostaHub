@@ -6,6 +6,7 @@ import { Building2, MapPin, ChevronRight, Plus, Clock, AlertCircle, XCircle } fr
 import { switchFarm } from '@/actions/switchFarm'
 import { GoatMark } from '@/components/GoatMark'
 import { logout } from '@/actions/auth'
+import { forgetPushOnThisDevice } from '@/hooks/usePushSubscription'
 import Link from 'next/link'
 
 type Farm = {
@@ -82,7 +83,7 @@ export default function FarmPickerClient({ farms, userName, userRole, activeFarm
             </div>
             <span className="hidden min-[360px]:block truncate" style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}>{userName}</span>
           </div>
-          <form action={logout}>
+          <form action={logout} onSubmit={forgetPushOnThisDevice}>
             <button
               type="submit"
               className="cursor-pointer min-h-10 sm:min-h-0 px-3 py-1.5 rounded-full text-xs"

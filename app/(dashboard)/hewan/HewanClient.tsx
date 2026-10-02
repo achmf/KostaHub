@@ -20,6 +20,7 @@ import {
   palette,
 } from '@/components/KostaUI'
 import { SearchBar } from '@/components/Layout/SearchBar'
+import { NfcScanButton } from '@/components/Hewan/NfcScanButton'
 import { FilterSheet } from '@/components/Layout/FilterSheet'
 
 type HewanWithRelations = {
@@ -36,7 +37,11 @@ type HewanWithRelations = {
   kematian: { tanggalMati: Date } | null
   beratHistory?: { id: string; tanggal: Date; berat: number }[]
   _count?: { rekamMedis: number }
+  tagsRfid?: { rfidUid: string }[]
 }
+
+// Samakan format UID: "04:8f:21:4a" (Web NFC) = "048F214A" (reader USB)
+const normalisasiUid = (s: string) => s.replace(/[^0-9a-z]/gi, '').toUpperCase()
 
 const KATEGORI_LABEL: Record<string, string> = {
   INDUKAN: 'Indukan',
@@ -75,13 +80,18 @@ export function HewanClient({
   const router = useRouter()
 
   const filtered = useMemo(() => {
+    const uidQuery = normalisasiUid(q)
     return hewanList.filter((h) => {
       if (kat !== 'ALL' && h.kategori !== kat) return false
       if (statusFilter === 'MATI' && !h.kematian) return false
       if (statusFilter === 'HIDUP' && !!h.kematian) return false
       if (kelaminFilter !== 'ALL' && h.kelamin !== kelaminFilter) return false
       if (farmFilter !== 'ALL' && h.farmId !== farmFilter) return false
-      if (q && !(`${h.tag} ${h.nama || ''}`.toLowerCase().includes(q.toLowerCase()))) return false
+      if (q) {
+        const cocokTeks = `${h.tag} ${h.nama || ''}`.toLowerCase().includes(q.toLowerCase())
+        const cocokUid = uidQuery.length >= 4 && !!h.tagsRfid?.some((t) => normalisasiUid(t.rfidUid) === uidQuery)
+        if (!cocokTeks && !cocokUid) return false
+      }
       return true
     })
   }, [q, kat, statusFilter, kelaminFilter, farmFilter, hewanList])
@@ -161,7 +171,10 @@ export function HewanClient({
 
       {/* Search & Filter Bar */}
       <div className="mb-5 flex flex-row items-center justify-between gap-3 sm:gap-4">
-        <SearchBar placeholder="Cari tag (KST-…), atau nama..." />
+        <div className="flex flex-1 min-w-0 items-center gap-2">
+          <SearchBar placeholder="Cari tag (KST-…), nama, atau UID RFID..." />
+          <NfcScanButton />
+        </div>
         <FilterSheet filters={filterGroups} />
       </div>
 

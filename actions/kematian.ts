@@ -1,12 +1,12 @@
 'use server'
 
-import { withAuth } from '@/lib/auth'
+import { withMutationAuth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { kematianSchema } from '@/lib/validations/kematian.schema'
 import { catatKematianLogic, batalkanKematianLogic } from '@/services/kematian.service'
 import { invalidateHewan } from '@/lib/cache-invalidation'
 
-export const catatKematian = withAuth(async (session, hewanId: string, formData: FormData) => {
+export const catatKematian = withMutationAuth(async (session, hewanId: string, formData: FormData) => {
   const parsed = kematianSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
@@ -19,7 +19,7 @@ export const catatKematian = withAuth(async (session, hewanId: string, formData:
   return { success: true }
 })
 
-export const batalkanKematian = withAuth(async (session, hewanId: string) => {
+export const batalkanKematian = withMutationAuth(async (session, hewanId: string) => {
   const result = await batalkanKematianLogic(hewanId, session)
   if ('error' in result) return result
 

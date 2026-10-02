@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { FileText, Building2, Activity, Users, Heart } from 'lucide-react'
+import { FileText, Building2, Activity, Users, Heart, HeartCrack, Stethoscope } from 'lucide-react'
 import LaporanExportButton from '@/components/Admin/LaporanExportButton'
 
 const palette = {
@@ -112,9 +112,9 @@ export default async function AdminLaporanPage() {
             { label: 'Farm Terdaftar', value: farms.length, icon: Building2 },
             { label: 'Farm Aktif', value: farmAktif, icon: Building2 },
             { label: 'Total Hewan', value: totalHewan, icon: Activity },
-            { label: 'Total Kematian', value: totalMati, icon: Heart },
+            { label: 'Total Kematian', value: totalMati, icon: HeartCrack },
             { label: 'Total Staf', value: totalUser, icon: Users },
-            { label: 'Rekam Medis', value: totalMedis, icon: FileText },
+            { label: 'Rekam Medis', value: totalMedis, icon: Stethoscope },
           ].map((s) => {
             const Icon = s.icon
             return (

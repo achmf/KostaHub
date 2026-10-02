@@ -1,13 +1,13 @@
 'use server'
 
-import { withAuth } from '@/lib/auth'
+import { withMutationAuth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { hewanSchema } from '@/lib/validations/hewan.schema'
-import { createHewanLogic, transferHewanLogic, editHewanLogic, updateFotoHewanLogic } from '@/services/hewan.service'
+import { createHewanLogic, transferHewanLogic, editHewanLogic } from '@/services/hewan.service'
 import { invalidateHewan } from '@/lib/cache-invalidation'
 
-export const tambahHewan = withAuth(async (session, formData: FormData) => {
+export const tambahHewan = withMutationAuth(async (session, formData: FormData) => {
 
   const parsed = hewanSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: parsed.error.issues[0].message }
@@ -19,7 +19,7 @@ export const tambahHewan = withAuth(async (session, formData: FormData) => {
   redirect('/hewan')
 })
 
-export const transferHewan = withAuth(async (session, hewanId: string, toFarmId: string, alasan?: string) => {
+export const transferHewan = withMutationAuth(async (session, hewanId: string, toFarmId: string, alasan?: string) => {
 
   const result = await transferHewanLogic(hewanId, toFarmId, alasan, session)
   if ('error' in result) return result
@@ -29,7 +29,7 @@ export const transferHewan = withAuth(async (session, hewanId: string, toFarmId:
   return { success: true }
 })
 
-export const editHewan = withAuth(async (session, hewanId: string, formData: FormData) => {
+export const editHewan = withMutationAuth(async (session, hewanId: string, formData: FormData) => {
 
   const parsed = hewanSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: parsed.error.issues[0].message }
@@ -39,15 +39,5 @@ export const editHewan = withAuth(async (session, hewanId: string, formData: For
 
   invalidateHewan()
   redirect(`/hewan/${hewanId}`)
-})
-
-export const updateFotoHewan = withAuth(async (session, hewanId: string, fotoUrl: string) => {
-
-  const result = await updateFotoHewanLogic(hewanId, fotoUrl, session)
-  if ('error' in result) return result
-
-  invalidateHewan()
-  revalidatePath(`/hewan/${hewanId}`)
-  return { success: true }
 })
 

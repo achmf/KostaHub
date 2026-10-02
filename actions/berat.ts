@@ -1,13 +1,13 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { withAuth } from '@/lib/auth'
+import { withAuth, withMutationAuth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { invalidateBerat } from '@/lib/cache-invalidation'
 
 import { redirect } from 'next/navigation'
 
-export const addBeratBadan = withAuth(async (session, formData: FormData) => {
+export const addBeratBadan = withMutationAuth(async (session, formData: FormData) => {
   const hewanId = formData.get('hewanId') as string
   if (!hewanId) return { error: 'Hewan tidak dipilih' }
 

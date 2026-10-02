@@ -8,8 +8,8 @@ import { usePagination } from '@/hooks/usePagination'
 import { SearchBar } from '@/components/Layout/SearchBar'
 import {
   FileSpreadsheet, Download, Stethoscope, Calendar, Shield, Search,
-  CircleAlert, PawPrint, ArrowUpDown, ArrowUp, ArrowDown,
-  Syringe, FlaskConical, Pill, Heart, Scissors,
+  CircleAlert, ArrowUpDown, ArrowUp, ArrowDown,
+  Syringe, FlaskConical, Pill, FileText, Scissors,
   Dna, Scale, TrendingUp, TrendingDown, Minus,
   ArrowRightLeft, PackagePlus, PackageMinus,
   ShoppingCart, ChevronDown, ChevronUp, ChevronRight, ShieldAlert,
@@ -28,7 +28,7 @@ const KATEGORI_MEDIS_ICON: Record<string, React.ReactNode> = {
   PENGOBATAN: <Pill size={13} />,
   PEMERIKSAAN: <Stethoscope size={13} />,
   PERAWATAN_LUKA: <Scissors size={13} />,
-  LAINNYA: <Heart size={13} />,
+  LAINNYA: <FileText size={13} />,
 }
 
 const KATEGORI_MEDIS_LABEL: Record<string, string> = {
