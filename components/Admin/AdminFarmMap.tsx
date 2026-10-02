@@ -12,6 +12,7 @@ import type { Farm } from '@/components/Map/MapPageClient'
 import { saveGeojsonAdmin } from '@/actions/admin/saveGeojsonAdmin'
 import { useToast } from '@/components/ToastProvider'
 import { escapeHtml } from '@/lib/utils'
+import { switchFarm } from '@/actions/switchFarm'
 
 // Dynamically load GIS sub-components (no SSR)
 const HeatmapLayer = dynamic(() => import('@/components/Map/HeatmapLayer'), { ssr: false })
@@ -99,7 +100,13 @@ function createClusterIcon(cluster: any) {
 function FocusMap({ farm }: { farm: AdminFarm | null }) {
   const map = useMap()
   useEffect(() => {
-    if (farm?.lat && farm?.lng) map.flyTo([farm.lat, farm.lng], 15, { duration: 1.2 })
+    if (farm?.lat && farm?.lng) {
+      try {
+        map.flyTo([farm.lat, farm.lng], 15, { duration: 1.2 })
+      } catch {
+        // map may have been unmounted during navigation
+      }
+    }
   }, [farm, map])
   return null
 }
@@ -123,11 +130,15 @@ function InitBounds({ farms }: { farms: AdminFarm[] }) {
 function LayerController({ layer }: { layer: MapLayer }) {
   const map = useMap()
   useEffect(() => {
-    map.eachLayer((l) => {
-      if (l instanceof L.TileLayer) map.removeLayer(l)
-    })
-    const t = TILE_LAYERS[layer]
-    L.tileLayer(t.url, { attribution: t.attribution, maxZoom: 19 }).addTo(map)
+    try {
+      map.eachLayer((l) => {
+        if (l instanceof L.TileLayer) map.removeLayer(l)
+      })
+      const t = TILE_LAYERS[layer]
+      L.tileLayer(t.url, { attribution: t.attribution, maxZoom: 19 }).addTo(map)
+    } catch {
+      // map may have been unmounted
+    }
   }, [layer, map])
   return null
 }
@@ -135,10 +146,21 @@ function LayerController({ layer }: { layer: MapLayer }) {
 function MapResizer() {
   const map = useMap()
   useEffect(() => {
+    let container: HTMLElement | null = null
+    try {
+      container = map.getContainer()
+    } catch {
+      return
+    }
+    if (!container) return
     const observer = new ResizeObserver(() => {
-      map.invalidateSize()
+      try {
+        map.invalidateSize()
+      } catch {
+        // map unmounted during resize
+      }
     })
-    observer.observe(map.getContainer())
+    observer.observe(container)
     return () => observer.disconnect()
   }, [map])
   return null
@@ -201,13 +223,15 @@ function FarmPopupContent({ farm }: { farm: AdminFarm }) {
       </div>
 
       {/* Action */}
-      <Link href={`/admin/farms/${farm.id}`} className="min-h-10 lg:min-h-0" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 12px', background: '#1B2A1F', color: '#F2EDE0', borderRadius: 8, fontSize: 12, fontWeight: 500, textDecoration: 'none', transition: 'opacity 0.2s' }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-        </svg>
-        Buka Dasbor Farm
-      </Link>
+      <form action={switchFarm.bind(null, farm.id)} className="w-full">
+        <button
+          type="submit"
+          className="min-h-10 lg:min-h-0 w-full"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 12px', background: '#1B2A1F', color: '#F2EDE0', borderRadius: 8, fontSize: 12, fontWeight: 500, border: 'none', cursor: 'pointer', transition: 'opacity 0.2s' }}
+        >
+          Buka Dasbor Farm
+        </button>
+      </form>
     </div>
   )
 }
@@ -287,6 +311,7 @@ export default function AdminFarmMap({
   return (
     <div className="relative w-full h-full">
       <MapContainer
+        key="admin-leaflet-map"
         center={initialCenter}
         zoom={7}
         style={{ height: '100%', width: '100%' }}
