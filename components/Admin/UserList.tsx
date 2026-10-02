@@ -122,7 +122,7 @@ export default function UserList({ users }: { users: UserItem[] }) {
                     <div className="flex items-center gap-3">
                       <div
                         className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                        style={{ background: palette.ochre, color: palette.ink, fontFamily: "'Fraunces',serif", fontSize: 13 }}
+                        style={{ background: palette.ochre, color: palette.cream, fontFamily: "'Fraunces',serif", fontSize: 13 }}
                       >
                         {user.name.charAt(0).toUpperCase()}
                       </div>

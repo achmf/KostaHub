@@ -14,7 +14,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts'
 import {
   Building2,
@@ -108,8 +107,7 @@ const fadeUp = {
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="mb-5"
-      style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.2em', color: 'rgba(13,20,15,0.45)' }}
+      style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.2em', color: 'rgba(13,20,15,0.4)', marginBottom: 4 }}
     >
       {children}
     </div>
@@ -124,6 +122,28 @@ const Card = ({ children, className = '' }: { children: React.ReactNode; classNa
     {children}
   </div>
 )
+
+// Unified tooltip style
+const tooltipStyle = {
+  contentStyle: { backgroundColor: palette.ink, color: '#fff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' },
+  itemStyle: { color: '#ffffff' },
+  labelStyle: { color: 'rgba(255,255,255,0.6)', fontFamily: "'Inter',sans-serif", fontSize: 12, marginBottom: 4 },
+  cursor: { fill: 'rgba(13,20,15,0.03)' },
+}
+
+// ChartLegend — unified legend outside scroll areas
+function ChartLegend({ items }: { items: { label: string; color: string }[] }) {
+  return (
+    <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-3" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>
+      {items.map((item) => (
+        <span key={item.label} className="flex items-center gap-1.5" style={{ color: item.color }}>
+          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: item.color }} />
+          {item.label}
+        </span>
+      ))}
+    </div>
+  )
+}
 
 // TrendBadge — shows delta % vs last month
 function TrendBadge({ delta, invertedDanger = false }: { delta: number; invertedDanger?: boolean }) {
@@ -143,6 +163,40 @@ function TrendBadge({ delta, invertedDanger = false }: { delta: number; inverted
     </span>
   )
 }
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const rawData = payload[0]?.payload;
+    const isFarmComparison = rawData && rawData.hewan !== undefined && rawData.user !== undefined;
+    const ratio = isFarmComparison && rawData.user > 0 ? Math.round(rawData.hewan / rawData.user) : 0;
+
+    return (
+      <div style={{ backgroundColor: palette.ink, color: '#fff', padding: '12px 16px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
+        <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 8 }}>
+          {rawData?.namaPanjang || label}
+        </div>
+        {payload.map((entry: any, index: number) => (
+          <div key={index} className="flex items-center justify-between gap-6 mb-1 last:mb-0">
+            <div className="flex items-center gap-2">
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: entry.color }} />
+              <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 13 }}>{entry.name}</span>
+            </div>
+            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 13, fontWeight: 500 }}>
+              {entry.value}
+            </span>
+          </div>
+        ))}
+        {isFarmComparison && (
+          <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.1)', fontFamily: "'Inter',sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>
+            <span style={{ color: palette.ochreSoft, fontWeight: 500 }}>Beban:</span> {ratio > 0 ? `${ratio} ekor / staf` : 'Tidak ada staf aktif'}
+          </div>
+        )}
+      </div>
+    )
+  }
+  return null
+}
+
 
 export default function AdminDashboardClient({
   stats,
@@ -176,7 +230,7 @@ export default function AdminDashboardClient({
       icon: Activity,
       color: palette.moss,
       bg: 'rgba(63,91,58,0.10)',
-      href: '/admin/analytics',
+      href: '#analytics',
       trendKey: 'hewanMasuk' as const,
       invertedDanger: false,
     },
@@ -198,7 +252,7 @@ export default function AdminDashboardClient({
       icon: Heart,
       color: stats.mortalityRate > 10 ? palette.danger : palette.moss,
       bg: stats.mortalityRate > 10 ? 'rgba(181,68,59,0.08)' : 'rgba(63,91,58,0.10)',
-      href: '/admin/analytics',
+      href: '#analytics',
       trendKey: 'hewanMati' as const,
       invertedDanger: true,
     },
@@ -209,7 +263,7 @@ export default function AdminDashboardClient({
       icon: Dna,
       color: palette.ochre,
       bg: 'rgba(199,135,62,0.08)',
-      href: '/admin/analytics',
+      href: '#analytics',
       trendKey: null,
       invertedDanger: false,
     },
@@ -297,7 +351,7 @@ export default function AdminDashboardClient({
         {/* Trend Populasi */}
         <motion.div custom={6} variants={fadeUp} initial="hidden" animate="visible" className="xl:col-span-2">
           <Card>
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
               <div>
                 <SectionLabel>TREN POPULASI REGIONAL</SectionLabel>
                 <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink }}>
@@ -307,28 +361,36 @@ export default function AdminDashboardClient({
               <TrendingUp size={16} style={{ color: palette.ochre, opacity: 0.7 }} />
             </div>
             <div className="w-full min-w-0">
-              <ResponsiveContainer width="100%" height={200}>
-                <AreaChart data={trendData} margin={{ top: 4, right: 0, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="adminGradMasuk" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={palette.ochre} stopOpacity={0.2} />
-                    <stop offset="95%" stopColor={palette.ochre} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,20,15,0.05)" />
-                <XAxis dataKey="label" tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                  itemStyle={{ color: '#ffffff' }}
-                  labelStyle={{ color: '#ffffff' }}
-                  contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}`, opacity: 1 }}
-                />
-                <Legend wrapperStyle={{ fontFamily: "'Inter',sans-serif", fontSize: 11 }} />
-                <Area type="monotone" dataKey="masuk" name="Masuk" stroke={palette.ochre} strokeWidth={2} fill="url(#adminGradMasuk)" />
+              <ResponsiveContainer width="100%" height={240}>
+                <AreaChart data={trendData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="adminGradMasuk" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={palette.moss} stopOpacity={0.25} />
+                      <stop offset="95%" stopColor={palette.moss} stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="adminGradKeluar" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={palette.ochre} stopOpacity={0.25} />
+                      <stop offset="95%" stopColor={palette.ochre} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,20,15,0.05)" horizontal={false} vertical={true} />
+                  <XAxis dataKey="label" tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} dy={10} />
+                  <YAxis tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} dx={-10} />
+                  <Tooltip
+                    content={<CustomTooltip />}
+                    cursor={{ stroke: 'rgba(13,20,15,0.1)', strokeWidth: 1, strokeDasharray: '3 3' }}
+                  />
+                  <Area type="monotone" dataKey="masuk" name="Masuk" stroke={palette.moss} strokeWidth={2.5} fill="url(#adminGradMasuk)" activeDot={{ r: 5, strokeWidth: 0, fill: palette.moss }} />
+                  <Area type="monotone" dataKey="keluar" name="Keluar" stroke={palette.ochre} strokeWidth={2.5} fill="url(#adminGradKeluar)" activeDot={{ r: 5, strokeWidth: 0, fill: palette.ochre }} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
+            <ChartLegend
+              items={[
+                { label: 'Masuk', color: palette.moss },
+                { label: 'Keluar', color: palette.ochre },
+              ]}
+            />
           </Card>
         </motion.div>
 
@@ -363,11 +425,26 @@ export default function AdminDashboardClient({
           <Card className="flex-1">
             <SectionLabel>PERINGATAN FARM</SectionLabel>
             {farmAlerts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-6 gap-2">
-                <CheckCircle2 size={22} style={{ color: palette.moss }} />
-                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.5)' }}>
-                  Semua farm normal
-                </span>
+              <div className="flex-1 flex flex-col justify-center">
+                <div 
+                  className="flex flex-col sm:flex-row items-center gap-4 p-5 rounded-xl text-center sm:text-left"
+                  style={{ border: '1px solid rgba(63,91,58,0.15)', background: 'rgba(63,91,58,0.04)' }}
+                >
+                  <div 
+                    className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
+                    style={{ background: 'rgba(63,91,58,0.1)' }}
+                  >
+                    <CheckCircle2 size={24} style={{ color: palette.moss }} />
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 600, color: palette.ink, marginBottom: 2 }}>
+                      Status Regional Normal
+                    </div>
+                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.6)', lineHeight: 1.4 }}>
+                      Tidak ada farm yang memerlukan perhatian khusus saat ini. Semua parameter terpantau aman.
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="space-y-2.5">
@@ -480,40 +557,70 @@ export default function AdminDashboardClient({
         {/* Farm Comparison Bar */}
         <motion.div custom={9} variants={fadeUp} initial="hidden" animate="visible" className="xl:col-span-2">
           <Card>
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
               <div>
-                <SectionLabel>PERBANDINGAN ANTAR FARM</SectionLabel>
+                <SectionLabel>BEBAN KERJA & SKALA OPERASIONAL</SectionLabel>
                 <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink }}>
-                  Jumlah hewan per farm
+                  Perbandingan jumlah hewan dan staf per farm
                 </div>
               </div>
-              <Link href="/admin/analytics" className="shrink-0 flex items-center min-h-10" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: palette.ochre }}>
-                Detail →
-              </Link>
             </div>
-            {/* Banyak farm: di ponsel grafik bisa di-swipe agar batang tidak terlalu tipis */}
-            <div className="overflow-x-auto">
-            <ResponsiveContainer width="100%" height={200} minWidth={farmComparison.length * 40} className="md:min-w-0!">
-              <BarChart data={farmComparison} margin={{ top: 4, right: 0, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,20,15,0.05)" vertical={false} />
-                <XAxis dataKey="nama" tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                  itemStyle={{ color: '#ffffff' }}
-                  labelStyle={{ color: '#ffffff' }}
-                  formatter={(val, name) => [val, name === 'hewan' ? 'Hewan' : 'User']}
-                  contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}`, opacity: 1 }}
-                  labelFormatter={(label) => {
-                    const item = farmComparison.find((f) => f.nama === String(label))
-                    return item?.namaPanjang || String(label)
-                  }}
-                />
-                <Bar dataKey="hewan" name="Hewan" fill={palette.ochre} radius={[4, 4, 0, 0]} />
-                <Bar dataKey="user" name="User" fill="rgba(199,135,62,0.3)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-            </div>
+            {(() => {
+              const sorted = [...farmComparison]
+                .sort((a, b) => b.hewan - a.hewan)
+                .map(f => ({
+                  ...f,
+                  shortName: f.namaPanjang.replace(/^Farm Kosta\s*/i, ''),
+                }))
+              const barH = 32
+              const pad = 40
+              const maxVisible = 8
+              const needsScroll = sorted.length > maxVisible
+              const chartHeight = Math.max(300, sorted.length * barH)
+              const containerMaxH = maxVisible * barH + pad
+              return (
+                <>
+                <div className="relative">
+                  <div
+                    style={{
+                      maxHeight: needsScroll ? containerMaxH : undefined,
+                      overflowY: needsScroll ? 'auto' : undefined,
+                      scrollbarWidth: 'thin',
+                      scrollbarColor: 'rgba(13,20,15,0.12) transparent',
+                    }}
+                  >
+                    <ResponsiveContainer width="100%" height={chartHeight}>
+                      <BarChart data={sorted} layout="vertical" margin={{ top: 0, right: 40, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,20,15,0.05)" horizontal={false} vertical={true} />
+                        <XAxis type="number" tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
+                        <YAxis dataKey="shortName" type="category" width={100} tick={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, fill: 'rgba(13,20,15,0.7)' }} axisLine={false} tickLine={false} />
+                        <Tooltip
+                          content={<CustomTooltip />}
+                          cursor={{ fill: 'rgba(13,20,15,0.03)' }}
+                        />
+                        <Bar dataKey="hewan" name="Hewan" fill={palette.ochre} radius={[0, 4, 4, 0]} barSize={14} label={{ position: 'right', fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.5)' }} />
+                        <Bar dataKey="user" name="Staf" fill="rgba(199,135,62,0.3)" radius={[0, 4, 4, 0]} barSize={14} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  {needsScroll && (
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 28, pointerEvents: 'none', background: 'linear-gradient(transparent, rgba(255,255,255,0.9))' }} />
+                  )}
+                </div>
+                {needsScroll && (
+                  <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: 'rgba(13,20,15,0.3)', textAlign: 'center', marginTop: 4 }}>
+                    ↕ scroll · {sorted.length} farm
+                  </div>
+                )}
+                </>
+              )
+            })()}
+            <ChartLegend
+              items={[
+                { label: 'Hewan', color: palette.ochre },
+                { label: 'Staf', color: 'rgba(199,135,62,0.5)' },
+              ]}
+            />
           </Card>
         </motion.div>
 
@@ -525,46 +632,46 @@ export default function AdminDashboardClient({
               Kategori hewan regional
             </div>
             {kategoriData.length > 0 ? (
-              <>
-                <ResponsiveContainer width="100%" height={140}>
-                  <PieChart>
-                    <Pie
-                      data={kategoriData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={40}
-                      outerRadius={65}
-                      paddingAngle={2}
-                      dataKey="value"
-                    >
-                      {kategoriData.map((_, idx) => (
-                        <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
+              (() => {
+                const sorted = [...kategoriData].sort((a, b) => b.value - a.value)
+                return (
+                  <>
+                    <ResponsiveContainer width="100%" height={140}>
+                      <PieChart>
+                        <Pie
+                          data={sorted}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={40}
+                          outerRadius={65}
+                          paddingAngle={2}
+                          dataKey="value"
+                        >
+                          {sorted.map((_, idx) => (
+                            <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip {...tooltipStyle} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="space-y-1.5 mt-3">
+                      {sorted.map((k, idx) => (
+                        <div key={k.name} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2.5 h-2.5 rounded-full" style={{ background: CHART_COLORS[idx % CHART_COLORS.length] }} />
+                            <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'rgba(13,20,15,0.7)' }}>{k.name}</span>
+                          </div>
+                          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: palette.ink, fontWeight: 500 }}>
+                            {k.value}
+                          </span>
+                        </div>
                       ))}
-                    </Pie>
-                    <Tooltip
-                      cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                      itemStyle={{ color: '#ffffff' }}
-                      labelStyle={{ color: '#ffffff' }}
-                      contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}`, opacity: 1 }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="space-y-1.5 mt-2">
-                  {kategoriData.map((k, idx) => (
-                    <div key={k.name} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full" style={{ background: CHART_COLORS[idx % CHART_COLORS.length] }} />
-                        <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'rgba(13,20,15,0.7)' }}>{k.name}</span>
-                      </div>
-                      <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: palette.ink, fontWeight: 500 }}>
-                        {k.value}
-                      </span>
                     </div>
-                  ))}
-                </div>
-              </>
+                  </>
+                )
+              })()
             ) : (
-              <div className="flex items-center justify-center h-32" style={{ color: 'rgba(13,20,15,0.4)', fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
+              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.45)', textAlign: 'center', padding: '32px 0' }}>
                 Belum ada data
               </div>
             )}
@@ -582,30 +689,39 @@ export default function AdminDashboardClient({
               Penyakit paling umum di seluruh wilayah
             </div>
             {topDiagnosa.length === 0 ? (
-              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.5)' }}>Belum ada rekam medis.</div>
+              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.45)', textAlign: 'center', padding: '32px 0' }}>Belum ada rekam medis.</div>
             ) : (
-              <div className="space-y-3">
-                {topDiagnosa.map((d, i) => {
-                  const max = topDiagnosa[0].count
-                  const pct = Math.round((d.count / max) * 100)
-                  return (
-                    <div key={d.name}>
-                      <div className="flex items-center justify-between gap-3 mb-1">
-                        <span className="min-w-0 break-words" style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: palette.ink }}>{d.name}</span>
-                        <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'rgba(13,20,15,0.5)' }}>
-                          {d.count}×
-                        </span>
-                      </div>
-                      <div className="h-1.5 rounded-full" style={{ background: 'rgba(13,20,15,0.07)' }}>
-                        <div
-                          className="h-full rounded-full transition-all"
-                          style={{ width: `${pct}%`, background: i === 0 ? palette.danger : palette.ochre, opacity: 1 - i * 0.12 }}
-                        />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+              <ResponsiveContainer width="100%" height={Math.max(260, topDiagnosa.length * 44)}>
+                <BarChart
+                  data={topDiagnosa}
+                  layout="vertical"
+                  margin={{ top: 0, right: 40, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,20,15,0.05)" horizontal={false} />
+                  <XAxis type="number" tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={140}
+                    tick={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, fill: 'rgba(13,20,15,0.7)' }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    {...tooltipStyle}
+                    formatter={(val) => [`${val} kasus`, 'Frekuensi']}
+                  />
+                  <Bar dataKey="count" name="Kasus" fill={palette.ochre} radius={[0, 4, 4, 0]} barSize={14} label={{ position: 'right', fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.5)' }}>
+                    {topDiagnosa.map((_, idx) => (
+                      <Cell 
+                        key={idx} 
+                        fill={idx === 0 ? palette.danger : palette.ochre} 
+                        opacity={1 - idx * 0.08} 
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             )}
           </Card>
         </motion.div>
