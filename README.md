@@ -1,6 +1,8 @@
 # KostaHub
 
-Platform manajemen peternakan kambing berbasis web. Dibangun dengan Next.js 16, Prisma, dan PostgreSQL (Neon).
+> **Skripsi:** Rancang Bangun Sistem Informasi Manajemen Peternakan Kambing Kosta Berbasis Web (Studi Kasus: Koni Farm)
+
+Platform manajemen peternakan kambing Kosta berbasis web. Dibangun dengan Next.js 16, Prisma, dan PostgreSQL (Neon).
 
 ## Tech Stack
 
@@ -17,15 +19,25 @@ Platform manajemen peternakan kambing berbasis web. Dibangun dengan Next.js 16, 
 npm install
 ```
 
-Buat file `.env.local` dengan variabel berikut:
+Buat file `.env` (dibaca Next.js dan Prisma CLI) dengan variabel berikut:
 
 ```
 DATABASE_URL=...
 DATABASE_URL_UNPOOLED=...
 JWT_SECRET=...
-VAPID_PUBLIC_KEY=...
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=...   # npx web-push generate-vapid-keys
 VAPID_PRIVATE_KEY=...
+VAPID_EMAIL=mailto:admin@contoh.com
+CRON_SECRET=...                    # string acak; dikirim Vercel Cron sebagai "Bearer <CRON_SECRET>"
+AWS_ACCESS_KEY_ID=...              # object storage Neon (bucket "uploads" di neon.ts)
+AWS_SECRET_ACCESS_KEY=...
+AWS_ENDPOINT_URL_S3=...
+AWS_REGION=...
 ```
+
+Push notification butuh ketiga variabel VAPID di Vercel (Production & Preview) **sebelum build**, karena
+`NEXT_PUBLIC_VAPID_PUBLIC_KEY` ditanam ke bundle browser. Pengingat otomatis dikirim harian lewat
+Vercel Cron (`vercel.json`, 06:00 WIB) dan langsung setelah input rekam medis/reproduksi.
 
 ## Development
 
