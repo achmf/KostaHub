@@ -3,13 +3,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { KostaCard, KostaSectionLabel, KostaButton, palette } from '@/components/KostaUI'
-import { Download, Link as LinkIcon, Radio, Smartphone, QrCode } from 'lucide-react'
+import { Download, Link as LinkIcon, Radio, Smartphone, QrCode, Nfc } from 'lucide-react'
 import { toast } from 'sonner'
-import { saveRfidTag } from '@/app/(dashboard)/hewan/[id]/actions'
+import { saveRfidTag } from '@/actions/rfid'
+import { useWebNFC } from '@/hooks/useWebNFC'
 
 export function HybridTagManager({ hewanId, tagStr, existingTags }: { hewanId: string, tagStr: string, existingTags: any[] }) {
   const [url, setUrl] = useState('')
-  const [nfcSupported, setNfcSupported] = useState(false)
+  const nfc = useWebNFC()
   const [isWritingNfc, setIsWritingNfc] = useState(false)
   const [uidInput, setUidInput] = useState('')
   const [isSavingUid, setIsSavingUid] = useState(false)
@@ -17,9 +18,6 @@ export function HybridTagManager({ hewanId, tagStr, existingTags }: { hewanId: s
 
   useEffect(() => {
     setUrl(window.location.href)
-    if ('NDEFReader' in window) {
-      setNfcSupported(true)
-    }
   }, [])
 
   const downloadQR = () => {
@@ -95,19 +93,39 @@ export function HybridTagManager({ hewanId, tagStr, existingTags }: { hewanId: s
     }
   }
 
-  const handleUidSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!uidInput.trim()) return
-    
+  const simpanUid = async (uid: string) => {
     setIsSavingUid(true)
-    const res = await saveRfidTag(hewanId, uidInput.trim())
-    setIsSavingUid(false)
-    
-    if (res.success) {
-      toast.success('UID Tag berhasil disimpan')
-      setUidInput('')
-    } else {
-      toast.error(res.error || 'Gagal menyimpan UID')
+    try {
+      const res = await saveRfidTag(hewanId, uid)
+      if ('error' in res) {
+        toast.error(res.error)
+      } else {
+        toast.success('Tag tersimpan dan aktif untuk hewan ini')
+        setUidInput('')
+      }
+    } catch {
+      toast.error('Gagal menyimpan UID')
+    } finally {
+      setIsSavingUid(false)
+    }
+  }
+
+  const handleUidSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (uidInput.trim()) simpanUid(uidInput.trim())
+  }
+
+  // Daftarkan tag cukup dengan menempelkannya ke HP (tanpa mengetik UID)
+  const scanDaftar = async () => {
+    if (nfc.scanning) return nfc.cancel()
+    try {
+      const tag = await nfc.scan()
+      if (!tag) return
+      if (!tag.uid) return toast.error('Tag ini tidak memiliki UID yang bisa dibaca.')
+      setUidInput(tag.uid)
+      await simpanUid(tag.uid)
+    } catch (err) {
+      toast.error((err as Error).message || 'Gagal membaca tag NFC')
     }
   }
 
@@ -155,7 +173,7 @@ export function HybridTagManager({ hewanId, tagStr, existingTags }: { hewanId: s
               <KostaButton variant="outline" onClick={copyUrl} className="flex-1 justify-center">
                 <LinkIcon size={14} /> Copy URL
               </KostaButton>
-              {nfcSupported && (
+              {nfc.supported && (
                 <KostaButton variant="primary" onClick={writeNfc} disabled={isWritingNfc} className="flex-1 justify-center bg-blue-600 border-none text-white hover:bg-blue-700">
                   <Radio size={14} /> {isWritingNfc ? 'Mendekatkan...' : 'Tulis NFC'}
                 </KostaButton>
@@ -168,11 +186,23 @@ export function HybridTagManager({ hewanId, tagStr, existingTags }: { hewanId: s
           {/* Scanner Input */}
           <div>
             <div className="flex items-center gap-2 mb-1.5 font-medium" style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: palette.ink }}>
-              <QrCode size={14} /> Daftar Scanner Fisik
+              <QrCode size={14} /> Daftarkan Tag RFID / NFC
             </div>
             <p className="opacity-70 mb-3" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>
-              Jika menggunakan RFID Stick Reader, klik kolom di bawah lalu tembakkan scanner ke tag.
+              {nfc.supported
+                ? 'Tekan "Scan NFC" lalu tempel tag ke HP, atau gunakan RFID Stick Reader / ketik UID di kolom bawah.'
+                : 'Jika menggunakan RFID Stick Reader, klik kolom di bawah lalu tembakkan scanner ke tag.'}
             </p>
+            {nfc.supported && (
+              <KostaButton
+                variant="outline"
+                onClick={scanDaftar}
+                disabled={isSavingUid}
+                className="w-full justify-center mb-2"
+              >
+                <Nfc size={14} /> {nfc.scanning ? 'Tempel tag ke HP… (ketuk untuk batal)' : 'Scan NFC'}
+              </KostaButton>
+            )}
             <form onSubmit={handleUidSubmit} className="flex gap-2">
               <input
                 ref={inputRef}
@@ -198,8 +228,19 @@ export function HybridTagManager({ hewanId, tagStr, existingTags }: { hewanId: s
             {existingTags && existingTags.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {existingTags.map(t => (
-                  <div key={t.id} className="px-2 py-1 rounded bg-gray-100 text-gray-600 break-all" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11 }}>
-                    {t.rfidUid}
+                  <div
+                    key={t.id}
+                    className="px-2 py-1 rounded break-all"
+                    title={t.status === 'AKTIF' ? 'Tag aktif' : `Tag ${String(t.status).toLowerCase()}`}
+                    style={{
+                      fontFamily: "'JetBrains Mono',monospace",
+                      fontSize: 11,
+                      background: t.status === 'AKTIF' ? 'rgba(63,91,58,0.12)' : 'rgba(13,20,15,0.05)',
+                      color: t.status === 'AKTIF' ? palette.moss : 'rgba(13,20,15,0.55)',
+                      textDecoration: t.status === 'AKTIF' ? 'none' : 'line-through',
+                    }}
+                  >
+                    {t.rfidUid}{t.status === 'AKTIF' ? ' · aktif' : ''}
                   </div>
                 ))}
               </div>

@@ -24,6 +24,7 @@ export default async function HewanPage(props: { searchParams: Promise<{ [key: s
       },
       _count: { select: { rekamMedis: true } }, // count only, no row fetch
       kematian: { select: { tanggalMati: true } }, // for status badge: ada = mati, null = hidup
+      tagsRfid: { where: { status: 'AKTIF' }, select: { rfidUid: true } }, // pencarian via UID (reader USB)
     },
     orderBy: { createdAt: 'desc' }
   })

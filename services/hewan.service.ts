@@ -71,7 +71,8 @@ export async function editHewanLogic(hewanId: string, data: any, session: Sessio
   }
 
   await prisma.$transaction(async (tx) => {
-    if (data.rfidUid !== (activeTag?.rfidUid || null)) {
+    // Form edit tidak mengirim rfidUid (undefined) → jangan sentuh tag; tag dikelola di HybridTagManager
+    if (data.rfidUid !== undefined && data.rfidUid !== (activeTag?.rfidUid || null)) {
       if (activeTag) {
         await tx.tagRfid.update({ where: { id: activeTag.id }, data: { status: 'DICOPOT', tanggalCopot: new Date() } })
       }
