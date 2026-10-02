@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { Plus, Heart } from 'lucide-react'
+import { Plus, Dna } from 'lucide-react'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -56,10 +56,10 @@ export default async function ReproduksiPage(props: {
       {/* Stat cards */}
       <div className="grid grid-cols-12 gap-4 mb-6">
         {[
-          { l: 'Sedang hamil', v: hamil, tone: palette.amber, icon: <Heart size={14} /> },
-          { l: 'Sudah lahir', v: lahir, tone: palette.emerald, icon: <Heart size={14} /> },
-          { l: 'Gagal / keguguran', v: gagal, tone: palette.rose, icon: <Heart size={14} /> },
-          { l: 'Success rate', v: `${successRate}%`, tone: palette.moss, icon: <Heart size={14} /> },
+          { l: 'Sedang hamil', v: hamil, tone: palette.amber, icon: <Dna size={14} /> },
+          { l: 'Sudah lahir', v: lahir, tone: palette.emerald, icon: <Dna size={14} /> },
+          { l: 'Gagal / keguguran', v: gagal, tone: palette.rose, icon: <Dna size={14} /> },
+          { l: 'Success rate', v: `${successRate}%`, tone: palette.moss, icon: <Dna size={14} /> },
         ].map((s) => (
           <div
             key={s.l}

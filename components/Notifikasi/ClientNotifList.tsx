@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Plus, Syringe, PawPrint, Scale, Bell, Check,
+  Plus, Syringe, Dna, Scale, Bell, Check,
   CheckCheck, BellOff, BellRing, RefreshCw, Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -14,7 +14,7 @@ import { usePagination } from '@/hooks/usePagination'
 
 const ICONS: Record<string, React.FC<{ size?: number }>> = {
   MEDIS: Syringe,
-  LAHIR: PawPrint,
+  LAHIR: Dna,
   BERAT: Scale,
 }
 

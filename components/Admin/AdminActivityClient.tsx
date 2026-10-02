@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Activity,
-  Heart,
+  Stethoscope,
   Building2,
   Users,
   Dna,
@@ -41,7 +41,7 @@ interface ActivityItem {
 
 const TYPE_CONFIG: Record<ActivityType, { label: string; color: string; bg: string; icon: React.FC<{ size?: number; style?: React.CSSProperties; className?: string }> }> = {
   hewan: { label: 'Hewan', color: palette.ochre, bg: 'rgba(199,135,62,0.12)', icon: Activity },
-  medis: { label: 'Rekam Medis', color: palette.danger, bg: 'rgba(181,68,59,0.12)', icon: Heart },
+  medis: { label: 'Rekam Medis', color: palette.danger, bg: 'rgba(181,68,59,0.12)', icon: Stethoscope },
   farm: { label: 'Farm', color: palette.moss, bg: 'rgba(63,91,58,0.12)', icon: Building2 },
   user: { label: 'User', color: palette.info, bg: 'rgba(44,95,138,0.12)', icon: Users },
   reproduksi: { label: 'Reproduksi', color: '#7A5C2E', bg: 'rgba(122,92,46,0.12)', icon: Dna },

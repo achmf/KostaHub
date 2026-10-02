@@ -30,6 +30,7 @@ import {
   Minus,
   Flame,
   Timer,
+  HeartCrack,
 } from 'lucide-react'
 import Link from 'next/link'
 import PaginationControl from './PaginationControl'
@@ -249,7 +250,7 @@ export default function AdminDashboardClient({
       label: 'Mortality Rate',
       value: `${stats.mortalityRate}%`,
       sub: 'tingkat kematian',
-      icon: Heart,
+      icon: HeartCrack,
       color: stats.mortalityRate > 10 ? palette.danger : palette.moss,
       bg: stats.mortalityRate > 10 ? 'rgba(181,68,59,0.08)' : 'rgba(63,91,58,0.10)',
       href: '#analytics',
