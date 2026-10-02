@@ -46,3 +46,6 @@ next-env.d.ts
 # AI agent config
 .agents/
 skills-lock.json
+
+# Upload user (disimpan di bucket Neon, bukan di repo)
+/public/uploads/
