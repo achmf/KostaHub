@@ -5,12 +5,16 @@ import { cn } from "@/lib/utils";
 import { ConfirmProvider } from "@/components/ConfirmProvider";
 import { ToastProvider } from "@/components/ToastProvider";
 import { Toaster } from "@/components/ui/sonner";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
   title: "KostaHub — Sistem Manajemen Peternakan",
   description: "Platform monitoring dan manajemen peternakan multi-farm berbasis web.",
+  applicationName: "KostaHub",
+  // iOS: bisa "Tambahkan ke Layar Utama" dan berjalan seperti aplikasi (syarat push di iPhone)
+  appleWebApp: { capable: true, title: "KostaHub", statusBarStyle: "default" },
 };
 
 // Warna bar browser di HP mengikuti latar krem aplikasi
@@ -31,6 +35,7 @@ export default function RootLayout({
             <Toaster theme="light" position="top-right" richColors />
           </ToastProvider>
         </ConfirmProvider>
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
