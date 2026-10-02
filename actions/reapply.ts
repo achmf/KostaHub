@@ -4,7 +4,6 @@ import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
-import { sendReapplyNotificationEmail } from '@/lib/email'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 
@@ -92,7 +91,6 @@ export async function reapplyFarmById(formData: FormData) {
     },
   })
 
-  await sendReapplyNotificationEmail(session.name, farmNama)
   revalidatePath('/farms')
 
   return { success: true }
@@ -172,7 +170,6 @@ export async function reapplyRegistration(formData: FormData) {
     },
   })
 
-  await sendReapplyNotificationEmail(session.name, farmNama)
   revalidatePath('/farms')
 
   return { success: true }
