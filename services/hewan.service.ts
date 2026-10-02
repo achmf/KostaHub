@@ -96,12 +96,3 @@ export async function editHewanLogic(hewanId: string, data: any, session: Sessio
 
   return { success: true }
 }
-
-export async function updateFotoHewanLogic(hewanId: string, fotoUrl: string, session: SessionData) {
-  const existing = await prisma.hewan.findUnique({ where: { id: hewanId } })
-  if (!existing) return { error: 'Hewan tidak ditemukan' }
-  if (session.role !== 'SUPER_ADMIN' && existing.farmId !== session.activeFarmId) return { error: 'Akses ditolak' }
-
-  await prisma.hewan.update({ where: { id: hewanId }, data: { fotoUrl } })
-  return { success: true }
-}

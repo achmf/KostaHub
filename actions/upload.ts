@@ -1,42 +1,25 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { withMutationAuth } from '@/lib/auth'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
-import { randomUUID } from 'crypto'
+import { prisma } from '@/lib/prisma'
+import { simpanFile } from '@/lib/storage'
+import { invalidateHewan } from '@/lib/cache-invalidation'
 
-export const uploadFotoHewanLocal = withMutationAuth(async (session, formData: FormData) => {
-  const file = formData.get('file') as File | null
-  if (!file) {
-    return { error: 'Tidak ada file yang dipilih' }
-  }
+/** Upload + pasang foto hewan dalam satu langkah (URL tidak pernah berasal dari browser). */
+export const uploadFotoHewan = withMutationAuth(async (session, hewanId: string, formData: FormData): Promise<{ url: string } | { error: string }> => {
+  const hewan = await prisma.hewan.findUnique({ where: { id: hewanId }, select: { farmId: true } })
+  if (!hewan) return { error: 'Hewan tidak ditemukan' }
+  if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.activeFarmId) return { error: 'Akses ditolak' }
 
-  // Validate type
-  if (!file.type.startsWith('image/')) {
-    return { error: 'File harus berupa gambar (JPG/PNG/WEBP)' }
-  }
+  const file = formData.get('file')
+  if (!(file instanceof File)) return { error: 'Tidak ada file yang dipilih' }
 
-  // Validate size (max 5MB)
-  if (file.size > 5 * 1024 * 1024) {
-    return { error: 'Ukuran gambar maksimal 5MB' }
-  }
+  const hasil = await simpanFile(file, `hewan/${hewanId}`, { izinkanPdf: false, maksMB: 4 })
+  if ('error' in hasil) return hasil
 
-  try {
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-
-    const ext = file.name.split('.').pop() || 'jpg'
-    const fileName = `${randomUUID()}.${ext}`
-    
-    const uploadDir = join(process.cwd(), 'public', 'uploads', 'hewan')
-    await mkdir(uploadDir, { recursive: true })
-
-    const path = join(uploadDir, fileName)
-    await writeFile(path, buffer)
-
-    return { url: `/uploads/hewan/${fileName}` }
-  } catch (error) {
-    console.error('Upload Error:', error)
-    return { error: 'Gagal mengunggah gambar' }
-  }
+  await prisma.hewan.update({ where: { id: hewanId }, data: { fotoUrl: hasil.url } })
+  invalidateHewan()
+  revalidatePath(`/hewan/${hewanId}`)
+  return hasil
 })

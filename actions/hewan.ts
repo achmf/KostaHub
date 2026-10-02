@@ -4,7 +4,7 @@ import { withMutationAuth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { hewanSchema } from '@/lib/validations/hewan.schema'
-import { createHewanLogic, transferHewanLogic, editHewanLogic, updateFotoHewanLogic } from '@/services/hewan.service'
+import { createHewanLogic, transferHewanLogic, editHewanLogic } from '@/services/hewan.service'
 import { invalidateHewan } from '@/lib/cache-invalidation'
 
 export const tambahHewan = withMutationAuth(async (session, formData: FormData) => {
@@ -41,12 +41,3 @@ export const editHewan = withMutationAuth(async (session, hewanId: string, formD
   redirect(`/hewan/${hewanId}`)
 })
 
-export const updateFotoHewan = withMutationAuth(async (session, hewanId: string, fotoUrl: string) => {
-
-  const result = await updateFotoHewanLogic(hewanId, fotoUrl, session)
-  if ('error' in result) return result
-
-  invalidateHewan()
-  revalidatePath(`/hewan/${hewanId}`)
-  return { success: true }
-})

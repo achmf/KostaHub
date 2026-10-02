@@ -4,6 +4,7 @@ import { withAuth, withMutationAuth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { farmSchema, farmRegistrationSchema } from '@/lib/validations/farm.schema'
 import { invalidateFarm } from '@/lib/cache-invalidation'
+import { simpanFile } from '@/lib/storage'
 
 import { createFarmLogic, createAdditionalFarmLogic, assignUserToFarmLogic, assignStaffToFarmLogic, removeUserFromFarmLogic, updateFarmLogic, deleteFarmLogic, getFarmsLogic, createFarmRegistrationLogic } from '@/services/farm.service'
 
@@ -89,20 +90,9 @@ export const createFarmRegistration = withMutationAuth(async (session, formData:
 
   let sertifikatUrl: string | null = null
   if (farmSertifikat && farmSertifikat.size > 0) {
-    try {
-      const { writeFile, mkdir } = await import('fs/promises')
-      const path = await import('path')
-      const bytes = await farmSertifikat.arrayBuffer()
-      const buffer = Buffer.from(bytes)
-      const uploadDir = path.join(process.cwd(), 'public/uploads')
-      await mkdir(uploadDir, { recursive: true })
-      const ext = farmSertifikat.name.split('.').pop() || 'png'
-      const fileName = `${Date.now()}-${Math.round(Math.random() * 1000)}.${ext}`
-      await writeFile(path.join(uploadDir, fileName), buffer)
-      sertifikatUrl = `/uploads/${fileName}`
-    } catch (e) {
-      console.error('File upload failed', e)
-    }
+    const hasil = await simpanFile(farmSertifikat, 'sertifikat', { izinkanPdf: true, maksMB: 4 })
+    if ('error' in hasil) return { error: `Sertifikat: ${hasil.error}` }
+    sertifikatUrl = hasil.url
   }
 
   const result = await createFarmRegistrationLogic(parsed.data, sertifikatUrl, session as any)
