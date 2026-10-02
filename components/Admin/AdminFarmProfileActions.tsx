@@ -17,9 +17,11 @@ interface AdminFarmProfileActionsProps {
     status: string
   }
   canEdit?: boolean
+  owners?: { id: string; name: string; email: string }[]
+  currentOwnerId?: string
 }
 
-export default function AdminFarmProfileActions({ farm, canEdit = true }: AdminFarmProfileActionsProps) {
+export default function AdminFarmProfileActions({ farm, canEdit = true, owners = [], currentOwnerId }: AdminFarmProfileActionsProps) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   if (!canEdit) return null
@@ -44,7 +46,7 @@ export default function AdminFarmProfileActions({ farm, canEdit = true }: AdminF
         </button>
         <AdminFarmActions farmId={farm.id} />
       </div>
-      <EditFarmModal open={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} farm={farm} />
+      <EditFarmModal open={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} farm={farm} owners={owners} currentOwnerId={currentOwnerId} />
     </div>
   )
 }

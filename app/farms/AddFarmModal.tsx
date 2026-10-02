@@ -1,179 +1,101 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { X, Building2 } from 'lucide-react'
+import { useState } from 'react'
+import { Modal, ModalBody, ModalFooter } from '@/components/ui/Modal'
+import { FormField } from '@/components/ui/FormField'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { createAdditionalFarm } from '@/actions/farm'
+import { toast } from 'sonner'
+import { Building2 } from 'lucide-react'
 
 interface AddFarmModalProps {
   onClose: () => void
 }
 
-const palette = {
-  cream: '#F2EDE0',
-  forest: '#1B2A1F',
-  ochre: '#C7873E',
-  ink: '#0D140F',
-  border: 'rgba(13,20,15,0.10)',
-}
-
-type FormState = { error?: string; success?: boolean; pendingApproval?: boolean } | null
-
 export default function AddFarmModal({ onClose }: AddFarmModalProps) {
-  const [state, action, isPending] = useActionState<FormState, FormData>(
-    async (_prevState: FormState, formData: FormData) => {
-      return await createAdditionalFarm(formData)
-    },
-    null
-  )
+  const [loading, setLoading] = useState(false)
 
-  // Escape menutup modal + kunci scroll halaman selama modal terbuka
-  useEffect(() => {
-    const prevOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => {
-      document.body.style.overflow = prevOverflow
-      window.removeEventListener('keydown', onKey)
-    }
-  }, [onClose])
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setLoading(true)
 
-  useEffect(() => {
-    if (state?.success) {
-      // Refresh halaman untuk menampilkan farm baru yang pending
-      window.location.reload()
+    const formData = new FormData(e.currentTarget)
+    try {
+      const res = await createAdditionalFarm(formData)
+      if (res.error) {
+        toast.error(res.error)
+      } else {
+        toast.success('Farm berhasil diajukan')
+        // Refresh halaman untuk menampilkan farm baru yang pending
+        window.location.reload()
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Terjadi kesalahan')
+    } finally {
+      setLoading(false)
     }
-  }, [state])
+  }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex overflow-y-auto p-3 sm:p-4"
-      style={{ background: 'rgba(13,20,15,0.5)', backdropFilter: 'blur(4px)' }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    <Modal
+      open={true}
+      onClose={onClose}
+      title="Tambah Farm Baru"
+      description="Farm baru akan berstatus menunggu persetujuan sampai Super Admin menyetujuinya."
     >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 16 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 16 }}
-        transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-        className="m-auto w-full max-w-md rounded-2xl p-5 sm:p-6"
-        style={{ background: palette.cream, border: `1px solid ${palette.border}` }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between gap-3 mb-6">
-          <div className="flex items-center gap-3 min-w-0">
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: 'rgba(199,135,62,0.12)' }}
-            >
-              <Building2 size={16} style={{ color: palette.ochre }} />
-            </div>
-            <div>
-              <h2 style={{ fontFamily: "'Fraunces',serif", fontSize: 18, fontWeight: 600, color: palette.ink }}>
-                Tambah Farm Baru
-              </h2>
-              <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'rgba(13,20,15,0.5)' }}>
-                Butuh persetujuan Super Admin
-              </p>
-            </div>
+      <form onSubmit={handleSubmit}>
+        <ModalBody>
+          <FormField label="Nama Farm" required>
+            <Input name="nama" placeholder="Contoh: Farm Berkah" required className="h-[42px] w-full rounded-[10px] border border-[rgba(13,20,15,0.12)] bg-white px-3 text-[14px] outline-none transition-all focus-visible:border-[#C7873E] focus-visible:ring-4 focus-visible:ring-[rgba(199,135,62,0.12)] shadow-sm" />
+          </FormField>
+          <FormField label="Alamat">
+            <Textarea name="alamat" placeholder="Alamat lengkap farm..." className="min-h-[80px] w-full rounded-[10px] border border-[rgba(13,20,15,0.12)] bg-white p-3 text-[14px] outline-none transition-all focus-visible:border-[#C7873E] focus-visible:ring-4 focus-visible:ring-[rgba(199,135,62,0.12)] shadow-sm" />
+          </FormField>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-4">
+            <FormField label="Latitude (opsional)">
+              <Input name="lat" type="number" step="any" placeholder="-6.200000" className="h-[42px] w-full rounded-[10px] border border-[rgba(13,20,15,0.12)] bg-white px-3 text-[14px] outline-none transition-all focus-visible:border-[#C7873E] focus-visible:ring-4 focus-visible:ring-[rgba(199,135,62,0.12)] shadow-sm" />
+            </FormField>
+            <FormField label="Longitude (opsional)">
+              <Input name="lng" type="number" step="any" placeholder="106.816666" className="h-[42px] w-full rounded-[10px] border border-[rgba(13,20,15,0.12)] bg-white px-3 text-[14px] outline-none transition-all focus-visible:border-[#C7873E] focus-visible:ring-4 focus-visible:ring-[rgba(199,135,62,0.12)] shadow-sm" />
+            </FormField>
           </div>
+          <FormField label="Deskripsi">
+            <Textarea name="deskripsi" placeholder="Deskripsi singkat mengenai farm..." className="min-h-[80px] w-full rounded-[10px] border border-[rgba(13,20,15,0.12)] bg-white p-3 text-[14px] outline-none transition-all focus-visible:border-[#C7873E] focus-visible:ring-4 focus-visible:ring-[rgba(199,135,62,0.12)] shadow-sm" />
+          </FormField>
+        </ModalBody>
+        <ModalFooter className="flex-col-reverse sm:flex-row">
           <button
             type="button"
             onClick={onClose}
-            aria-label="Tutup"
-            className="cursor-pointer w-10 h-10 sm:w-8 sm:h-8 shrink-0 rounded-full flex items-center justify-center"
-            style={{ background: 'rgba(13,20,15,0.06)' }}
+            disabled={loading}
+            className="min-h-10 sm:min-h-0 px-4 py-2 rounded-xl transition-all hover:bg-[rgba(13,20,15,0.06)] active:translate-y-0 disabled:opacity-50"
+            style={{
+              color: '#0D140F',
+              fontFamily: "'Inter',sans-serif",
+              fontSize: 13,
+              fontWeight: 500,
+            }}
           >
-            <X size={14} style={{ color: palette.ink }} />
+            Batal
           </button>
-        </div>
-
-        {/* Form */}
-        <form action={action} className="flex flex-col gap-4">
-          {[
-            { name: 'nama', label: 'Nama Farm', placeholder: 'cth. Farm Omega', required: true },
-            { name: 'alamat', label: 'Alamat', placeholder: 'Jl. Contoh No. 1, Kota', required: false },
-            { name: 'deskripsi', label: 'Deskripsi (opsional)', placeholder: 'Deskripsi singkat farm', required: false },
-          ].map((field) => (
-            <div key={field.name}>
-              <label
-                htmlFor={`add-farm-${field.name}`}
-                style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, fontWeight: 500, color: 'rgba(13,20,15,0.6)' }}
-              >
-                {field.label}{field.required && <span style={{ color: palette.ochre }}> *</span>}
-              </label>
-              <input
-                id={`add-farm-${field.name}`}
-                name={field.name}
-                placeholder={field.placeholder}
-                required={field.required}
-                className="mt-1.5 w-full px-3.5 py-2.5 rounded-xl outline-none"
-                style={{
-                  fontFamily: "'Inter',sans-serif",
-                  fontSize: 13,
-                  background: '#fff',
-                  border: `1.5px solid ${palette.border}`,
-                  color: palette.ink,
-                }}
-                onFocus={(e) => { e.currentTarget.style.borderColor = palette.ochre }}
-                onBlur={(e) => { e.currentTarget.style.borderColor = palette.border }}
-              />
-            </div>
-          ))}
-
-          {state?.error && (
-            <p
-              className="px-3 py-2 rounded-lg text-sm"
-              style={{ background: 'rgba(220,38,38,0.08)', color: '#DC2626', fontFamily: "'Inter',sans-serif" }}
-            >
-              {state.error}
-            </p>
-          )}
-
-          <div
-            className="flex items-start gap-2 px-3 py-2.5 rounded-xl"
-            style={{ background: 'rgba(199,135,62,0.08)', border: `1px solid rgba(199,135,62,0.2)` }}
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex items-center justify-center gap-2 min-h-10 sm:min-h-0 px-4 py-2 rounded-xl transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
+            style={{
+              background: '#1B2A1F',
+              color: '#F2EDE0',
+              fontFamily: "'Inter',sans-serif",
+              fontSize: 13,
+              fontWeight: 500,
+            }}
           >
-            <span style={{ fontSize: 14 }}>ℹ️</span>
-            <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'rgba(13,20,15,0.6)', lineHeight: 1.5 }}>
-              Farm baru akan berstatus <strong>menunggu persetujuan</strong> sampai Super Admin menyetujuinya.
-            </p>
-          </div>
-
-          <div className="flex flex-col-reverse sm:flex-row gap-3 mt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="cursor-pointer flex-1 py-2.5 rounded-xl text-sm"
-              style={{
-                fontFamily: "'Inter',sans-serif",
-                border: `1.5px solid ${palette.border}`,
-                color: 'rgba(13,20,15,0.6)',
-                background: 'transparent',
-              }}
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="cursor-pointer flex-1 py-2.5 rounded-xl text-sm font-medium"
-              style={{
-                fontFamily: "'Inter',sans-serif",
-                background: isPending ? 'rgba(199,135,62,0.5)' : palette.forest,
-                color: palette.cream,
-                border: 'none',
-              }}
-            >
-              {isPending ? 'Menyimpan…' : 'Ajukan Farm'}
-            </button>
-          </div>
-        </form>
-      </motion.div>
-    </motion.div>
+            <Building2 size={15} />
+            {loading ? 'Menyimpan...' : 'Ajukan Farm'}
+          </button>
+        </ModalFooter>
+      </form>
+    </Modal>
   )
 }

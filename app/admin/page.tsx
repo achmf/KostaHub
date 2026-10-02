@@ -1,21 +1,38 @@
 import AdminDashboardClient from '@/components/Admin/AdminDashboardClient'
-import { getCachedAdminDashboard } from '@/lib/cached-queries'
+import AdminAnalyticsClient from '@/components/Admin/AdminAnalyticsClient'
+import { getCachedAdminDashboard, getCachedAdminAnalytics } from '@/lib/cached-queries'
 
 export default async function AdminPage() {
-  const data = await getCachedAdminDashboard()
+  const [dashboardData, analyticsData] = await Promise.all([
+    getCachedAdminDashboard(),
+    getCachedAdminAnalytics(),
+  ])
 
   return (
-    <AdminDashboardClient
-      stats={data.stats}
-      trend={data.trend}
-      trendData={data.trendData}
-      farmComparison={data.farmComparison}
-      kategoriData={data.kategoriData}
-      topDiagnosa={data.topDiagnosa}
-      farmAlerts={data.farmAlerts}
-      inactiveFarms={data.inactiveFarms}
-      highMortalityFarms={data.highMortalityFarms}
-      recentPending={data.recentPending}
-    />
+    <div className="flex flex-col gap-10">
+      <AdminDashboardClient
+        stats={dashboardData.stats}
+        trend={dashboardData.trend}
+        trendData={dashboardData.trendData}
+        farmComparison={dashboardData.farmComparison}
+        kategoriData={dashboardData.kategoriData}
+        topDiagnosa={dashboardData.topDiagnosa}
+        farmAlerts={dashboardData.farmAlerts}
+        inactiveFarms={dashboardData.inactiveFarms}
+        highMortalityFarms={dashboardData.highMortalityFarms}
+        recentPending={dashboardData.recentPending}
+      />
+      
+      <div id="analytics" className="pt-6 border-t" style={{ borderColor: 'rgba(13,20,15,0.1)' }}>
+        <AdminAnalyticsClient
+          hewanPerFarm={analyticsData.hewanPerFarm}
+          reproduksiPerFarm={analyticsData.reproduksiPerFarm}
+          distribusiUmur={analyticsData.distribusiUmur}
+          topDiagnosa={analyticsData.topDiagnosa}
+          kategoriMedisData={analyticsData.kategoriMedisData}
+          hideHeader={true}
+        />
+      </div>
+    </div>
   )
 }

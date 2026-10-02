@@ -15,8 +15,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  RadialBarChart,
-  RadialBar,
 } from 'recharts'
 
 const palette = {
@@ -58,19 +56,26 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl p-4 sm:p-6 flex flex-col min-w-0 ${className}`} style={{ background: '#fff', border: `1px solid ${palette.border}` }}>
+    <div className={`p-4 sm:p-5 sm:px-6 rounded-2xl h-full flex flex-col min-w-0 ${className}`} style={{ background: '#fff', border: `1px solid ${palette.border}` }}>
       {children}
     </div>
   )
 }
 
-// Legend di luar area grafik yang di-scroll horizontal, supaya selalu terlihat & bisa wrap di ponsel
+// Unified tooltip style
+const tooltipStyle = {
+  contentStyle: { backgroundColor: palette.ink, color: '#fff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' },
+  itemStyle: { color: '#ffffff' },
+  labelStyle: { color: 'rgba(255,255,255,0.6)', fontFamily: "'Inter',sans-serif", fontSize: 12, marginBottom: 4 },
+  cursor: { fill: 'rgba(13,20,15,0.03)' },
+}
+
 function ChartLegend({ items }: { items: { label: string; color: string }[] }) {
   return (
-    <div className="flex flex-wrap justify-center gap-x-2.5 gap-y-1 mt-2" style={{ fontFamily: "'Inter',sans-serif", fontSize: 11 }}>
+    <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-3" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>
       {items.map((item) => (
-        <span key={item.label} className="flex items-center gap-1" style={{ color: item.color }}>
-          <span className="w-3.5 h-2.5 shrink-0" style={{ background: item.color }} />
+        <span key={item.label} className="flex items-center gap-1.5" style={{ color: item.color }}>
+          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: item.color }} />
           {item.label}
         </span>
       ))}
@@ -95,6 +100,7 @@ interface AdminAnalyticsClientProps {
   distribusiUmur: { name: string; value: number }[]
   topDiagnosa: { name: string; count: number }[]
   kategoriMedisData: { name: string; value: number }[]
+  hideHeader?: boolean
 }
 
 export default function AdminAnalyticsClient({
@@ -103,103 +109,121 @@ export default function AdminAnalyticsClient({
   distribusiUmur,
   topDiagnosa,
   kategoriMedisData,
+  hideHeader = false,
 }: AdminAnalyticsClientProps) {
   const sortedFarms = [...hewanPerFarm].sort((a, b) => b.total - a.total)
   const { paged: pagedFarms, page, totalPages, onPrev, onNext } = usePagination(sortedFarms, 10)
 
   const sortedMortalityFarms = [...hewanPerFarm].sort((a, b) => b.mortalityRate - a.mortalityRate)
   const mortalityP = usePagination(sortedMortalityFarms, 5)
+
   return (
     <div>
       {/* Header */}
-      <motion.div
-        className="mb-6 sm:mb-10"
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.2em', color: 'rgba(13,20,15,0.4)', marginBottom: 8 }}>
-          ANALYTICS REGIONAL
-        </div>
-        <h1 style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 400, letterSpacing: '-0.025em' }}>
-          Analytics <span style={{ fontStyle: 'italic', color: palette.ochre }}>Regional</span>
-        </h1>
-        <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, color: 'rgba(13,20,15,0.55)', marginTop: 4 }}>
-          Analisis mendalam perbandingan antar farm di seluruh wilayah.
-        </p>
-
-      </motion.div>
+      {!hideHeader && (
+        <motion.div
+          className="mb-6 sm:mb-10"
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '0.2em', color: 'rgba(13,20,15,0.4)', marginBottom: 8 }}>
+            ANALYTICS REGIONAL
+          </div>
+          <h1 style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 400, letterSpacing: '-0.025em' }}>
+            Analytics <span style={{ fontStyle: 'italic', color: palette.ochre }}>Regional</span>
+          </h1>
+          <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, color: 'rgba(13,20,15,0.55)', marginTop: 4 }}>
+            Analisis mendalam perbandingan antar farm di seluruh wilayah.
+          </p>
+        </motion.div>
+      )}
 
       {/* ── STACKED BAR: Komposisi Hewan per Farm ── */}
-      <motion.div custom={0} variants={fadeUp} initial="hidden" animate="visible" className="mb-6">
+      <motion.div custom={0} variants={fadeUp} initial="hidden" animate="visible" className="mb-4">
         <Card>
           <SectionLabel>KOMPOSISI HEWAN PER FARM</SectionLabel>
-          <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink, marginBottom: 20 }}>
+          <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink, marginBottom: 16 }}>
             Distribusi kategori hewan aktif per farm
           </div>
           {hewanPerFarm.length === 0 ? (
             <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.45)', textAlign: 'center', padding: '32px 0' }}>
               Belum ada data farm
             </div>
-          ) : (
-            <>
-            <div className="relative w-full">
-              <div className="absolute left-0 top-0 bottom-0 z-10 bg-white pointer-events-none" style={{ width: 45 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={hewanPerFarm} margin={{ top: 4, right: 0, left: -20, bottom: 0 }}>
-                    <Bar dataKey="indukan" stackId="a" fill="transparent" />
-                    <Bar dataKey="pejantan" stackId="a" fill="transparent" />
-                    <Bar dataKey="anakan" stackId="a" fill="transparent" />
-                    <Bar dataKey="dara" stackId="a" fill="transparent" />
-                    <Bar dataKey="jantanMuda" stackId="a" fill="transparent" />
-                    <YAxis tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
-                    <XAxis dataKey="nama" height={24} tick={false} axisLine={false} tickLine={false} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="overflow-x-auto overflow-y-hidden" style={{ width: '100%', scrollbarWidth: 'thin' }}>
-                <div style={{ minWidth: Math.max(hewanPerFarm.length * 60, 600) + 'px', height: 280 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={hewanPerFarm} margin={{ top: 4, right: 0, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,20,15,0.05)" vertical={false} />
-                      <XAxis dataKey="nama" height={24} tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, fill: 'rgba(13,20,15,0.5)' }} tickFormatter={(val) => String(val).replace(/^Farm Kosta\s+/i, '')} axisLine={false} tickLine={false} />
-                      <YAxis tick={false} axisLine={false} tickLine={false} />
-                      <Tooltip
-                        cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                        itemStyle={{ color: '#ffffff' }}
-                        labelStyle={{ color: '#ffffff' }}
-                        contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}` }}
-                        labelFormatter={(label) => {
-                          const item = hewanPerFarm.find((f) => f.nama === String(label))
-                          return item?.namaPanjang || String(label)
-                        }}
+          ) : (() => {
+            const sorted = [...hewanPerFarm]
+              .sort((a, b) => b.total - a.total)
+              .map(f => ({
+                ...f,
+                shortName: f.namaPanjang.replace(/^Farm Kosta\s*/i, ''),
+              }))
+            const barH = 40
+            const pad = 40
+            const maxVisible = 8
+            const needsScroll = sorted.length > maxVisible
+            const chartHeight = sorted.length * barH + pad
+            const containerMaxH = maxVisible * barH + pad
+            return (
+              <>
+              <div className="relative">
+                <div
+                  style={{
+                    maxHeight: needsScroll ? containerMaxH : undefined,
+                    overflowY: needsScroll ? 'auto' : undefined,
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: 'rgba(13,20,15,0.12) transparent',
+                  }}
+                >
+                  <ResponsiveContainer width="100%" height={chartHeight}>
+                    <BarChart data={sorted} layout="vertical" margin={{ top: 0, right: 24, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,20,15,0.05)" horizontal={false} />
+                      <XAxis type="number" tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
+                      <YAxis 
+                        type="category" 
+                        dataKey="shortName" 
+                        width={110} 
+                        tick={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, fill: 'rgba(13,20,15,0.7)' }} 
+                        axisLine={false} 
+                        tickLine={false} 
                       />
-                      <Bar dataKey="indukan" name="Indukan" stackId="a" fill={STACKED_COLORS.indukan} radius={[0, 0, 0, 0]} />
-                      <Bar dataKey="pejantan" name="Pejantan" stackId="a" fill={STACKED_COLORS.pejantan} />
-                      <Bar dataKey="anakan" name="Anakan" stackId="a" fill={STACKED_COLORS.anakan} />
-                      <Bar dataKey="dara" name="Dara" stackId="a" fill={STACKED_COLORS.dara} />
-                      <Bar dataKey="jantanMuda" name="Jantan Muda" stackId="a" fill={STACKED_COLORS.jantanMuda} radius={[4, 4, 0, 0]} />
+                      <Tooltip
+                        {...tooltipStyle}
+                        labelFormatter={(label) => sorted.find((f) => f.shortName === String(label))?.namaPanjang || String(label)}
+                      />
+                      <Bar dataKey="indukan" name="Indukan" stackId="a" fill={STACKED_COLORS.indukan} radius={[0, 0, 0, 0]} barSize={14} />
+                      <Bar dataKey="pejantan" name="Pejantan" stackId="a" fill={STACKED_COLORS.pejantan} radius={[0, 0, 0, 0]} />
+                      <Bar dataKey="anakan" name="Anakan" stackId="a" fill={STACKED_COLORS.anakan} radius={[0, 0, 0, 0]} />
+                      <Bar dataKey="dara" name="Dara" stackId="a" fill={STACKED_COLORS.dara} radius={[0, 0, 0, 0]} />
+                      <Bar dataKey="jantanMuda" name="Jantan Muda" stackId="a" fill={STACKED_COLORS.jantanMuda} radius={[0, 4, 4, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
+                {needsScroll && (
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 28, pointerEvents: 'none', background: 'linear-gradient(transparent, rgba(255,255,255,0.9))' }} />
+                )}
               </div>
-            </div>
-            <ChartLegend
-              items={[
-                { label: 'Indukan', color: STACKED_COLORS.indukan },
-                { label: 'Pejantan', color: STACKED_COLORS.pejantan },
-                { label: 'Anakan', color: STACKED_COLORS.anakan },
-                { label: 'Dara', color: STACKED_COLORS.dara },
-                { label: 'Jantan Muda', color: STACKED_COLORS.jantanMuda },
-              ]}
-            />
-            </>
-          )}
+              {needsScroll && (
+                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: 'rgba(13,20,15,0.3)', textAlign: 'center', marginTop: 4 }}>
+                  ↕ scroll · {sorted.length} farm
+                </div>
+              )}
+              <ChartLegend
+                items={[
+                  { label: 'Indukan', color: STACKED_COLORS.indukan },
+                  { label: 'Pejantan', color: STACKED_COLORS.pejantan },
+                  { label: 'Anakan', color: STACKED_COLORS.anakan },
+                  { label: 'Dara', color: STACKED_COLORS.dara },
+                  { label: 'Jantan Muda', color: STACKED_COLORS.jantanMuda },
+                ]}
+              />
+              </>
+            )
+          })()}
         </Card>
       </motion.div>
 
       {/* ── ROW: MORTALITY RATE TABLE + REPRODUKSI ── */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
         {/* Mortality Rate per Farm */}
         <motion.div custom={1} variants={fadeUp} initial="hidden" animate="visible">
           <Card className="h-full">
@@ -258,67 +282,84 @@ export default function AdminAnalyticsClient({
         <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible">
           <Card className="h-full">
             <SectionLabel>KEBERHASILAN REPRODUKSI PER FARM</SectionLabel>
-            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink, marginBottom: 20 }}>
+            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink, marginBottom: 16 }}>
               Tingkat lahir vs gagal per farm
             </div>
             {reproduksiPerFarm.filter((f) => f.lahir + f.gagal > 0).length === 0 ? (
-              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.45)', textAlign: 'center', padding: '40px 0' }}>
+              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.45)', textAlign: 'center', padding: '32px 0' }}>
                 Belum ada data reproduksi selesai
               </div>
-            ) : (
-              <>
-              <div className="relative w-full">
-                <div className="absolute left-0 top-0 bottom-0 z-10 bg-white pointer-events-none" style={{ width: 45 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={reproduksiPerFarm.filter((f) => f.lahir + f.gagal > 0)}
-                      margin={{ top: 4, right: 0, left: -20, bottom: 0 }}
-                    >
-                      <Bar dataKey="lahir" fill="transparent" />
-                      <Bar dataKey="gagal" fill="transparent" />
-                      <YAxis tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
-                      <XAxis dataKey="nama" height={24} tick={false} axisLine={false} tickLine={false} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="overflow-x-auto overflow-y-hidden" style={{ width: '100%', scrollbarWidth: 'thin' }}>
-                  <div style={{ minWidth: Math.max(reproduksiPerFarm.filter((f) => f.lahir + f.gagal > 0).length * 60, 400) + 'px', height: 240 }}>
-                    <ResponsiveContainer width="100%" height="100%">
+            ) : (() => {
+              const reproActive = reproduksiPerFarm.filter((f) => f.lahir + f.gagal > 0)
+              const barH = 48
+              const pad = 40
+              const maxVisible = 5
+              const needsScroll = reproActive.length > maxVisible
+              const chartHeight = reproActive.length * barH + pad
+              const containerMaxH = maxVisible * barH + pad
+              return (
+                <>
+                <div className="relative">
+                  <div
+                    style={{
+                      maxHeight: needsScroll ? containerMaxH : undefined,
+                      overflowY: needsScroll ? 'auto' : undefined,
+                      // ponytail: inline thin scrollbar, no extra CSS file
+                      scrollbarWidth: 'thin',
+                      scrollbarColor: 'rgba(13,20,15,0.12) transparent',
+                    }}
+                  >
+                    <ResponsiveContainer width="100%" height={chartHeight}>
                       <BarChart
-                        data={reproduksiPerFarm.filter((f) => f.lahir + f.gagal > 0)}
-                        margin={{ top: 4, right: 0, left: -20, bottom: 0 }}
+                        data={reproActive}
+                        layout="vertical"
+                        margin={{ top: 0, right: 24, left: 0, bottom: 0 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,20,15,0.05)" vertical={false} />
-                        <XAxis dataKey="nama" height={24} tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, fill: 'rgba(13,20,15,0.5)' }} tickFormatter={(val) => String(val).replace(/^Farm Kosta\s+/i, '')} axisLine={false} tickLine={false} />
-                        <YAxis tick={false} axisLine={false} tickLine={false} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,20,15,0.05)" horizontal={false} />
+                        <XAxis type="number" tick={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fill: 'rgba(13,20,15,0.45)' }} axisLine={false} tickLine={false} />
+                        <YAxis 
+                          type="category" 
+                          dataKey="nama" 
+                          width={110} 
+                          tick={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, fill: 'rgba(13,20,15,0.7)' }} 
+                          axisLine={false} 
+                          tickLine={false} 
+                        />
                         <Tooltip
-                          cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                          itemStyle={{ color: '#ffffff' }}
-                          labelStyle={{ color: '#ffffff' }}
-                          contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}` }}
+                          {...tooltipStyle}
                           labelFormatter={(label) => reproduksiPerFarm.find((f) => f.nama === String(label))?.namaPanjang || String(label)}
                         />
-                        <Bar dataKey="lahir" name="Berhasil Lahir" fill={palette.moss} radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="gagal" name="Gagal" fill={palette.danger} radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="lahir" name="Berhasil Lahir" fill={palette.moss} radius={[0, 4, 4, 0]} barSize={14} />
+                        <Bar dataKey="gagal" name="Gagal" fill={palette.danger} radius={[0, 4, 4, 0]} barSize={14} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
+                  {/* Bottom fade hint when scrollable */}
+                  {needsScroll && (
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 28, pointerEvents: 'none', background: 'linear-gradient(transparent, rgba(255,255,255,0.9))' }} />
+                  )}
                 </div>
-              </div>
-              <ChartLegend
-                items={[
-                  { label: 'Berhasil Lahir', color: palette.moss },
-                  { label: 'Gagal', color: palette.danger },
-                ]}
-              />
-              </>
-            )}
+                {needsScroll && (
+                  <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: 'rgba(13,20,15,0.3)', textAlign: 'center', marginTop: 4 }}>
+                    ↕ scroll · {reproActive.length} farm
+                  </div>
+                )}
+                {/* Legend stays outside scroll — always visible */}
+                <ChartLegend
+                  items={[
+                    { label: 'Berhasil Lahir', color: palette.moss },
+                    { label: 'Gagal', color: palette.danger },
+                  ]}
+                />
+                </>
+              )
+            })()}
           </Card>
         </motion.div>
       </div>
 
       {/* ── ROW: DISTRIBUSI UMUR + KATEGORI MEDIS ── */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
         {/* Distribusi Umur */}
         <motion.div custom={3} variants={fadeUp} initial="hidden" animate="visible">
           <Card>
@@ -327,7 +368,7 @@ export default function AdminAnalyticsClient({
               Kelompok umur hewan aktif seluruh wilayah
             </div>
             {distribusiUmur.length === 0 ? (
-              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.45)', textAlign: 'center', padding: '40px 0' }}>
+              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.45)', textAlign: 'center', padding: '32px 0' }}>
                 Belum ada data
               </div>
             ) : (
@@ -339,12 +380,7 @@ export default function AdminAnalyticsClient({
                         <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip
-                      cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                      itemStyle={{ color: '#ffffff' }}
-                      labelStyle={{ color: '#ffffff' }}
-                      contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}` }}
-                    />
+                    <Tooltip {...tooltipStyle} />
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="flex-1 w-full space-y-2">
@@ -373,7 +409,7 @@ export default function AdminAnalyticsClient({
               Distribusi kategori rekam medis seluruh farm
             </div>
             {kategoriMedisData.length === 0 ? (
-              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.45)', textAlign: 'center', padding: '40px 0' }}>
+              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'rgba(13,20,15,0.45)', textAlign: 'center', padding: '32px 0' }}>
                 Belum ada data medis
               </div>
             ) : (
@@ -386,7 +422,7 @@ export default function AdminAnalyticsClient({
                         <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: palette.ink }}>{k.name}</span>
                         <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'rgba(13,20,15,0.5)' }}>{k.value}</span>
                       </div>
-                      <div className="h-1.5 rounded-full" style={{ background: 'rgba(13,20,15,0.06)' }}>
+                      <div className="h-2 rounded-full" style={{ background: 'rgba(13,20,15,0.06)' }}>
                         <div
                           className="h-full rounded-full"
                           style={{ width: `${Math.round((k.value / max) * 100)}%`, background: PIE_COLORS[i % PIE_COLORS.length] }}
@@ -405,7 +441,7 @@ export default function AdminAnalyticsClient({
       <motion.div custom={5} variants={fadeUp} initial="hidden" animate="visible">
         <Card>
           <SectionLabel>TOP DIAGNOSA PENYAKIT REGIONAL</SectionLabel>
-          <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink, marginBottom: 20 }}>
+          <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 500, color: palette.ink, marginBottom: 16 }}>
             8 diagnosa paling sering dicatat di seluruh wilayah
           </div>
           {topDiagnosa.length === 0 ? (
@@ -430,10 +466,7 @@ export default function AdminAnalyticsClient({
                   tickLine={false}
                 />
                 <Tooltip
-                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                  itemStyle={{ color: '#ffffff' }}
-                  labelStyle={{ color: '#ffffff' }}
-                  contentStyle={{ backgroundColor: '#0D140F', color: '#ffffff', fontFamily: "'Inter',sans-serif", fontSize: 12, borderRadius: 10, border: `1px solid ${palette.border}` }}
+                  {...tooltipStyle}
                   formatter={(val) => [`${val} kasus`, 'Frekuensi']}
                 />
                 <Bar dataKey="count" name="Kasus" fill={palette.ochre} radius={[0, 4, 4, 0]}>

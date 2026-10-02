@@ -5,16 +5,29 @@ export type SessionData = { id: string; role?: string }
 
 export async function createFarmLogic(data: any, session: SessionData) {
   if (session.role !== 'SUPER_ADMIN') return { error: 'Akses ditolak. Hanya Super Admin.' }
-  await prisma.farm.create({
-    data: {
-      nama: data.nama,
-      alamat: data.alamat || null,
-      lat: typeof data.lat === 'number' ? data.lat : null,
-      lng: typeof data.lng === 'number' ? data.lng : null,
-      deskripsi: data.deskripsi || null,
-      status: 'AKTIF',
+
+  await prisma.$transaction(async (tx) => {
+    const farm = await tx.farm.create({
+      data: {
+        nama: data.nama,
+        alamat: data.alamat || null,
+        lat: typeof data.lat === 'number' ? data.lat : null,
+        lng: typeof data.lng === 'number' ? data.lng : null,
+        deskripsi: data.deskripsi || null,
+        status: 'AKTIF',
+      }
+    })
+
+    if (data.ownerId) {
+      await tx.userFarm.create({
+        data: {
+          userId: data.ownerId,
+          farmId: farm.id,
+        }
+      })
     }
   })
+
   return { success: true }
 }
 
@@ -73,18 +86,45 @@ export async function removeUserFromFarmLogic(userId: string, farmId: string, se
 
 export async function updateFarmLogic(id: string, data: any, session: SessionData) {
   if (session.role !== 'SUPER_ADMIN') return { error: 'Akses ditolak. Hanya Super Admin.' }
-  await prisma.farm.update({
-    where: { id },
-    data: {
-      nama: data.nama,
-      alamat: data.alamat || null,
-      lat: typeof data.lat === 'number' ? data.lat : null,
-      lng: typeof data.lng === 'number' ? data.lng : null,
-      deskripsi: data.deskripsi || null,
-      status: (data.status || 'AKTIF') as FarmStatus,
-      geojson: data.geojson || null,
+  
+  await prisma.$transaction(async (tx) => {
+    await tx.farm.update({
+      where: { id },
+      data: {
+        nama: data.nama,
+        alamat: data.alamat || null,
+        lat: typeof data.lat === 'number' ? data.lat : null,
+        lng: typeof data.lng === 'number' ? data.lng : null,
+        deskripsi: data.deskripsi || null,
+        status: (data.status || 'AKTIF') as FarmStatus,
+        geojson: data.geojson || null,
+      }
+    })
+
+    if ('ownerId' in data) {
+      const currentOwners = await tx.userFarm.findMany({
+        where: { farmId: id, user: { role: 'OWNER' } }
+      })
+      
+      const newOwnerId = data.ownerId
+      const currentOwnerId = currentOwners[0]?.userId
+
+      if (newOwnerId !== currentOwnerId) {
+        for (const owner of currentOwners) {
+          await tx.userFarm.delete({
+            where: { userId_farmId: { userId: owner.userId, farmId: id } }
+          })
+        }
+        
+        if (newOwnerId) {
+          await tx.userFarm.create({
+            data: { userId: newOwnerId, farmId: id }
+          })
+        }
+      }
     }
   })
+
   return { success: true }
 }
 

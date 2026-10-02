@@ -41,10 +41,16 @@ export default async function AdminFarmsPage() {
     { label: 'Rata-rata Hewan/Farm', value: avgHewan, icon: Activity, color: palette.moss, bg: 'rgba(63,91,58,0.10)' },
   ]
 
+  const owners = await prisma.user.findMany({
+    where: { role: 'OWNER' },
+    select: { id: true, name: true, email: true },
+    orderBy: { name: 'asc' }
+  })
+
   return (
     <div>
       {/* Header */}
-      <AdminFarmsHeader canCreate={session?.role === 'SUPER_ADMIN'} />
+      <AdminFarmsHeader canCreate={session?.role === 'SUPER_ADMIN'} owners={owners} />
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">

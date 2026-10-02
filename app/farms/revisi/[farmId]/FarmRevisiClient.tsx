@@ -379,7 +379,7 @@ export default function FarmRevisiClient({ farmId, initialData, rejectionReason 
                   {!isPending && (
                     <span
                       className="w-7 h-7 rounded-full flex items-center justify-center transition-transform group-hover:rotate-45"
-                      style={{ background: palette.ochre, color: palette.ink }}
+                      style={{ background: palette.ochre, color: palette.cream }}
                     >
                       <ArrowUpRight size={14} />
                     </span>

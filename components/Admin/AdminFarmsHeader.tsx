@@ -5,7 +5,13 @@ import { Plus } from 'lucide-react'
 import AddFarmModal from '@/components/Admin/AddFarmModal'
 import { palette } from '@/components/KostaUI'
 
-export default function AdminFarmsHeader({ canCreate = true }: { canCreate?: boolean }) {
+export default function AdminFarmsHeader({ 
+  canCreate = true,
+  owners = [] 
+}: { 
+  canCreate?: boolean
+  owners?: { id: string; name: string; email: string }[]
+}) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
 
   return (
@@ -42,7 +48,7 @@ export default function AdminFarmsHeader({ canCreate = true }: { canCreate?: boo
         )}
       </div>
 
-      <AddFarmModal open={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
+      <AddFarmModal open={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} owners={owners} />
     </>
   )
 }

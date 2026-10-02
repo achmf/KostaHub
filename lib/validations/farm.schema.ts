@@ -8,6 +8,7 @@ export const farmSchema = z.object({
   deskripsi: z.string().optional(),
   status: z.string().optional(),
   geojson: z.string().optional(),
+  ownerId: z.string().optional(),
 })
 
 export const farmRegistrationSchema = z.object({

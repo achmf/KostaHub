@@ -151,7 +151,7 @@ export default function UserDropdown({
                   className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
                   style={{
                     background: palette.ochre,
-                    color: palette.ink,
+                    color: palette.cream,
                     fontFamily: "'Fraunces',serif",
                     fontSize: 16,
                     fontWeight: 600,
