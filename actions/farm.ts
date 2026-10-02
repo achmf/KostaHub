@@ -1,9 +1,7 @@
 'use server'
 
-import { prisma } from '@/lib/prisma'
 import { withAuth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
-import { type FarmStatus } from '@prisma/client'
 import { farmSchema, farmRegistrationSchema } from '@/lib/validations/farm.schema'
 import { invalidateFarm } from '@/lib/cache-invalidation'
 
