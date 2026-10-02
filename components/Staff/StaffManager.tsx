@@ -273,7 +273,7 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
               >
                 <div
                   className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
-                  style={{ background: palette.ochre, color: palette.ink, fontFamily: "'Fraunces',serif", fontSize: 15 }}
+                  style={{ background: palette.ochre, color: palette.cream, fontFamily: "'Fraunces',serif", fontSize: 15 }}
                 >
                   {s.name.charAt(0).toUpperCase()}
                 </div>

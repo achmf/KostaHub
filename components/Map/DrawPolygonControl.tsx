@@ -261,7 +261,7 @@ export default function DrawPolygonControl({ farm, onSave, onClose }: Props) {
                 : 'Klik "Mulai Gambar" lalu klik pada peta untuk menambahkan titik polygon area kandang.'}
             </p>
             <div className="flex flex-wrap sm:flex-nowrap gap-2">
-              <button style={btn('#C7873E', '#1B2A1F', { fontWeight: 600, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 })} onClick={startDrawing}>
+              <button style={btn('#C7873E', '#F2EDE0', { fontWeight: 600, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 })} onClick={startDrawing}>
                 <PenLine size={13} />
                 {farm.geojson ? 'Gambar Ulang' : 'Mulai Gambar'}
               </button>
@@ -317,7 +317,7 @@ export default function DrawPolygonControl({ farm, onSave, onClose }: Props) {
               </p>
             </div>
             <div className="flex flex-wrap sm:flex-nowrap gap-2">
-              <button style={btn('#C7873E', '#1B2A1F', { fontWeight: 600, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 })} onClick={handleSave}>
+              <button style={btn('#C7873E', '#F2EDE0', { fontWeight: 600, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 })} onClick={handleSave}>
                 <Save size={13} />
                 Simpan Area Kandang
               </button>

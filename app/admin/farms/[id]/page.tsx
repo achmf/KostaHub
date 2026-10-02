@@ -98,6 +98,14 @@ export default async function AdminFarmDetailPage({
     JANTAN_MUDA: 'Jantan Muda',
   }
 
+  const owners = await prisma.user.findMany({
+    where: { role: 'OWNER' },
+    select: { id: true, name: true, email: true },
+    orderBy: { name: 'asc' }
+  })
+  
+  const currentOwnerId = farm.members.find(m => m.user.role === 'OWNER')?.user.id || ''
+
   return (
     <div>
       {/* Back + header */}
@@ -143,15 +151,20 @@ export default async function AdminFarmDetailPage({
             >
               {farm.status === 'AKTIF' ? 'Aktif' : farm.status === 'NONAKTIF' ? 'Nonaktif' : farm.status}
             </span>
-            <AdminFarmProfileActions canEdit={session?.role === 'SUPER_ADMIN'} farm={{
-              id: farm.id,
-              nama: farm.nama,
-              alamat: farm.alamat,
-              deskripsi: farm.deskripsi,
-              lat: farm.lat,
-              lng: farm.lng,
-              status: farm.status,
-            }} />
+            <AdminFarmProfileActions 
+              canEdit={session?.role === 'SUPER_ADMIN'} 
+              farm={{
+                id: farm.id,
+                nama: farm.nama,
+                alamat: farm.alamat,
+                deskripsi: farm.deskripsi,
+                lat: farm.lat,
+                lng: farm.lng,
+                status: farm.status,
+              }}
+              owners={owners}
+              currentOwnerId={currentOwnerId}
+            />
           </div>
         </div>
       </div>
@@ -217,7 +230,7 @@ export default async function AdminFarmDetailPage({
                       className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                       style={{ background: 'rgba(199,135,62,0.10)' }}
                     >
-                      <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: palette.ochre }}>
+                      <span style={{ fontSize: 16, color: palette.ochre, lineHeight: 1 }}>
                         {h.kelamin === 'JANTAN' ? '♂' : '♀'}
                       </span>
                     </div>

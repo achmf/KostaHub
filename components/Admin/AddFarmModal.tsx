@@ -7,16 +7,20 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { createFarm } from '@/actions/farm'
+import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
-import { Building2 } from 'lucide-react'
+import { X } from 'lucide-react'
+import { SearchableCombobox } from '@/components/ui/SearchableCombobox'
 
 interface AddFarmModalProps {
   open: boolean
   onClose: () => void
+  owners?: { id: string; name: string; email: string }[]
 }
 
-export default function AddFarmModal({ open, onClose }: AddFarmModalProps) {
+export default function AddFarmModal({ open, onClose, owners = [] }: AddFarmModalProps) {
   const [loading, setLoading] = useState(false)
+  const [selectedOwner, setSelectedOwner] = useState('')
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -29,6 +33,7 @@ export default function AddFarmModal({ open, onClose }: AddFarmModalProps) {
         toast.error(res.error)
       } else {
         toast.success('Farm berhasil ditambahkan')
+        setSelectedOwner('') // Reset owner on success
         onClose()
       }
     } catch (err: any) {
@@ -50,6 +55,20 @@ export default function AddFarmModal({ open, onClose }: AddFarmModalProps) {
           <FormField label="Nama Farm" required>
             <Input name="nama" placeholder="Contoh: Farm Berkah" required className="h-[42px] w-full rounded-[10px] border border-[rgba(13,20,15,0.12)] bg-white px-3 text-[14px] outline-none transition-all focus-visible:border-[#C7873E] focus-visible:ring-4 focus-visible:ring-[rgba(199,135,62,0.12)] shadow-sm" />
           </FormField>
+
+          {owners.length > 0 && (
+            <FormField label="Owner (Opsional)">
+              <SearchableCombobox
+                name="ownerId"
+                options={owners.map(o => ({ value: o.id, label: o.name, sublabel: o.email }))}
+                value={selectedOwner}
+                onChange={setSelectedOwner}
+                placeholder="-- Pilih Owner (Bisa diisi nanti) --"
+                searchPlaceholder="Cari nama atau email..."
+              />
+            </FormField>
+          )}
+
           <FormField label="Alamat">
             <Textarea name="alamat" placeholder="Alamat lengkap farm..." className="min-h-[80px] w-full rounded-[10px] border border-[rgba(13,20,15,0.12)] bg-white p-3 text-[14px] outline-none transition-all focus-visible:border-[#C7873E] focus-visible:ring-4 focus-visible:ring-[rgba(199,135,62,0.12)] shadow-sm" />
           </FormField>
@@ -92,7 +111,6 @@ export default function AddFarmModal({ open, onClose }: AddFarmModalProps) {
               fontWeight: 500,
             }}
           >
-            <Building2 size={15} />
             {loading ? 'Menyimpan...' : 'Simpan Farm'}
           </button>
         </ModalFooter>

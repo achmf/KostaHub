@@ -33,8 +33,7 @@ const palette = {
 }
 
 const nav = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, group: 'OVERVIEW', exact: true },
-  { href: '/admin/analytics', label: 'Analytics', icon: BarChart3, group: 'OVERVIEW' },
+  { href: '/admin', label: 'Dashboard & Analitik', icon: LayoutDashboard, group: 'OVERVIEW', exact: true },
   { href: '/admin/approvals', label: 'Persetujuan', icon: ShieldCheck, group: 'MANAJEMEN', badgeKey: 'approvals' },
   { href: '/admin/farms', label: 'Semua Farm', icon: Building2, group: 'MANAJEMEN' },
   { href: '/admin/map', label: 'Peta GIS', icon: MapPin, group: 'MANAJEMEN' },

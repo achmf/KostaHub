@@ -6,6 +6,7 @@ import MarkerClusterGroup from 'react-leaflet-cluster'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import dynamic from 'next/dynamic'
+import Link from 'next/link'
 import type { AdminFarm, MapLayer } from './AdminMapClient'
 import type { Farm } from '@/components/Map/MapPageClient'
 import { saveGeojsonAdmin } from '@/actions/admin/saveGeojsonAdmin'
@@ -143,41 +144,72 @@ function MapResizer() {
   return null
 }
 
-function buildPopupHtml(farm: AdminFarm) {
+function FarmPopupContent({ farm }: { farm: AdminFarm }) {
   const isActive = farm.status === 'AKTIF'
-  const rows = [
-    ['TOTAL', farm._count.hewan],
-    ['AKTIF', farm.hewanAktif],
-    ['INDUKAN', farm.hewanIndukan],
-    ['PEJANTAN', farm.hewanPejantan],
-  ] as const
+  const hasPolygon = !!farm.geojson
 
-  return `
-    <div style="font-family:'Inter',sans-serif;min-width:230px;max-width:240px;overflow-wrap:break-word;padding:4px 0;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-        <div style="width:8px;height:8px;border-radius:50%;background:${isActive ? '#4ade80' : '#9ca3af'};flex-shrink:0;"></div>
-        <strong style="font-size:13px;color:#0D140F;">${escapeHtml(farm.nama)}</strong>
-        <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:${isActive ? '#3F5B3A' : '#9ca3af'};padding:2px 7px;border-radius:99px;border:1px solid ${isActive ? 'rgba(63,91,58,0.3)' : 'rgba(13,20,15,0.15)'}">
-          ${escapeHtml(farm.status)}
-        </span>
+  return (
+    <div style={{ fontFamily: "'Inter', sans-serif", minWidth: 240, maxWidth: 260, overflowWrap: 'break-word', padding: '4px 0', paddingRight: 12 }}>
+      {/* Header */}
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: isActive ? '#4ade80' : '#9ca3af', flexShrink: 0 }} />
+          <strong style={{ fontSize: 14, color: '#0D140F', lineHeight: 1.2 }}>{farm.nama}</strong>
+          <span style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 9,
+            color: isActive ? '#3F5B3A' : '#9ca3af',
+            padding: '2px 6px',
+            borderRadius: 6,
+            background: isActive ? 'rgba(63,91,58,0.1)' : 'rgba(13,20,15,0.05)',
+            border: `1px solid ${isActive ? 'rgba(63,91,58,0.2)' : 'rgba(13,20,15,0.1)'}`,
+            marginLeft: 4
+          }}>
+            {farm.status}
+          </span>
+        </div>
+        <div style={{ fontSize: 11, color: 'rgba(13,20,15,0.6)' }}>Owner: {farm.ownerName}</div>
       </div>
-      <div style="font-size:11px;color:rgba(13,20,15,0.5);margin-bottom:8px;">
-        Owner: <strong style="color:#1B2A1F;">${escapeHtml(farm.ownerName)}</strong>
-      </div>
-      ${farm.alamat ? `<div style="font-size:11px;color:rgba(13,20,15,0.55);margin-bottom:8px;line-height:1.5;">${escapeHtml(farm.alamat)}</div>` : ''}
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px;">
-        ${rows.map(([label, val]) => `
-          <div style="text-align:center;padding:5px;border-radius:8px;background:rgba(13,20,15,0.04);border:1px solid rgba(13,20,15,0.08);">
-            <div style="font-family:'Fraunces',serif;font-size:17px;color:#1B2A1F;">${val}</div>
-            <div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.12em;color:rgba(13,20,15,0.4);">${label}</div>
+
+      {/* GIS Info Box */}
+      <div style={{ background: 'rgba(13,20,15,0.02)', border: '1px solid rgba(13,20,15,0.06)', borderRadius: 10, padding: 10, marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, paddingBottom: 8, borderBottom: '1px dashed rgba(13,20,15,0.1)' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#C7873E', opacity: 0.8 }}>
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: 'rgba(13,20,15,0.7)' }}>
+            {farm.lat?.toFixed(5) || '-'}, {farm.lng?.toFixed(5) || '-'}
           </div>
-        `).join('')}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 11, color: 'rgba(13,20,15,0.5)' }}>Status Area</span>
+          <span style={{ fontSize: 11, fontWeight: 500, color: hasPolygon ? '#3F5B3A' : '#C7873E' }}>
+            {hasPolygon ? '✓ Terpetakan' : '⚠ Hanya Titik'}
+          </span>
+        </div>
       </div>
-      <a href="/admin/farms/${escapeHtml(farm.id)}" class="min-h-10 lg:min-h-0" style="display:flex;align-items:center;justify-content:center;text-align:center;padding:7px 12px;background:#1B2A1F;color:#F2EDE0;border-radius:99px;font-size:12px;font-weight:500;text-decoration:none;">
-        Lihat di Admin →
-      </a>
+
+      {/* Metrics */}
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid rgba(13,20,15,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: 'rgba(13,20,15,0.45)' }}>POPULASI AKTIF</div>
+          <div style={{ fontFamily: "'Fraunces', serif", fontSize: 18, color: '#1B2A1F', lineHeight: 1 }}>
+            {farm.hewanAktif} <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: 'rgba(13,20,15,0.4)', fontWeight: 400 }}>ekor</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Action */}
+      <Link href={`/admin/farms/${farm.id}`} className="min-h-10 lg:min-h-0" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 12px', background: '#1B2A1F', color: '#F2EDE0', borderRadius: 8, fontSize: 12, fontWeight: 500, textDecoration: 'none', transition: 'opacity 0.2s' }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+        </svg>
+        Buka Dasbor Farm
+      </Link>
     </div>
-  `
+  )
 }
 
 export interface AdminFarmMapProps {
@@ -317,7 +349,7 @@ export default function AdminFarmMap({
                 eventHandlers={{ click: () => { if (!drawMode) onSelectFarm(isSelected ? null : farm) } }}
               >
                 <Popup minWidth={240}>
-                  <div dangerouslySetInnerHTML={{ __html: buildPopupHtml(farm) }} />
+                  <FarmPopupContent farm={farm} />
                 </Popup>
               </Marker>
             )

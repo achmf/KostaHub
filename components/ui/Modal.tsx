@@ -58,7 +58,7 @@ export function Modal({ open, onClose, title, description, maxWidth = 'md', chil
             transition={{ type: 'spring' as const, stiffness: 420, damping: 32 }}
             role="dialog"
             aria-modal="true"
-            className={`m-auto bg-[#FDFCF7] rounded-2xl shadow-[0_20px_40px_-15px_rgba(13,20,15,0.2)] border border-[rgba(13,20,15,0.06)] w-full overflow-hidden ${MAX_W[maxWidth]}`}
+            className={`relative m-auto bg-[#FDFCF7] rounded-2xl shadow-[0_20px_40px_-15px_rgba(13,20,15,0.2)] border border-[rgba(13,20,15,0.06)] w-full overflow-hidden ${MAX_W[maxWidth]}`}
           >
             {/* Header */}
             <div className="flex justify-between items-start px-5 sm:px-6 py-4 sm:py-5 border-b border-[rgba(13,20,15,0.06)] bg-[#FDFCF7]">

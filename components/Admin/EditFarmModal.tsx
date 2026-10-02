@@ -8,7 +8,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { updateFarm } from '@/actions/farm'
 import { toast } from 'sonner'
-import { Building2 } from 'lucide-react'
+
+import { SearchableCombobox } from '@/components/ui/SearchableCombobox'
 
 interface EditFarmModalProps {
   open: boolean
@@ -22,16 +23,22 @@ interface EditFarmModalProps {
     lng: number | null
     status: string
   }
+  owners?: { id: string; name: string; email: string }[]
+  currentOwnerId?: string
 }
 
-export default function EditFarmModal({ open, onClose, farm }: EditFarmModalProps) {
+export default function EditFarmModal({ open, onClose, farm, owners = [], currentOwnerId }: EditFarmModalProps) {
   const [loading, setLoading] = useState(false)
+  const [selectedOwner, setSelectedOwner] = useState(currentOwnerId || '')
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
 
     const formData = new FormData(e.currentTarget)
+    // Always append ownerId so the backend can remove the owner if the field is empty
+    formData.set('ownerId', selectedOwner)
+    
     try {
       const res = await updateFarm(farm.id, formData)
       if (res.error) {
@@ -59,6 +66,19 @@ export default function EditFarmModal({ open, onClose, farm }: EditFarmModalProp
           <FormField label="Nama Farm" required>
             <Input name="nama" defaultValue={farm.nama} required className="h-[42px] w-full rounded-[10px] border border-[rgba(13,20,15,0.12)] bg-white px-3 text-[14px] outline-none transition-all focus-visible:border-[#C7873E] focus-visible:ring-4 focus-visible:ring-[rgba(199,135,62,0.12)] shadow-sm" />
           </FormField>
+
+          {owners.length > 0 && (
+            <FormField label="Owner (Opsional)">
+              <SearchableCombobox
+                name="ownerId"
+                options={owners.map(o => ({ value: o.id, label: o.name, sublabel: o.email }))}
+                value={selectedOwner}
+                onChange={setSelectedOwner}
+                placeholder="-- Pilih Owner (Bisa diisi nanti) --"
+                searchPlaceholder="Cari nama atau email..."
+              />
+            </FormField>
+          )}
           <FormField label="Alamat">
             <Textarea name="alamat" defaultValue={farm.alamat || ''} className="min-h-[80px] w-full rounded-[10px] border border-[rgba(13,20,15,0.12)] bg-white p-3 text-[14px] outline-none transition-all focus-visible:border-[#C7873E] focus-visible:ring-4 focus-visible:ring-[rgba(199,135,62,0.12)] shadow-sm" />
           </FormField>
@@ -112,7 +132,6 @@ export default function EditFarmModal({ open, onClose, farm }: EditFarmModalProp
               fontWeight: 500,
             }}
           >
-            <Building2 size={15} />
             {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
           </button>
         </ModalFooter>
