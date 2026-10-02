@@ -98,8 +98,22 @@ model User {
 
   farms               UserFarm[] // semua role bisa punya banyak farm
   rekamMedisDitangani RekamMedis[] @relation("DokterPemeriksa")
+  pushSubscriptions   PushSubscription[]
 
   @@index([approvalStatus])
+}
+
+// Satu baris per browser/perangkat yang mengaktifkan push notification.
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Farm {
@@ -279,9 +293,12 @@ model Notifikasi {
   type      TipeNotifikasi
   farmId    String?
   farm      Farm?          @relation(fields: [farmId], references: [id])
+  // Kunci dedup notifikasi otomatis (mis. MEDIS-<id>); null untuk pengumuman.
+  refKey    String?
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 
+  @@unique([farmId, refKey])
   @@index([tanggal])
   @@index([isRead])
   @@index([farmId])

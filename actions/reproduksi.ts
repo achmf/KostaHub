@@ -2,7 +2,9 @@
 
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
+import { after } from 'next/server'
 import { checkInbreeding } from '@/lib/inbreeding'
+import { generateNotifikasiOtomatis } from '@/lib/notifikasi-generator'
 import { withMutationAuth } from '@/lib/auth'
 import { invalidateReproduksi } from '@/lib/cache-invalidation'
 
@@ -51,18 +53,8 @@ export const tambahReproduksi = withMutationAuth(async (session, formData: FormD
     }
   })
 
-  // Buat notifikasi H-7 sebelum estimasi lahir
-  const notifHmin7 = new Date(estimasiLahir)
-  notifHmin7.setDate(notifHmin7.getDate() - 7)
-
-  await prisma.notifikasi.create({
-    data: {
-      title: 'Estimasi Kelahiran Mendekat (H-7)',
-      message: `Induk perlu persiapan melahirkan pada ${estimasiLahir.toLocaleDateString()}`,
-      tanggal: notifHmin7,
-      type: 'LAHIR',
-    }
-  })
+  // Notifikasi H-7 dibuat generator; jalankan sekarang supaya push langsung terkirim jika sudah dekat
+  after(() => generateNotifikasiOtomatis(induk.farmId))
 
   invalidateReproduksi()
   redirect('/reproduksi')

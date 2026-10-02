@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Syringe, Dna, Scale, Bell, Check,
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useNotifikasi } from '@/hooks/useNotifikasi'
+import { usePushSubscription } from '@/hooks/usePushSubscription'
 import { KostaPageHeader, KostaButton, Badge, palette } from '@/components/KostaUI'
 import PaginationControl from '@/components/Admin/PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
@@ -31,17 +32,13 @@ type FilterType = 'ALL' | 'MEDIS' | 'LAHIR' | 'BERAT'
 export function ClientNotifList() {
   const {
     list, loading, unreadCount,
-    pushEnabled, requestPushPermission,
     markRead, markAllRead, refetch,
   } = useNotifikasi()
+  const push = usePushSubscription()
+  const pushOn = push.status === 'subscribed'
 
   const [filter, setFilter] = useState<FilterType>('ALL')
   const [pendingId, setPendingId] = useState<string | null>(null)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   const filtered = list.filter((n) => filter === 'ALL' || n.type === filter)
 
@@ -81,19 +78,23 @@ export function ClientNotifList() {
                 }
               </button>
 
-              {/* Push toggle */}
-              <button
-                onClick={requestPushPermission}
-                className="cursor-pointer w-10 h-10 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-colors"
-                style={{
-                  border: `1px solid ${palette.border}`,
-                  color: pushEnabled ? palette.moss : 'rgba(13,20,15,0.45)',
-                }}
-                title={pushEnabled ? 'Push aktif' : 'Aktifkan push notification'}
-                aria-label={pushEnabled ? 'Push aktif' : 'Aktifkan push notification'}
-              >
-                {pushEnabled ? <BellRing size={14} /> : <BellOff size={14} />}
-              </button>
+              {/* Push toggle (disembunyikan jika browser/server tidak mendukung) */}
+              {push.status !== 'unsupported' && (
+                <button
+                  onClick={pushOn ? push.unsubscribe : push.subscribe}
+                  disabled={push.busy}
+                  aria-pressed={pushOn}
+                  className="cursor-pointer w-10 h-10 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-colors disabled:opacity-50"
+                  style={{
+                    border: `1px solid ${palette.border}`,
+                    color: pushOn ? palette.moss : 'rgba(13,20,15,0.6)',
+                  }}
+                  title={pushOn ? 'Matikan push notification di perangkat ini' : 'Aktifkan push notification'}
+                  aria-label={pushOn ? 'Matikan push notification di perangkat ini' : 'Aktifkan push notification'}
+                >
+                  {pushOn ? <BellRing size={14} /> : <BellOff size={14} />}
+                </button>
+              )}
 
               {/* Mark all read */}
               {unreadCount > 0 && (
@@ -105,8 +106,16 @@ export function ClientNotifList() {
           }
         />
 
-        {/* Push permission banner */}
-        {!pushEnabled && mounted && 'PushManager' in window && (
+        {/* Izin push diblokir: beri tahu caranya, jangan terus menawarkan */}
+        {push.status === 'denied' && (
+          <div className="mb-4 flex items-center gap-3 px-4 py-3 rounded-2xl" style={{ border: `1px solid ${palette.border}`, fontFamily: "'Inter',sans-serif", fontSize: 12.5, color: 'rgba(13,20,15,0.7)' }}>
+            <BellOff size={14} style={{ flexShrink: 0 }} />
+            Push notification diblokir browser. Izinkan lewat ikon gembok di samping alamat situs → Notifikasi.
+          </div>
+        )}
+
+        {/* Push permission banner (hanya jika belum pernah ditanya) */}
+        {push.status === 'default' && (
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -122,10 +131,10 @@ export function ClientNotifList() {
                 Aktifkan Push Notification
               </div>
               <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, opacity: 0.6, marginTop: 2 }}>
-                Terima peringatan otomatis di browser walau halaman tidak terbuka.
+                Pengingat jadwal medis, kelahiran, penimbangan, dan pengumuman tetap masuk ke HP walau aplikasi ditutup.
               </div>
             </div>
-            <KostaButton onClick={requestPushPermission} className="w-full sm:w-auto justify-center">
+            <KostaButton onClick={push.subscribe} disabled={push.busy} className="w-full sm:w-auto justify-center">
               <BellRing size={12} /> Aktifkan
             </KostaButton>
           </motion.div>

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Building2, LogOut, ChevronDown, ShieldCheck } from 'lucide-react'
 import { logout } from '@/actions/auth'
+import { forgetPushOnThisDevice } from '@/hooks/usePushSubscription'
 import { palette } from '@/components/KostaUI'
 
 
@@ -219,7 +220,7 @@ export default function UserDropdown({
 
               {/* Logout */}
               <div className="px-4 py-3">
-                <form action={logout}>
+                <form action={logout} onSubmit={forgetPushOnThisDevice}>
                   <button
                     type="submit"
                     className="cursor-pointer w-full flex items-center gap-2.5 px-3 py-2 rounded-lg"
