@@ -15,12 +15,12 @@ export function useWebNFC() {
     try {
       setIsScanning(true)
       setError(null)
-      // @ts-ignore
+      // @ts-expect-error — NDEFReader not in TypeScript's DOM types yet
       const ndef = new window.NDEFReader()
       await ndef.scan()
 
-      return new Promise((resolve, reject) => {
-        const onReading = (event: any) => {
+      return new Promise((resolve) => {
+        const onReading = (event: { serialNumber: string }) => {
           ndef.removeEventListener('reading', onReading)
           ndef.removeEventListener('readingerror', onReadingError)
           setIsScanning(false)
@@ -44,9 +44,9 @@ export function useWebNFC() {
         ndef.addEventListener('reading', onReading)
         ndef.addEventListener('readingerror', onReadingError)
       })
-    } catch (err: any) {
+    } catch (err: unknown) {
       setIsScanning(false)
-      setError(err.message || 'Terjadi kesalahan saat menginisiasi NFC.')
+      setError((err as Error).message || 'Terjadi kesalahan saat menginisiasi NFC.')
       return null
     }
   }, [])

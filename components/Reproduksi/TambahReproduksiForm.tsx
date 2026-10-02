@@ -9,12 +9,6 @@ import { HewanSelector } from '@/components/ui/HewanSelector'
 import { DatePickerField } from '@/components/ui/DatePickerField'
 
 
-
-const inputStyle: React.CSSProperties = {
-  background: 'rgba(13,20,15,0.03)', border: `1px solid ${palette.border}`,
-  fontFamily: "'Inter',sans-serif", fontSize: 14, borderRadius: 12,
-  padding: '12px 16px', width: '100%', outline: 'none', color: palette.ink,
-}
 const labelStyle: React.CSSProperties = {
   fontFamily: "'JetBrains Mono',monospace", fontSize: 10, letterSpacing: '0.15em',
   color: 'rgba(13,20,15,0.55)', display: 'block', marginBottom: 8,
