@@ -94,6 +94,7 @@ export default function LocationPicker({
       }}
     >
       <MapContainer
+        key="location-picker-map"
         center={[defaultLat, defaultLng]}
         zoom={13}
         // Map berada di dalam form panjang — scroll mouse/trackpad menggulir halaman, bukan zoom peta
