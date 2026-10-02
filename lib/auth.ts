@@ -56,3 +56,19 @@ export function withAuth<Args extends any[], Return>(
     return handler(session, ...args)
   }
 }
+
+/**
+ * Seperti withAuth, tapi juga memblokir role DINAS.
+ * Gunakan untuk semua server action yang bersifat mutasi (create/update/delete)
+ * di dashboard owner — DINAS hanya boleh membaca, tidak boleh mengubah data.
+ */
+export function withMutationAuth<Args extends any[], Return>(
+  handler: (session: SessionPayload, ...args: Args) => Promise<Return>
+) {
+  return async (...args: Args): Promise<Return | { error: string }> => {
+    const session = await getSession()
+    if (!session) throw new Error('Unauthorized')
+    if (session.role === 'DINAS') return { error: 'Akses ditolak: DINAS hanya dapat melihat data.' } as { error: string }
+    return handler(session, ...args)
+  }
+}

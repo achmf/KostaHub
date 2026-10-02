@@ -1,11 +1,11 @@
 'use server'
 
-import { withAuth } from '@/lib/auth'
+import { withMutationAuth } from '@/lib/auth'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { randomUUID } from 'crypto'
 
-export const uploadFotoHewanLocal = withAuth(async (session, formData: FormData) => {
+export const uploadFotoHewanLocal = withMutationAuth(async (session, formData: FormData) => {
   const file = formData.get('file') as File | null
   if (!file) {
     return { error: 'Tidak ada file yang dipilih' }

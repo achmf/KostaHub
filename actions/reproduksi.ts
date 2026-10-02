@@ -3,7 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { checkInbreeding } from '@/lib/inbreeding'
-import { withAuth } from '@/lib/auth'
+import { withMutationAuth } from '@/lib/auth'
 import { invalidateReproduksi } from '@/lib/cache-invalidation'
 
 export type TambahReproduksiState = {
@@ -12,7 +12,7 @@ export type TambahReproduksiState = {
   error?: string
 } | null
 
-export const tambahReproduksi = withAuth(async (session, formData: FormData): Promise<TambahReproduksiState> => {
+export const tambahReproduksi = withMutationAuth(async (session, formData: FormData): Promise<TambahReproduksiState> => {
   const indukId = formData.get('indukId') as string
   if (!indukId) return { error: 'Induk tidak dipilih' }
 

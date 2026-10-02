@@ -1,13 +1,13 @@
 'use server'
 
-import { withAuth } from '@/lib/auth'
+import { withAuth, withMutationAuth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { farmSchema, farmRegistrationSchema } from '@/lib/validations/farm.schema'
 import { invalidateFarm } from '@/lib/cache-invalidation'
 
 import { createFarmLogic, createAdditionalFarmLogic, assignUserToFarmLogic, assignStaffToFarmLogic, removeUserFromFarmLogic, updateFarmLogic, deleteFarmLogic, getFarmsLogic, createFarmRegistrationLogic } from '@/services/farm.service'
 
-export const createFarm = withAuth(async (session, formData: FormData) => {
+export const createFarm = withMutationAuth(async (session, formData: FormData) => {
   const parsed = farmSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: parsed.error.issues[0].message }
   
@@ -19,7 +19,7 @@ export const createFarm = withAuth(async (session, formData: FormData) => {
   return { success: true }
 })
 
-export const createAdditionalFarm = withAuth(async (session, formData: FormData) => {
+export const createAdditionalFarm = withMutationAuth(async (session, formData: FormData) => {
   const parsed = farmSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: parsed.error.issues[0].message }
   
@@ -39,7 +39,7 @@ export const assignUserToFarm = withAuth(async (session, userId: string, farmId:
   return { success: true }
 })
 
-export const assignStaffToFarm = withAuth(async (session, staffId: string, farmId: string) => {
+export const assignStaffToFarm = withMutationAuth(async (session, staffId: string, farmId: string) => {
   const result = await assignStaffToFarmLogic(staffId, farmId, session as any)
   if ('error' in result) return result
 
@@ -47,7 +47,7 @@ export const assignStaffToFarm = withAuth(async (session, staffId: string, farmI
   return { success: true }
 })
 
-export const removeUserFromFarm = withAuth(async (session, userId: string, farmId: string) => {
+export const removeUserFromFarm = withMutationAuth(async (session, userId: string, farmId: string) => {
   const result = await removeUserFromFarmLogic(userId, farmId, session as any)
   if ('error' in result) return result
 
@@ -55,7 +55,7 @@ export const removeUserFromFarm = withAuth(async (session, userId: string, farmI
   return { success: true }
 })
 
-export const updateFarm = withAuth(async (session, id: string, formData: FormData) => {
+export const updateFarm = withMutationAuth(async (session, id: string, formData: FormData) => {
   const parsed = farmSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: parsed.error.issues[0].message }
   
@@ -68,7 +68,7 @@ export const updateFarm = withAuth(async (session, id: string, formData: FormDat
   return { success: true }
 })
 
-export const deleteFarm = withAuth(async (session, id: string) => {
+export const deleteFarm = withMutationAuth(async (session, id: string) => {
   const result = await deleteFarmLogic(id, session as any)
   if ('error' in result) return result
 
@@ -81,7 +81,7 @@ export const getFarms = withAuth(async (session) => {
   return getFarmsLogic(session as any)
 })
 
-export const createFarmRegistration = withAuth(async (session, formData: FormData) => {
+export const createFarmRegistration = withMutationAuth(async (session, formData: FormData) => {
   const parsed = farmRegistrationSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: parsed.error.issues[0].message }
   

@@ -43,14 +43,15 @@ export function HewanAvatarProfile({ hewanId, fotoUrl, nama, tag }: HewanAvatarP
         return
       }
 
-      if (uploadRes?.url) {
+      const url = (uploadRes as { url: string } | undefined)?.url
+      if (url) {
         // 2. Update DB
-        const updateRes = await updateFotoHewan(hewanId, uploadRes.url)
+        const updateRes = await updateFotoHewan(hewanId, url)
         if (updateRes?.error) {
           setError(updateRes.error)
           setPreview(fotoUrl)
         } else {
-          setPreview(uploadRes.url) // Update to real URL
+          setPreview(url) // Update to real URL
         }
       }
     })
