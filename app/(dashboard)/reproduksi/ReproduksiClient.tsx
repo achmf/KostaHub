@@ -1,8 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
-import { Heart } from 'lucide-react'
+import { ClipboardCheck } from 'lucide-react'
 import { KostaCard, Badge, KostaEmptyState, palette } from '@/components/KostaUI'
+import { CatatHasilModal } from '@/components/Reproduksi/CatatHasilModal'
 import PaginationControl from '@/components/Admin/PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
 import { useSearchParams } from 'next/navigation'
@@ -17,9 +19,44 @@ function StatusBadge({ status }: { status: string }) {
   return <Badge variant="rose">Gagal</Badge>
 }
 
+type ReproduksiRow = {
+  id: string
+  status: 'HAMIL' | 'LAHIR' | 'GAGAL'
+  tanggalKawin: Date | string
+  estimasiLahir: Date | string
+  anakTag: string | null
+  induk: { id: string; tag: string; nama: string | null; farm?: { nama: string } | null }
+  pejantan: { id: string; tag: string; nama: string | null }
+}
+
+// Status + tombol "Catat hasil" (untuk yang masih hamil) + tag anak (untuk yang sudah lahir)
+function StatusCell({ r, canEdit, onCatat }: { r: ReproduksiRow; canEdit: boolean; onCatat: () => void }) {
+  return (
+    <div className="flex flex-col items-start gap-1.5">
+      <StatusBadge status={r.status} />
+      {r.status === 'LAHIR' && r.anakTag && (
+        <div className="opacity-60 break-all" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>
+          Anak: {r.anakTag}
+        </div>
+      )}
+      {r.status === 'HAMIL' && canEdit && (
+        <button
+          type="button"
+          onClick={onCatat}
+          className="cursor-pointer inline-flex items-center gap-1.5 min-h-9 px-3 rounded-full transition-colors hover:bg-black/5"
+          style={{ border: `1px solid ${palette.borderStrong}`, fontFamily: "'Inter',sans-serif", fontSize: 12 }}
+        >
+          <ClipboardCheck size={13} /> Catat hasil
+        </button>
+      )}
+    </div>
+  )
+}
+
 const PER_PAGE = 10
 
-export default function ReproduksiClient({ reproduksiList }: { reproduksiList: any[] }) {
+export default function ReproduksiClient({ reproduksiList, canEdit }: { reproduksiList: ReproduksiRow[]; canEdit: boolean }) {
+  const [dicatat, setDicatat] = useState<ReproduksiRow | null>(null)
   const searchParams = useSearchParams()
   const q = searchParams.get('q')?.toLowerCase() || ''
   const statusFilter = searchParams.get('status') || 'ALL'
@@ -106,7 +143,7 @@ export default function ReproduksiClient({ reproduksiList }: { reproduksiList: a
                 </Link>
               </div>
               <div className="md:hidden">
-                <StatusBadge status={r.status} />
+                <StatusCell r={r} canEdit={canEdit} onCatat={() => setDicatat(r)} />
               </div>
             </div>
             
@@ -142,9 +179,9 @@ export default function ReproduksiClient({ reproduksiList }: { reproduksiList: a
               </div>
             </div>
             
-            <div className="hidden md:block" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>—</div>
+            <div className="hidden md:block" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{r.induk.farm?.nama ?? '—'}</div>
             <div className="hidden md:block">
-              <StatusBadge status={r.status} />
+              <StatusCell r={r} canEdit={canEdit} onCatat={() => setDicatat(r)} />
             </div>
           </div>
         )
@@ -163,6 +200,15 @@ export default function ReproduksiClient({ reproduksiList }: { reproduksiList: a
         </div>
       )}
     </KostaCard>
+
+    {dicatat && (
+      <CatatHasilModal
+        reproduksiId={dicatat.id}
+        induk={dicatat.induk}
+        pejantan={dicatat.pejantan}
+        onClose={() => setDicatat(null)}
+      />
+    )}
     </>
   )
 }

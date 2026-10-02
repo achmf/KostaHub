@@ -26,8 +26,8 @@ export default async function ReproduksiPage(props: {
   const reproduksiList = await prisma.reproduksi.findMany({
     where: farmFilter,
     include: {
-      induk: { select: { tag: true, nama: true, farm: { select: { nama: true } } } },
-      pejantan: { select: { tag: true, nama: true } },
+      induk: { select: { id: true, tag: true, nama: true, farm: { select: { nama: true } } } },
+      pejantan: { select: { id: true, tag: true, nama: true } },
     },
     orderBy: { estimasiLahir: 'asc' },
   })
@@ -35,8 +35,9 @@ export default async function ReproduksiPage(props: {
   const hamil = reproduksiList.filter((r) => r.status === 'HAMIL').length
   const lahir = reproduksiList.filter((r) => r.status === 'LAHIR').length
   const gagal = reproduksiList.filter((r) => r.status === 'GAGAL').length
-  const successRate = reproduksiList.length > 0
-    ? Math.round((lahir / reproduksiList.length) * 100)
+  // Hanya kehamilan yang sudah selesai (lahir/gagal) — yang masih hamil belum punya hasil
+  const successRate = lahir + gagal > 0
+    ? Math.round((lahir / (lahir + gagal)) * 100)
     : 0
 
   return (
@@ -86,7 +87,7 @@ export default async function ReproduksiPage(props: {
       </div>
 
       {/* ── Client Component List ── */}
-      <ReproduksiClient reproduksiList={reproduksiList} />
+      <ReproduksiClient reproduksiList={reproduksiList} canEdit={session.role !== 'DINAS'} />
     </div>
   )
 }
