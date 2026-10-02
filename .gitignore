@@ -42,3 +42,7 @@ next-env.d.ts
 
 /app/generated/prisma
 .neon
+
+# AI agent config
+.agents/
+skills-lock.json

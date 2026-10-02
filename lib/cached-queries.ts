@@ -448,15 +448,10 @@ export const getCachedAdminAnalytics = unstable_cache(
     })
 
     // ── ONE groupBy instead of N×6 individual queries ──
-    const [hewanGrouped, reproduksiGrouped, hewanMatiIds, allHewan, allMedis] = await Promise.all([
+    const [hewanGrouped, hewanMatiIds, allHewan, allMedis] = await Promise.all([
       prisma.hewan.groupBy({
         by: ['farmId', 'kategori'],
         _count: true,
-      }),
-      prisma.reproduksi.groupBy({
-        by: ['status'],
-        _count: true,
-        where: { induk: { farmId: { in: farms.map(f => f.id) } } },
       }),
       prisma.kematianHewan.findMany({ select: { hewanId: true } }),
       prisma.hewan.findMany({ select: { id: true, tanggalLahir: true, farmId: true } }),

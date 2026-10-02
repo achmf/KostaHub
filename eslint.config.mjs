@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // AI agent config (not app code):
+    ".agents/**",
+    "skills-lock.json",
   ]),
 ]);
 

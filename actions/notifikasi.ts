@@ -1,7 +1,6 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { redirect } from 'next/navigation'
 import { withAuth } from '@/lib/auth'
 
 // Legacy action — dipertahankan untuk kompatibilitas,
