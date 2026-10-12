@@ -27,7 +27,8 @@ export const tambahReproduksi = withMutationAuth(async (session, formData: FormD
   }
   const pejantanId = formData.get('pejantanId') as string
   const tanggalKawin = new Date(formData.get('tanggalKawin') as string)
-  const forceSubmit = formData.get('forceSubmit') === 'true'
+  // Override kawin sedarah hanya untuk Super Admin — jangan percaya hidden field dari client
+  const forceSubmit = formData.get('forceSubmit') === 'true' && session.role === 'SUPER_ADMIN'
 
   // Estimasi lahir = +150 hari
   const estimasiLahir = new Date(tanggalKawin)
