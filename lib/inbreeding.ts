@@ -27,15 +27,10 @@ export async function checkInbreeding(
     getAncestorIds(pejantanId),
   ])
 
-  // Tambahkan ID masing-masing sebagai kandidat (cek jika salah satu adalah leluhur langsung)
-  indukAncestors.add(indukId)
-  pejantanAncestors.add(pejantanId)
-
-  // Cari irisan
-  const sharedIds = [...indukAncestors].filter((id) => pejantanAncestors.has(id))
-
-  // Keluarkan ID induk dan pejantan itu sendiri dari hasil irisan
-  const filteredIds = sharedIds.filter((id) => id !== indukId && id !== pejantanId)
+  // Irisan leluhur, ditambah garis lurus: salah satu adalah leluhur yang lain (anak × bapak, cucu × kakek, …)
+  const filteredIds = [...indukAncestors].filter((id) => pejantanAncestors.has(id))
+  if (indukAncestors.has(pejantanId)) filteredIds.push(pejantanId)
+  if (pejantanAncestors.has(indukId)) filteredIds.push(indukId)
 
   if (filteredIds.length === 0) {
     return { isRisk: false, sharedAncestors: [] }
