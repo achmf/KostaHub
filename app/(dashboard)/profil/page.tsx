@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { getSession } from '@/lib/auth'
+import { getFarmSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { KostaPageHeader } from '@/components/KostaUI'
 import { ProfileInfoCard } from '@/components/Profile/ProfileInfoCard'
@@ -13,7 +13,7 @@ export const metadata = {
 }
 
 export default async function ProfilPage() {
-  const session = await getSession()
+  const session = await getFarmSession()
   if (!session) redirect('/login')
 
   const user = await prisma.user.findUnique({

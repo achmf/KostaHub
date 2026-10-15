@@ -1,10 +1,10 @@
 import { prisma } from '@/lib/prisma'
-import { getSession } from '@/lib/auth'
+import { getFarmSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { TambahReproduksiForm } from '@/components/Reproduksi/TambahReproduksiForm'
 
 export default async function TambahReproduksiPage(props: { searchParams: Promise<{ [key: string]: string | undefined }> }) {
-  const session = await getSession()
+  const session = await getFarmSession()
   if (!session) redirect('/login')
   const searchParams = await props.searchParams
 

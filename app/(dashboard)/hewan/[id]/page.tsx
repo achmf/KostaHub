@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
-import { getSession } from '@/lib/auth'
+import { getFarmSession } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { ArrowLeft, Edit, Scale, Calendar, MapPin, Stethoscope, GitBranch } from 'lucide-react'
 import Link from 'next/link'
@@ -60,7 +60,7 @@ function SilsilahSkeleton() {
 
 export default async function HewanDetailPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params
-  const session = await getSession()
+  const session = await getFarmSession()
   if (!session) redirect('/login')
 
   const hewanId = params.id

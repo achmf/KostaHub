@@ -1,7 +1,6 @@
 import Sidebar from '@/components/Layout/Sidebar'
-import { getSession } from '@/lib/auth'
+import { getFarmSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { redirect } from 'next/navigation'
 import { GoatMark } from '@/components/GoatMark'
 import FarmSelector from '@/components/Layout/FarmSelector'
 import UserDropdown from '@/components/Layout/UserDropdown'
@@ -13,14 +12,7 @@ import AdminImpersonationBanner from '@/components/Layout/AdminImpersonationBann
 import { palette } from '@/lib/palette'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const session = await getSession()
-  if (!session) redirect('/login')
-  if ((session.role === 'SUPER_ADMIN' || session.role === 'DINAS') && !session.activeFarmId) redirect('/admin')
-
-  // Jika Owner/Staff belum memilih farm → redirect ke farm picker
-  if (!session.activeFarmId) {
-    redirect('/farms')
-  }
+  const session = await getFarmSession()
 
   let farmName: string | undefined
   let allFarms: { id: string; nama: string }[] = []

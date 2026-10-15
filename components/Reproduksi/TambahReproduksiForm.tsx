@@ -58,8 +58,8 @@ export function TambahReproduksiForm({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ indukId, pejantanId }),
       })
-      const data = await res.json()
-      setInbreedingWarning(data)
+      // Respons error jangan dianggap "tidak ada risiko"
+      setInbreedingWarning(res.ok ? await res.json() : null)
       setOverrideConfirmed(false)
     } catch {
       setInbreedingWarning(null)
