@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { getSession } from '@/lib/auth'
+import { getFarmSession } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { ArrowLeft, Edit, Calendar, Activity, Eye, Plus } from 'lucide-react'
 import Link from 'next/link'
@@ -10,7 +10,7 @@ import { RekamMedisHistory } from '@/components/Hewan/RekamMedisHistory'
 
 export default async function RekamMedisHewanPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params
-  const session = await getSession()
+  const session = await getFarmSession()
   if (!session) redirect('/login')
 
   const hewanId = params.id

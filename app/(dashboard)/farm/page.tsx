@@ -1,10 +1,10 @@
 import { prisma } from '@/lib/prisma'
-import { getSession } from '@/lib/auth'
+import { getFarmSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import FarmPageClient from '@/components/Farm/FarmPageClient'
 
 export default async function FarmPage() {
-  const session = await getSession()
+  const session = await getFarmSession()
   if (!session) redirect('/login')
   if (session.role !== 'SUPER_ADMIN') redirect('/')
 

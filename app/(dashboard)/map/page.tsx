@@ -1,11 +1,11 @@
 import { prisma } from '@/lib/prisma'
-import { getSession } from '@/lib/auth'
+import { getFarmSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import MapPageClient from '@/components/Map/MapPageClient'
 
 export default async function MapPage(props: { searchParams: Promise<{ [key: string]: string | undefined }> }) {
   const searchParams = await props.searchParams
-  const session = await getSession()
+  const session = await getFarmSession()
   if (!session) redirect('/login')
   if (session.role === 'PETUGAS') redirect('/')
 

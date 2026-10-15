@@ -1,11 +1,11 @@
-import { getSession } from '@/lib/auth'
+import { getFarmSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect, notFound } from 'next/navigation'
 import EditHewanForm from '@/components/Hewan/EditHewanForm'
 
 export default async function EditHewanPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params
-  const session = await getSession()
+  const session = await getFarmSession()
   if (!session) redirect('/login')
 
   const farmFilter = session.role === 'SUPER_ADMIN' ? {} : { farmId: session.activeFarmId as string }

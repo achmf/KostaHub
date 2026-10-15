@@ -1,10 +1,10 @@
 import { prisma } from '@/lib/prisma'
-import { getSession } from '@/lib/auth'
+import { getFarmSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import LaporanClient from './LaporanClient'
 
 export default async function LaporanPage(props: { searchParams: Promise<{ [key: string]: string | undefined }> }) {
-  const session = await getSession()
+  const session = await getFarmSession()
   if (!session) redirect('/login')
   if (session.role === 'PETUGAS') redirect('/')
   const searchParams = await props.searchParams

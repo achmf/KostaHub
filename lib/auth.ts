@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { cache } from 'react'
 
 const secretKey = process.env.JWT_SECRET || 'secret-kostahub-farm-2026'
@@ -41,6 +42,19 @@ export const getSession = cache(async () => {
   } catch {
     return null
   }
+})
+
+/**
+ * Sesi untuk halaman dashboard farm. Layout dan page dirender paralel, jadi page harus
+ * redirect sendiri sebelum query — kalau tidak, query jalan dengan farmId null dan error di log.
+ */
+export const getFarmSession = cache(async () => {
+  const session = await getSession()
+  if (!session) redirect('/login')
+  if (!session.activeFarmId) {
+    redirect(session.role === 'SUPER_ADMIN' || session.role === 'DINAS' ? '/admin' : '/farms')
+  }
+  return session as SessionPayload & { activeFarmId: string }
 })
 
 /**

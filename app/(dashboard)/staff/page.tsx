@@ -1,10 +1,10 @@
-import { getSession } from '@/lib/auth'
+import { getFarmSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import StaffManager from '@/components/Staff/StaffManager'
 
 export default async function StaffPage() {
-  const session = await getSession()
+  const session = await getFarmSession()
   if (!session) redirect('/login')
   if (session.role !== 'OWNER' && session.role !== 'SUPER_ADMIN') redirect('/')
   if (!session.activeFarmId && session.role === 'OWNER') redirect('/')

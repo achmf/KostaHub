@@ -1,4 +1,4 @@
-import { getSession } from '@/lib/auth'
+import { getFarmSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { ProfileInfoCard } from '@/components/Profile/ProfileInfoCard'
@@ -9,7 +9,7 @@ import { palette } from '@/lib/palette'
 
 export default async function StaffProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const session = await getSession()
+  const session = await getFarmSession()
   if (!session) redirect('/login')
   if (session.role !== 'OWNER' && session.role !== 'SUPER_ADMIN') redirect('/')
   if (!session.activeFarmId && session.role === 'OWNER') redirect('/')
