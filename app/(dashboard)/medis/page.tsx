@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { Plus } from 'lucide-react'
-import { getSession } from '@/lib/auth'
+import { getFarmSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { KostaPageHeader, KostaButton, KostaSectionLabel } from '@/components/KostaUI'
@@ -13,7 +13,7 @@ export default async function MedisPage(props: {
   searchParams: Promise<{ [key: string]: string | undefined }>
 }) {
   const searchParams = await props.searchParams
-  const session = await getSession()
+  const session = await getFarmSession()
   if (!session) redirect('/login')
 
   let farmId = session.activeFarmId as string | null

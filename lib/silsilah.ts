@@ -24,7 +24,9 @@ export async function getAncestorIds(hewanId: string): Promise<Set<string>> {
       FROM "Hewan"
       WHERE id = ${hewanId}
 
-      UNION ALL
+      -- UNION (bukan UNION ALL): baris yang sama tidak diulang, sehingga data silsilah melingkar
+      -- akibat salah input tetap berhenti dan leluhur bersama tidak ditelusuri berkali-kali
+      UNION
 
       -- Recursive: ambil bapak dan induk dari setiap node
       SELECT h.id, h."bapakId", h."indukId"

@@ -1,11 +1,11 @@
 import { prisma } from '@/lib/prisma'
-import { getSession } from '@/lib/auth'
+import { getFarmSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import BeratPageClient from '@/components/Berat/BeratPageClient'
 
 export default async function BeratPage(props: { searchParams: Promise<{ [key: string]: string | undefined }> }) {
   const searchParams = await props.searchParams
-  const session = await getSession()
+  const session = await getFarmSession()
   if (!session) redirect('/login')
 
   let farmId = session.activeFarmId as string | null

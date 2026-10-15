@@ -1,9 +1,9 @@
-import { getSession } from '@/lib/auth'
+import { getFarmSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { ClientNotifList } from '@/components/Notifikasi/ClientNotifList'
 
 export default async function NotifikasiPage() {
-  const session = await getSession()
+  const session = await getFarmSession()
   if (!session) redirect('/login')
 
   // Data sekarang di-fetch client-side via /api/notifikasi dengan auto-generator

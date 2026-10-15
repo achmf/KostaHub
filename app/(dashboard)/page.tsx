@@ -1,4 +1,4 @@
-import { getSession } from '@/lib/auth'
+import { getFarmSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import DashboardClient from '@/components/Dashboard/DashboardClient'
 import { getCachedDashboardData, getCachedDashboardTrends } from '@/lib/cached-queries'
@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 
 export default async function DashboardPage(props: { searchParams: Promise<{ [key: string]: string | undefined }> }) {
   const searchParams = await props.searchParams
-  const session = await getSession()
+  const session = await getFarmSession()
   if (!session) redirect('/login')
 
   let farmId = session.activeFarmId as string | null
