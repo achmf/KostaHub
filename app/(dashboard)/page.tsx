@@ -23,7 +23,7 @@ export default async function DashboardPage(props: { searchParams: Promise<{ [ke
 
   return (
     <DashboardClient
-      stats={{ totalHewan: data.totalHewan, indukan: data.indukan, pejantan: data.pejantan, sedangSakit: data.totalHewan, mati: data.mati, terjual: 0 }}
+      stats={{ totalHewan: data.totalHewan, indukan: data.indukan, pejantan: data.pejantan, sedangSakit: data.dalamPerawatan, mati: data.mati, terjual: 0 }}
       reproduksiHamil={data.reproduksiHamil.map(r => ({
         ...r,
         tanggalKawin: new Date(r.tanggalKawin).toISOString(),
@@ -51,7 +51,8 @@ export default async function DashboardPage(props: { searchParams: Promise<{ [ke
         birthSuccessRate: data.birthSuccessRate,
         totalLahir: data.totalLahir,
         totalGagal: data.totalGagal,
-        totalHamil: data.reproduksiHamil.length,
+        totalHamil: data.totalHamil,
+        lahir7Hari: data.lahir7Hari,
         avgBerat: data.avgBerat,
         kategoriData: data.kategoriData,
         distribusiUmur: data.distribusiUmur,
