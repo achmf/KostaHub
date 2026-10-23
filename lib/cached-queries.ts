@@ -20,6 +20,9 @@ export const CACHE_TAGS = {
   notifikasi: 'notifikasi',
 } as const
 
+const startOfToday = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }
+const daysFromToday = (n: number) => { const d = startOfToday(); d.setDate(d.getDate() + n); d.setHours(23, 59, 59, 999); return d }
+
 // ─── DASHBOARD STATS ─────────────────────────────────────────
 export const getCachedDashboardData = unstable_cache(
   async (farmId: string | null) => {
@@ -41,10 +44,13 @@ export const getCachedDashboardData = unstable_cache(
       hewanMatiIds,
       allHewan,
       allWeights,
+      totalHamil,
+      lahir7Hari,
+      dalamPerawatan,
     ] = await Promise.all([
       prisma.hewan.count({ where: farmFilter }),
-      prisma.hewan.count({ where: { kategori: 'INDUKAN', ...farmFilter } }),
-      prisma.hewan.count({ where: { kategori: 'PEJANTAN', ...farmFilter } }),
+      prisma.hewan.count({ where: { kategori: 'INDUKAN', kematian: { is: null }, ...farmFilter } }),
+      prisma.hewan.count({ where: { kategori: 'PEJANTAN', kematian: { is: null }, ...farmFilter } }),
       prisma.kematianHewan.count({ where: kematianFarmFilter }),
       prisma.reproduksi.findMany({
         where: {
@@ -67,7 +73,7 @@ export const getCachedDashboardData = unstable_cache(
       prisma.hewan.groupBy({
         by: ['kategori'],
         _count: true,
-        where: farmFilter,
+        where: { kematian: { is: null }, ...farmFilter },
       }),
       prisma.reproduksi.count({ where: { status: 'LAHIR', ...reproduksiFarmFilter } }),
       prisma.reproduksi.count({ where: { status: 'GAGAL', ...reproduksiFarmFilter } }),
@@ -82,6 +88,15 @@ export const getCachedDashboardData = unstable_cache(
       prisma.hewan.findMany({
         where: { berat: { not: null }, ...farmFilter },
         select: { id: true, berat: true },
+      }),
+      // reproduksiHamil di atas dibatasi 5 baris, jadi jumlahnya dihitung terpisah
+      prisma.reproduksi.count({ where: { status: 'HAMIL', ...reproduksiFarmFilter } }),
+      prisma.reproduksi.count({
+        where: { status: 'HAMIL', estimasiLahir: { gte: startOfToday(), lte: daysFromToday(7) }, ...reproduksiFarmFilter },
+      }),
+      // Dalam perawatan = hewan hidup yang masih punya jadwal kontrol lanjutan
+      prisma.hewan.count({
+        where: { kematian: { is: null }, rekamMedis: { some: { tanggalLanjut: { gte: startOfToday() } } }, ...farmFilter },
       }),
     ])
 
@@ -147,6 +162,9 @@ export const getCachedDashboardData = unstable_cache(
       kategoriStats,
       reproduksiHamil,
       notifikasiMedis,
+      totalHamil,
+      lahir7Hari,
+      dalamPerawatan,
     }
   },
   ['dashboard-stats'],
