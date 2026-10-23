@@ -534,6 +534,7 @@ interface OverviewData {
   totalLahir: number
   totalGagal: number
   totalHamil: number
+  lahir7Hari: number
   avgBerat: number
   kategoriData: { name: string; value: number }[]
   distribusiUmur: { name: string; value: number }[]
@@ -721,7 +722,7 @@ export default function DashboardClient({
           },
           {
             l: 'Estimasi lahir 7 hari',
-            v: reproduksiHamil.length,
+            v: overviewData.lahir7Hari,
             hint: 'berdasarkan +150 hari',
             icon: <Calendar size={14} style={{ color: palette.ink }} />,
           },
