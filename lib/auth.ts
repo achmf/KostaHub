@@ -3,8 +3,15 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { cache } from 'react'
 
-const secretKey = process.env.JWT_SECRET || 'secret-kostahub-farm-2026'
-const key = new TextEncoder().encode(secretKey)
+// Kunci cadangan hanya untuk development lokal. Di production (termasuk Preview Vercel) wajib JWT_SECRET,
+// kalau tidak siapa pun bisa menandatangani sesi palsu dengan kunci cadangan yang ada di kode ini.
+function getKey() {
+  const secret = process.env.JWT_SECRET
+  if (!secret && process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET belum di-set di environment ini')
+  }
+  return new TextEncoder().encode(secret || 'secret-kostahub-farm-2026')
+}
 
 export type SessionPayload = {
   id: string
@@ -19,11 +26,11 @@ export async function encrypt(payload: SessionPayload) {
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('24h')
-    .sign(key)
+    .sign(getKey())
 }
 
 export async function decrypt(input: string): Promise<SessionPayload | null> {
-  const { payload } = await jwtVerify(input, key, {
+  const { payload } = await jwtVerify(input, getKey(), {
     algorithms: ['HS256'],
   })
   return payload as SessionPayload
