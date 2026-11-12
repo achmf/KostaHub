@@ -727,7 +727,7 @@ export default function DashboardClient({
           {
             l: 'Jadwal Medis',
             v: jumlahJadwalMedis,
-            hint: 'belum ditangani',
+            hint: 'hari ini & mendatang',
             icon: <Syringe size={14} style={{ color: palette.ink }} />,
           },
           {
