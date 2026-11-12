@@ -59,17 +59,27 @@ export async function createStaff(formData: FormData) {
 
     const hashed = await bcrypt.hash(password, 10)
     try {
-      await prisma.$transaction(async (tx) => {
-        await tx.user.update({
-          where: { id: existingUser.id },
+      const direaktivasi = await prisma.$transaction(async (tx) => {
+        // Update bersyarat: Postgres mengecek ulang deletedAt setelah baris dikunci, jadi dari dua owner
+        // yang mengaktifkan user yang sama bersamaan hanya satu yang berhasil (yang kedua dapat count 0).
+        const { count } = await tx.user.updateMany({
+          where: {
+            id: existingUser.id,
+            role: 'PETUGAS',
+            deletedAt: { not: null },
+            farms: { every: { farmId } },
+          },
           data: { deletedAt: null, password: hashed, name, phone: phone || null, failedLogins: 0, lockedUntil: null },
         })
+        if (count === 0) return false
         await tx.userFarm.upsert({
           where: { userId_farmId: { userId: existingUser.id, farmId } },
           create: { userId: existingUser.id, farmId },
           update: {},
         })
+        return true
       })
+      if (!direaktivasi) return { error: 'Email sudah terdaftar' }
     } catch (e) {
       if ((e as { code?: string }).code === 'P2002') return { error: 'Staff sudah terdaftar di farm ini' }
       throw e
