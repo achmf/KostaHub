@@ -67,9 +67,11 @@ function StatusBadge({ kematian }: { kematian: { tanggalMati: Date } | null }) {
 export function HewanClient({
   hewanList,
   isSuperAdmin,
+  canEdit,
 }: {
   hewanList: HewanWithRelations[]
   isSuperAdmin: boolean
+  canEdit: boolean
 }) {
   const searchParams = useSearchParams()
   const q = searchParams.get('q') || ''
@@ -160,13 +162,15 @@ export function HewanClient({
         title="Daftar Hewan"
         description={`${filtered.length} ekor ditampilkan. Klik baris untuk membuka profil lengkap.`}
         action={
-          <div className="flex gap-2 w-full sm:w-auto">
-            <Link href="/hewan/tambah" className="flex-1 sm:flex-none">
-              <KostaButton className="w-full sm:w-auto justify-center">
-                <Plus size={13} /> <span>Tambah Hewan</span>
-              </KostaButton>
-            </Link>
-          </div>
+          canEdit ? (
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Link href="/hewan/tambah" className="flex-1 sm:flex-none">
+                <KostaButton className="w-full sm:w-auto justify-center">
+                  <Plus size={13} /> <span>Tambah Hewan</span>
+                </KostaButton>
+              </Link>
+            </div>
+          ) : undefined
         }
       />
 

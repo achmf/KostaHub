@@ -35,7 +35,7 @@ const KATEGORI_LABEL: Record<string, string> = {
 
 // trendData is now dynamic inside the component
 
-export default function BeratPageClient({ hewanList }: { hewanList: HewanBerat[] }) {
+export default function BeratPageClient({ hewanList, canEdit }: { hewanList: HewanBerat[]; canEdit: boolean }) {
   const searchParams = useSearchParams()
   const searchQuery = searchParams.get('q') || ''
   const kat = searchParams.get('kategori') || 'ALL'
@@ -159,11 +159,13 @@ export default function BeratPageClient({ hewanList }: { hewanList: HewanBerat[]
         title="Monitoring Pertumbuhan"
         description="Catat penimbangan rutin untuk melacak kurva pertumbuhan tiap individu."
         action={
-          <Link href="/berat/tambah">
-            <KostaButton>
-              <Plus size={13} /> Catat Penimbangan
-            </KostaButton>
-          </Link>
+          canEdit ? (
+            <Link href="/berat/tambah">
+              <KostaButton>
+                <Plus size={13} /> Catat Penimbangan
+              </KostaButton>
+            </Link>
+          ) : undefined
         }
       />
 
@@ -428,11 +430,13 @@ export default function BeratPageClient({ hewanList }: { hewanList: HewanBerat[]
               ))}
             </div>
             <div className="text-right">
-              <Link href={`/berat/tambah?hewanId=${h.id}`}>
-                <KostaButton variant="outline" size="sm">
-                  <Scale size={11} /> Timbang
-                </KostaButton>
-              </Link>
+              {canEdit && (
+                <Link href={`/berat/tambah?hewanId=${h.id}`}>
+                  <KostaButton variant="outline" size="sm">
+                    <Scale size={11} /> Timbang
+                  </KostaButton>
+                </Link>
+              )}
             </div>
           </motion.div>
         ))}
@@ -507,11 +511,13 @@ export default function BeratPageClient({ hewanList }: { hewanList: HewanBerat[]
                     {h.berat ?? '—'}
                     <span className="opacity-55" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10 }}> kg</span>
                   </div>
-                  <Link href={`/berat/tambah?hewanId=${h.id}`}>
-                    <KostaButton variant="outline" size="sm" className="min-h-10">
-                      <Scale size={11} /> Timbang
-                    </KostaButton>
-                  </Link>
+                  {canEdit && (
+                    <Link href={`/berat/tambah?hewanId=${h.id}`}>
+                      <KostaButton variant="outline" size="sm" className="min-h-10">
+                        <Scale size={11} /> Timbang
+                      </KostaButton>
+                    </Link>
+                  )}
                 </div>
               </div>
             </KostaCard>

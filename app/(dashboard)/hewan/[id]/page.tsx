@@ -78,6 +78,7 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
 
   if (!hewan) notFound()
   if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.activeFarmId) redirect('/hewan')
+  const canEdit = session.role !== 'DINAS'
 
   const isMati = !!hewan.kematian
   const umur = umurBulan(hewan.tanggalLahir, hewan.kematian?.tanggalMati ?? new Date())
@@ -93,11 +94,13 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
         >
           <ArrowLeft size={16} className="md:w-[14px] md:h-[14px]" /> <span>Kembali ke Populasi</span>
         </Link>
-        <Link href={`/hewan/${hewan.id}/edit`}>
-          <KostaButton variant="outline" className="hover:bg-black/5 px-3 md:px-4">
-            <Edit size={16} className="md:w-[13px] md:h-[13px]" /> <span>Edit Data</span>
-          </KostaButton>
-        </Link>
+        {canEdit && (
+          <Link href={`/hewan/${hewan.id}/edit`}>
+            <KostaButton variant="outline" className="hover:bg-black/5 px-3 md:px-4">
+              <Edit size={16} className="md:w-[13px] md:h-[13px]" /> <span>Edit Data</span>
+            </KostaButton>
+          </Link>
+        )}
       </div>
 
       {/* Hero card */}
@@ -176,7 +179,7 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
                 )}
               </div>
             </div>
-            <BatalkanKematianButton hewanId={hewan.id} hewanNama={hewan.nama || hewan.tag} />
+            {canEdit && <BatalkanKematianButton hewanId={hewan.id} hewanNama={hewan.nama || hewan.tag} />}
           </div>
         </KostaCard>
       )}
@@ -225,7 +228,7 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
         </Suspense>
       </KostaCard>
 
-      <HybridTagManager hewanId={hewan.id} tagStr={hewan.tag} existingTags={hewan.tagsRfid} />
+      {canEdit && <HybridTagManager hewanId={hewan.id} tagStr={hewan.tag} existingTags={hewan.tagsRfid} />}
     </div>
   )
 }
