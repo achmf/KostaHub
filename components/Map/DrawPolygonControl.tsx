@@ -5,6 +5,7 @@ import { useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import { PenLine, Check, Undo2, CheckCircle2, Save, X, Trash2, RefreshCw } from 'lucide-react'
 import type { Farm } from './MapPageClient'
+import { useConfirm } from '@/components/ConfirmProvider'
 
 interface Props {
   farm: Farm
@@ -14,6 +15,7 @@ interface Props {
 
 export default function DrawPolygonControl({ farm, onSave, onClose }: Props) {
   const map = useMap()
+  const { confirm } = useConfirm()
 
   // Panel ref — prevent clicks on UI from bubbling to Leaflet map
   const panelRef = useRef<HTMLDivElement>(null)
@@ -266,7 +268,10 @@ export default function DrawPolygonControl({ farm, onSave, onClose }: Props) {
                 {farm.geojson ? 'Gambar Ulang' : 'Mulai Gambar'}
               </button>
               {farm.geojson && (
-                <button style={btn('rgba(181,68,59,0.25)', '#FF9B94', { display: 'flex', alignItems: 'center', gap: 5 })} onClick={() => { handleClearAll(); onSave(null) }}>
+                <button style={btn('rgba(181,68,59,0.25)', '#FF9B94', { display: 'flex', alignItems: 'center', gap: 5 })} onClick={async () => {
+                  if (!(await confirm({ title: 'Hapus area kandang?', message: 'Area kandang farm ini akan dihapus.', confirmText: 'Ya, Hapus', variant: 'danger' }))) return
+                  handleClearAll(); onSave(null)
+                }}>
                   <Trash2 size={12} />
                   Hapus Area
                 </button>

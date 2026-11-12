@@ -98,7 +98,8 @@ export async function login(_prevState: unknown, formData: FormData) {
       role: user.role,
       activeFarmId: null,
     })
-    redirect('/farms/new')
+    // Hanya OWNER yang boleh mendaftarkan farm; role lain menunggu ditambahkan owner
+    redirect(user.role === 'OWNER' ? '/farms/new' : '/farms')
   }
 
   // Cek farm yang sudah AKTIF
