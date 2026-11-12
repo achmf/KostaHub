@@ -1,6 +1,11 @@
 'use client'
 
-import { Users, Clock, CheckCircle2, XCircle } from 'lucide-react'
+import { useState, useTransition } from 'react'
+import { Users, Clock, CheckCircle2, XCircle, KeyRound } from 'lucide-react'
+import { Modal } from '@/components/ui/Modal'
+import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/ToastProvider'
+import { resetPasswordUser } from '@/actions/admin'
 import { EmptyState } from '@/components/ui/EmptyState'
 import PaginationControl from './PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
@@ -31,6 +36,63 @@ const approvalBadge: Record<string, { label: string; color: string; bg: string; 
 }
 
 const PER_PAGE = 10
+
+function ResetPasswordButton({ user }: { user: { id: string; name: string } }) {
+  const { showToast } = useToast()
+  const [open, setOpen] = useState(false)
+  const [password, setPassword] = useState('')
+  const [pending, startTransition] = useTransition()
+  const inputId = `reset-pw-${user.id}`
+
+  const close = () => { setOpen(false); setPassword('') }
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault()
+    startTransition(async () => {
+      const res = await resetPasswordUser(user.id, password)
+      if (res.error) return showToast({ title: res.error, type: 'error' })
+      close()
+      showToast({ title: `Password ${user.name} berhasil direset`, type: 'success' })
+    })
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 hover:bg-black/[0.04]"
+        style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: palette.info }}
+      >
+        <KeyRound size={13} /> Reset password
+      </button>
+      <Modal open={open} onClose={close} title="Reset password" description={`Atur password baru untuk ${user.name}.`}>
+        <form onSubmit={submit} className="space-y-4">
+          <div>
+            <label htmlFor={inputId} className="block mb-1.5" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5, color: palette.ink }}>
+              Password baru
+            </label>
+            <input
+              id={inputId}
+              type="password"
+              required
+              minLength={6}
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-lg px-3 py-2"
+              style={{ border: `1px solid ${palette.border}`, fontSize: 14 }}
+            />
+            <p className="mt-1" style={{ fontSize: 11.5, color: 'rgba(13,20,15,0.5)' }}>Minimal 6 karakter.</p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={close}>Batal</Button>
+            <Button type="submit" disabled={pending}>{pending ? 'Menyimpan...' : 'Reset password'}</Button>
+          </div>
+        </form>
+      </Modal>
+    </>
+  )
+}
 
 export default function AdminUsersClient({ users }: { users: any[] }) {
   const searchParams = useSearchParams()
@@ -122,6 +184,7 @@ export default function AdminUsersClient({ users }: { users: any[] }) {
                     Bergabung {new Date(user.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </span>
                 </div>
+                <div className="mt-2 -ml-2.5"><ResetPasswordButton user={user} /></div>
               </div>
             </div>
           )
@@ -132,7 +195,7 @@ export default function AdminUsersClient({ users }: { users: any[] }) {
         <table className="w-full">
           <thead>
             <tr style={{ borderBottom: `1px solid ${palette.border}`, background: 'rgba(13,20,15,0.02)' }}>
-              {['User', 'Role', 'Farm', 'Bergabung'].map((col) => (
+              {['User', 'Role', 'Farm', 'Bergabung', 'Aksi'].map((col) => (
                 <th
                   key={col}
                   className="text-left px-5 py-3.5"
@@ -207,6 +270,11 @@ export default function AdminUsersClient({ users }: { users: any[] }) {
                     <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'rgba(13,20,15,0.45)' }}>
                       {new Date(user.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </span>
+                  </td>
+
+                  {/* Aksi */}
+                  <td className="px-5 py-4">
+                    <ResetPasswordButton user={user} />
                   </td>
                 </tr>
               )

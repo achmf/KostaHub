@@ -43,11 +43,13 @@ export default async function RekamMedisHewanPage(props: { params: Promise<{ id:
               <Eye size={16} className="md:w-[13px] md:h-[13px]" /> <span className="sr-only md:not-sr-only">Buka Profil Hewan</span>
             </KostaButton>
           </Link>
-          <Link href={`/medis/tambah?hewanId=${hewan.id}`}>
-            <KostaButton size="sm" className="px-3 md:px-4 min-h-10 md:min-h-0">
-              <Plus size={16} className="md:w-[13px] md:h-[13px]" /> <span>Tambah Catatan</span>
-            </KostaButton>
-          </Link>
+          {session.role !== 'DINAS' && (
+            <Link href={`/medis/tambah?hewanId=${hewan.id}`}>
+              <KostaButton size="sm" className="px-3 md:px-4 min-h-10 md:min-h-0">
+                <Plus size={16} className="md:w-[13px] md:h-[13px]" /> <span>Tambah Catatan</span>
+              </KostaButton>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -83,7 +85,7 @@ export default async function RekamMedisHewanPage(props: { params: Promise<{ id:
       </KostaCard>
 
       {/* Medical records list */}
-      <RekamMedisHistory records={hewan.rekamMedis} />
+      <RekamMedisHistory records={hewan.rekamMedis} canEdit={session.role !== 'DINAS'} />
     </div>
   )
 }

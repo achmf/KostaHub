@@ -39,5 +39,5 @@ export default async function BeratPage(props: { searchParams: Promise<{ [key: s
     }))
   }))
 
-  return <BeratPageClient hewanList={serialized} />
+  return <BeratPageClient hewanList={serialized} canEdit={session.role !== 'DINAS'} />
 }

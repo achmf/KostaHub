@@ -59,11 +59,13 @@ export default async function MedisPage(props: {
         title="Riwayat Kesehatan"
         description={`${totalMedis} catatan medis tersimpan. Semua diagnosis, obat, dan tindakan terlacak per individu.`}
         action={
-          <Link href="/medis/tambah">
-            <KostaButton className="px-3 md:px-4">
-              <Plus size={16} className="md:w-[13px] md:h-[13px]" /> <span>Tambah Rekam Medis</span>
-            </KostaButton>
-          </Link>
+          session.role !== 'DINAS' ? (
+            <Link href="/medis/tambah">
+              <KostaButton className="px-3 md:px-4">
+                <Plus size={16} className="md:w-[13px] md:h-[13px]" /> <span>Tambah Rekam Medis</span>
+              </KostaButton>
+            </Link>
+          ) : undefined
         }
       />
 

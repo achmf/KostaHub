@@ -20,5 +20,5 @@ export default async function TambahMedisPage(props: { searchParams: Promise<{ [
   })
 
 
-  return <TambahMedisForm hewan={hewan} />
+  return <TambahMedisForm hewan={hewan} defaultHewanId={searchParams.hewanId} />
 }

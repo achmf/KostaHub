@@ -40,9 +40,33 @@ export async function createStaff(formData: FormData) {
     return { error: parsed.error.issues[0].message }
   }
 
-  const existingUser = await prisma.user.findUnique({ where: { email } })
+  const farmId = session.activeFarmId!
+  const existingUser = await prisma.user.findUnique({
+    where: { email },
+    include: { farms: { select: { farmId: true } } },
+  })
   if (existingUser) {
-    return { error: 'Email sudah terdaftar' }
+    // Sengaja tidak melampirkan user aktif yang sudah ada: mencegah pengambilalihan akun lintas farm.
+    // Hanya PETUGAS terhapus tanpa keanggotaan farm (sisa deleteStaff) yang boleh diaktifkan lagi.
+    if (existingUser.role !== 'PETUGAS' || !existingUser.deletedAt || existingUser.farms.length > 0) {
+      return { error: 'Email sudah terdaftar' }
+    }
+
+    const hashed = await bcrypt.hash(password, 10)
+    try {
+      await prisma.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: existingUser.id },
+          data: { deletedAt: null, password: hashed, name, phone: phone || null, failedLogins: 0, lockedUntil: null },
+        })
+        await tx.userFarm.create({ data: { userId: existingUser.id, farmId } })
+      })
+    } catch (e) {
+      if ((e as { code?: string }).code === 'P2002') return { error: 'Staff sudah terdaftar di farm ini' }
+      throw e
+    }
+    revalidatePath('/staff')
+    return { success: true }
   }
 
   const hashedPassword = await bcrypt.hash(password, 10)
@@ -91,9 +115,14 @@ export async function deleteStaff(staffId: string) {
     return { error: 'Hanya bisa menghapus PETUGAS' }
   }
 
-  await prisma.user.update({
-    where: { id: staffId },
-    data: { deletedAt: new Date() },
+  // Lepas dari farm aktif saja; soft-delete user hanya jika tidak punya farm lain
+  await prisma.$transaction(async (tx) => {
+    await tx.userFarm.delete({
+      where: { userId_farmId: { userId: staffId, farmId: session.activeFarmId! } },
+    })
+    if (staff.farms.length <= 1) {
+      await tx.user.update({ where: { id: staffId }, data: { deletedAt: new Date() } })
+    }
   })
 
   revalidatePath('/staff')
@@ -123,6 +152,9 @@ export async function updateStaff(staffId: string, formData: FormData) {
   if (!isMemberOfActiveFarm) return { error: 'Bukan staff farm Anda' }
 
   if (staff.role !== 'PETUGAS') return { error: 'Hanya bisa mengubah PETUGAS' }
+  if (staff.farms.some((uf) => uf.farmId !== session.activeFarmId)) {
+    return { error: 'Staff juga terdaftar di farm lain; data akun tidak bisa diubah dari sini' }
+  }
 
   const updateData: any = { name, phone: phone || null }
 

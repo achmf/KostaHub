@@ -154,3 +154,21 @@ export const catatHasilReproduksi = withMutationAuth(async (session, reproduksiI
   revalidatePath('/reproduksi')
   return { success: true, jumlahAnak: anak.length }
 })
+
+export const hapusReproduksi = withMutationAuth(async (session, id: string) => {
+  const repro = await prisma.reproduksi.findUnique({
+    where: { id },
+    include: { induk: { select: { farmId: true } } },
+  })
+  if (!repro) return { error: 'Data kehamilan tidak ditemukan' }
+  if (session.role !== 'SUPER_ADMIN' && repro.induk.farmId !== session.activeFarmId) return { error: 'Akses ditolak' }
+  // LAHIR: anak sudah terdaftar dengan induk & pejantan ini
+  if (repro.status === 'LAHIR') return { error: 'Kehamilan dengan kelahiran tercatat tidak bisa dihapus' }
+
+  await prisma.reproduksi.delete({ where: { id } })
+
+  invalidateReproduksi()
+  revalidatePath('/reproduksi')
+  revalidatePath(`/hewan/${repro.indukId}`)
+  return { success: true as const }
+})

@@ -548,6 +548,7 @@ export default function MapPageClient({ farms: initialFarms, role }: { farms: Fa
             onSelectFarm={setSelectedFarm}
             layer={layer}
             role={role}
+            isAdmin={role === 'SUPER_ADMIN'}
             showHeatmap={showHeatmap}
             showRadius={showRadius}
             drawMode={drawMode}
