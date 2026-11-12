@@ -87,10 +87,11 @@ export type CatatHasilState = { success: true; jumlahAnak: number } | { error: s
 export const catatHasilReproduksi = withMutationAuth(async (session, reproduksiId: string, formData: FormData): Promise<CatatHasilState> => {
   const repro = await prisma.reproduksi.findUnique({
     where: { id: reproduksiId },
-    include: { induk: { select: { farmId: true } } },
+    include: { induk: { select: { farmId: true, kematian: { select: { id: true } } } } },
   })
   if (!repro) return { error: 'Data kehamilan tidak ditemukan' }
   if (session.role !== 'SUPER_ADMIN' && repro.induk.farmId !== session.activeFarmId) return { error: 'Akses ditolak' }
+  if (repro.induk.kematian) return { error: 'Hewan sudah tercatat mati' }
   if (repro.status !== 'HAMIL') return { error: 'Hasil kehamilan ini sudah pernah dicatat' }
 
   const hasil = formData.get('hasil')
@@ -114,7 +115,7 @@ export const catatHasilReproduksi = withMutationAuth(async (session, reproduksiI
   if (!parsed.success) return { error: parsed.error.issues[0].message }
   const { tanggalLahir, anak } = parsed.data
 
-  if (tanggalLahir > new Date()) return { error: 'Tanggal lahir tidak boleh di masa depan' }
+  if (lewatHariIniWIB(tanggalLahir)) return { error: 'Tanggal lahir tidak boleh di masa depan' }
   if (tanggalLahir < repro.tanggalKawin) return { error: 'Tanggal lahir tidak boleh sebelum tanggal kawin' }
 
   const farmId = repro.induk.farmId

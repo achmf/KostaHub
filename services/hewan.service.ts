@@ -67,10 +67,11 @@ export async function transferHewanLogic(hewanId: string, toFarmId: string, alas
 export async function editHewanLogic(hewanId: string, data: any, session: SessionData) {
   const existing = await prisma.hewan.findUnique({ 
     where: { id: hewanId },
-    include: { tagsRfid: { where: { status: 'AKTIF' } } }
+    include: { tagsRfid: { where: { status: 'AKTIF' } }, kematian: true }
   })
   if (!existing) return { error: 'Hewan tidak ditemukan' }
   if (session.role !== 'SUPER_ADMIN' && existing.farmId !== session.activeFarmId) return { error: 'Akses ditolak' }
+  if (existing.kematian) return { error: 'Hewan sudah tercatat mati' }
 
   if (data.tag !== existing.tag) {
     const checkTag = await prisma.hewan.findUnique({ where: { tag_farmId: { tag: data.tag, farmId: existing.farmId } } })
