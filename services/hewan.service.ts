@@ -22,6 +22,7 @@ export async function createHewanLogic(data: any, session: SessionData, override
       kelamin: data.kelamin as Kelamin,
       kategori: data.kategori as KategoriHewan,
       berat: typeof data.berat === 'number' ? data.berat : null,
+      ...(typeof data.berat === 'number' && { beratHistory: { create: { tanggal: new Date(), berat: data.berat, catatan: 'Berat awal' } } }),
       tanggalLahir: data.tanggalLahir,
       farmId,
       bapakId: data.bapakId || null,
