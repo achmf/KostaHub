@@ -1,4 +1,6 @@
 import { prisma } from '@/lib/prisma'
+import { cekOrangTua } from '@/lib/aturan-silsilah'
+import { ambilOrangTua, getAncestorIds } from '@/lib/silsilah'
 import { type Kelamin, type KategoriHewan } from '@prisma/client'
 
 export type SessionData = { role: string; activeFarmId?: string | null }
@@ -15,6 +17,17 @@ export async function createHewanLogic(data: any, session: SessionData, override
     if (checkRfid) return { error: `RFID UID "${data.rfidUid}" sudah terdaftar di sistem` }
   }
 
+  const bapakId: string | undefined = data.bapakId || undefined
+  const indukId: string | undefined = data.indukId || undefined
+  const ortu = await ambilOrangTua([bapakId, indukId])
+  if ((bapakId && !ortu.has(bapakId)) || (indukId && !ortu.has(indukId))) return { error: 'Orang tua tidak ditemukan' }
+  const errOrtu = cekOrangTua({
+    anak: { farmId, tanggalLahir: data.tanggalLahir },
+    bapak: bapakId ? ortu.get(bapakId) : null,
+    induk: indukId ? ortu.get(indukId) : null,
+  })
+  if (errOrtu) return { error: errOrtu }
+
   await prisma.hewan.create({
     data: {
       tag: data.tag,
@@ -22,6 +35,7 @@ export async function createHewanLogic(data: any, session: SessionData, override
       kelamin: data.kelamin as Kelamin,
       kategori: data.kategori as KategoriHewan,
       berat: typeof data.berat === 'number' ? data.berat : null,
+      ...(typeof data.berat === 'number' && { beratHistory: { create: { tanggal: new Date(), berat: data.berat, catatan: 'Berat awal' } } }),
       tanggalLahir: data.tanggalLahir,
       farmId,
       bapakId: data.bapakId || null,
@@ -53,10 +67,11 @@ export async function transferHewanLogic(hewanId: string, toFarmId: string, alas
 export async function editHewanLogic(hewanId: string, data: any, session: SessionData) {
   const existing = await prisma.hewan.findUnique({ 
     where: { id: hewanId },
-    include: { tagsRfid: { where: { status: 'AKTIF' } } }
+    include: { tagsRfid: { where: { status: 'AKTIF' } }, kematian: true }
   })
   if (!existing) return { error: 'Hewan tidak ditemukan' }
   if (session.role !== 'SUPER_ADMIN' && existing.farmId !== session.activeFarmId) return { error: 'Akses ditolak' }
+  if (existing.kematian) return { error: 'Hewan sudah tercatat mati' }
 
   if (data.tag !== existing.tag) {
     const checkTag = await prisma.hewan.findUnique({ where: { tag_farmId: { tag: data.tag, farmId: existing.farmId } } })
@@ -69,6 +84,20 @@ export async function editHewanLogic(hewanId: string, data: any, session: Sessio
     const checkRfid = await prisma.tagRfid.findUnique({ where: { rfidUid: data.rfidUid } })
     if (checkRfid) return { error: `RFID UID "${data.rfidUid}" sudah digunakan oleh hewan lain` }
   }
+
+  // Hanya orang tua yang diganti yang divalidasi; data lama yang tidak valid tetap bisa diedit (trade-off yang disetujui)
+  const bapakId: string | undefined = data.bapakId && data.bapakId !== existing.bapakId ? data.bapakId : undefined
+  const indukId: string | undefined = data.indukId && data.indukId !== existing.indukId ? data.indukId : undefined
+  const ortu = await ambilOrangTua([bapakId, indukId])
+  if ((bapakId && !ortu.has(bapakId)) || (indukId && !ortu.has(indukId))) return { error: 'Orang tua tidak ditemukan' }
+  const errOrtu = cekOrangTua({
+    anak: { id: hewanId, farmId: existing.farmId, tanggalLahir: data.tanggalLahir },
+    bapak: bapakId ? ortu.get(bapakId) : null,
+    induk: indukId ? ortu.get(indukId) : null,
+    leluhurBapak: bapakId ? await getAncestorIds(bapakId) : undefined,
+    leluhurInduk: indukId ? await getAncestorIds(indukId) : undefined,
+  })
+  if (errOrtu) return { error: errOrtu }
 
   await prisma.$transaction(async (tx) => {
     // Form edit tidak mengirim rfidUid (undefined) → jangan sentuh tag; tag dikelola di HybridTagManager

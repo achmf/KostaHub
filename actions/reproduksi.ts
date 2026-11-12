@@ -4,11 +4,13 @@ import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { after } from 'next/server'
+import { ambilOrangTua } from '@/lib/silsilah'
 import { checkInbreeding } from '@/lib/inbreeding'
 import { generateNotifikasiOtomatis } from '@/lib/notifikasi-generator'
 import { withMutationAuth } from '@/lib/auth'
 import { invalidateHewan, invalidateReproduksi } from '@/lib/cache-invalidation'
 import { hasilLahirSchema } from '@/lib/validations/reproduksi.schema'
+import { lewatHariIniWIB } from '@/lib/tanggal'
 
 export type TambahReproduksiState = {
   warning?: boolean
@@ -26,7 +28,20 @@ export const tambahReproduksi = withMutationAuth(async (session, formData: FormD
     return { error: 'Akses ditolak' }
   }
   const pejantanId = formData.get('pejantanId') as string
-  const tanggalKawin = new Date(formData.get('tanggalKawin') as string)
+  if (!pejantanId) return { error: 'Pejantan tidak dipilih' }
+  const ortu = await ambilOrangTua([indukId, pejantanId])
+  const pejantan = ortu.get(pejantanId)
+  if (!pejantan) return { error: 'Pejantan tidak ditemukan' }
+  if (pejantan.kelamin !== 'JANTAN') return { error: 'Bapak harus jantan' }
+  if (induk.kelamin !== 'BETINA') return { error: 'Induk harus betina' }
+  if (pejantan.farmId !== induk.farmId) return { error: 'Orang tua harus dari farm yang sama' }
+  if (pejantan.mati || ortu.get(indukId)?.mati) return { error: 'Induk/pejantan sudah mati' }
+  const rawKawin = formData.get('tanggalKawin')
+  if (typeof rawKawin !== 'string' || !rawKawin) return { error: 'Tanggal kawin tidak valid' }
+  const tanggalKawin = new Date(rawKawin)
+  if (isNaN(tanggalKawin.getTime()) || lewatHariIniWIB(tanggalKawin)) return { error: 'Tanggal kawin tidak valid' }
+  const masihHamil = await prisma.reproduksi.count({ where: { indukId, status: 'HAMIL' } })
+  if (masihHamil > 0) return { error: 'Induk ini masih tercatat hamil' }
   // Override kawin sedarah hanya untuk Super Admin — jangan percaya hidden field dari client
   const forceSubmit = formData.get('forceSubmit') === 'true' && session.role === 'SUPER_ADMIN'
 
@@ -72,10 +87,11 @@ export type CatatHasilState = { success: true; jumlahAnak: number } | { error: s
 export const catatHasilReproduksi = withMutationAuth(async (session, reproduksiId: string, formData: FormData): Promise<CatatHasilState> => {
   const repro = await prisma.reproduksi.findUnique({
     where: { id: reproduksiId },
-    include: { induk: { select: { farmId: true } } },
+    include: { induk: { select: { farmId: true, kematian: { select: { id: true } } } } },
   })
   if (!repro) return { error: 'Data kehamilan tidak ditemukan' }
   if (session.role !== 'SUPER_ADMIN' && repro.induk.farmId !== session.activeFarmId) return { error: 'Akses ditolak' }
+  if (repro.induk.kematian) return { error: 'Hewan sudah tercatat mati' }
   if (repro.status !== 'HAMIL') return { error: 'Hasil kehamilan ini sudah pernah dicatat' }
 
   const hasil = formData.get('hasil')
@@ -99,7 +115,7 @@ export const catatHasilReproduksi = withMutationAuth(async (session, reproduksiI
   if (!parsed.success) return { error: parsed.error.issues[0].message }
   const { tanggalLahir, anak } = parsed.data
 
-  if (tanggalLahir > new Date()) return { error: 'Tanggal lahir tidak boleh di masa depan' }
+  if (lewatHariIniWIB(tanggalLahir)) return { error: 'Tanggal lahir tidak boleh di masa depan' }
   if (tanggalLahir < repro.tanggalKawin) return { error: 'Tanggal lahir tidak boleh sebelum tanggal kawin' }
 
   const farmId = repro.induk.farmId
