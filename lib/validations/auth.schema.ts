@@ -25,3 +25,9 @@ export const changePasswordSchema = z.object({
   message: 'Password baru dan konfirmasi tidak cocok',
   path: ['confirmPassword'],
 })
+
+export const createStaffSchema = z.object({
+  name: z.string().min(1, { message: 'Nama wajib diisi' }),
+  email: z.email({ message: 'Email tidak valid' }),
+  password: z.string().min(6, { message: 'Password minimal 6 karakter' }),
+})

@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { revalidatePath } from 'next/cache'
 import { type Role } from '@prisma/client'
+import { createStaffSchema } from '@/lib/validations/auth.schema'
 
 async function requireOwnerWithFarm() {
   const session = await getSession()
@@ -32,6 +33,11 @@ export async function createStaff(formData: FormData) {
 
   if (!['PETUGAS'].includes(role)) {
     return { error: 'Role harus PETUGAS' }
+  }
+
+  const parsed = createStaffSchema.safeParse({ name, email, password })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
   }
 
   const existingUser = await prisma.user.findUnique({ where: { email } })
@@ -116,9 +122,12 @@ export async function updateStaff(staffId: string, formData: FormData) {
   )
   if (!isMemberOfActiveFarm) return { error: 'Bukan staff farm Anda' }
 
+  if (staff.role !== 'PETUGAS') return { error: 'Hanya bisa mengubah PETUGAS' }
+
   const updateData: any = { name, phone: phone || null }
-  
-  if (password && password.length >= 6) {
+
+  if (password) {
+    if (password.length < 6) return { error: 'Password minimal 6 karakter' }
     updateData.password = await bcrypt.hash(password, 10)
   }
 

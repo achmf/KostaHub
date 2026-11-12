@@ -28,9 +28,11 @@ export default async function EditHewanPage(props: { params: Promise<{ id: strin
 
   if (!hewan) return notFound()
 
-  if (session.role === 'FARM_OWNER' && hewan.farmId !== session.activeFarmId) {
+  if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.activeFarmId) {
     redirect('/hewan')
   }
+
+  if (session.role === 'DINAS') redirect(`/hewan/${hewan.id}`)
 
   const finalSemuaHewan = [...semuaHewan]
 

@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import { getAnnouncements } from '@/actions/admin/sendAnnouncement'
 import AdminAnnouncementsClient from '@/components/Admin/AdminAnnouncementsClient'
 import { getSession } from '@/lib/auth'
@@ -5,8 +6,9 @@ import { getSession } from '@/lib/auth'
 export const metadata = { title: 'Pengumuman — Admin KostaHub' }
 
 export default async function AnnouncementsPage() {
-  const history = await getAnnouncements()
   const session = await getSession()
+  if (session?.role !== 'SUPER_ADMIN') redirect('/admin')
+  const history = await getAnnouncements()
 
   return (
     <AdminAnnouncementsClient
