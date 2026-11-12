@@ -277,11 +277,11 @@ Jika `butuhNotifikasi = true` dan `tanggalLanjut` diisi, sistem akan auto-genera
 - Success rate = lahir ÷ (lahir + gagal); kehamilan yang masih berjalan tidak dihitung
 
 **Inbreeding Detection:**
-- Algoritma traversal ancestor via `lib/silsilah.ts` → `getAncestorIds()`
-- Mengambil semua leluhur (tidak terbatas generasi) dari kedua hewan
-- Mencari irisan leluhur bersama
-- Jika ada irisan → `inbreedingWarning: true` disimpan di record `Reproduksi`
-- Warning ditampilkan dengan nama/tag leluhur bersama
+- Algoritma traversal ancestor via `lib/silsilah.ts` → `getAncestorDepths()` (Recursive CTE dengan kolom kedalaman)
+- Mengambil leluhur kedua hewan sampai **4 generasi** (`BATAS_GENERASI` di `lib/inbreeding-rules.ts`; 1 = orang tua, 2 = kakek/nenek, 3 = buyut, 4 = canggah)
+- Mencari irisan leluhur bersama, termasuk garis lurus (pejantan adalah leluhur induk atau sebaliknya)
+- Jika ada irisan → warning ditampilkan dengan nama/tag leluhur bersama dan perkawinan tidak disimpan
+- OWNER atau SUPER_ADMIN boleh tetap menyimpan (override); record `Reproduksi` lalu disimpan dengan `inbreedingWarning: true`
 
 ### 5.5 Berat Badan (`/berat`)
 
@@ -646,16 +646,17 @@ User ←→ RekamMedis    (dokter internal, optional)
 
 - Setiap hewan bisa memiliki referensi `bapakId` dan `indukId`
 - `lib/silsilah.ts` → `buildSilsilahTree()`: traversal rekursif ke atas membangun pohon leluhur
-- `getAncestorIds()`: mengumpulkan semua ID leluhur (tanpa batas kedalaman) untuk inbreeding check
+- `getAncestorIds()`: mengumpulkan semua ID leluhur (tanpa batas kedalaman) untuk cek silsilah melingkar saat edit orang tua
+- `getAncestorDepths()`: leluhur beserta kedalamannya, dibatasi 4 generasi, untuk inbreeding check
 - Ditampilkan di halaman detail hewan via komponen `<SilsilahTree>` dengan streaming `<Suspense>`
 
 ### 10.2 Inbreeding Detection
 
 - Triggered otomatis saat memilih pasangan reproduksi
 - API `POST /api/check-inbreeding` menerima `indukId` + `pejantanId`
-- Mengambil semua ancestor kedua hewan dan mencari irisan
+- Mengambil ancestor kedua hewan sampai 4 generasi dan mencari irisan
 - Jika ada leluhur bersama → warning ditampilkan dengan nama/tag hewan yang menjadi common ancestor
-- Field `inbreedingWarning: Boolean` disimpan di tabel `Reproduksi`
+- Field `inbreedingWarning: Boolean` di tabel `Reproduksi` bernilai `true` bila OWNER/SUPER_ADMIN menyimpan perkawinan meski ada warning
 
 ### 10.3 RFID Tag Management
 
