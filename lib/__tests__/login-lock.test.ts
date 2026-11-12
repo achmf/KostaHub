@@ -1,17 +1,15 @@
 import { describe, it, expect } from 'vitest'
-import { setelahGagal, sedangTerkunci, LAMA_KUNCI_MS } from '../login-lock'
+import { kunciSetelahGagal, sedangTerkunci, LAMA_KUNCI_MS } from '../login-lock'
 
 const t = new Date('2026-11-12T00:00:00Z')
 
 describe('login-lock', () => {
-  it('menambah hitungan sebelum percobaan ke-5', () => {
-    expect(setelahGagal(3, t)).toEqual({ failedLogins: 4, lockedUntil: null })
+  it('belum mengunci sebelum percobaan ke-5', () => {
+    expect(kunciSetelahGagal(4, t)).toBeNull()
   })
-  it('mengunci 15 menit pada percobaan ke-5 dan mereset hitungan', () => {
-    const r = setelahGagal(4, t)
-    expect(r.failedLogins).toBe(0)
-    expect(r.lockedUntil!.getTime()).toBe(t.getTime() + 900000)
-    expect(LAMA_KUNCI_MS).toBe(900000)
+  it('mengunci 15 menit pada hitungan 5 dan 6', () => {
+    expect(kunciSetelahGagal(5, t)!.getTime()).toBe(t.getTime() + 900000)
+    expect(kunciSetelahGagal(6, t)!.getTime()).toBe(t.getTime() + LAMA_KUNCI_MS)
   })
   it('sedangTerkunci', () => {
     expect(sedangTerkunci(new Date(t.getTime() + 1), t)).toBe(true)

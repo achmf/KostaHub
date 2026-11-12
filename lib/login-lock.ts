@@ -5,13 +5,7 @@ export function sedangTerkunci(lockedUntil: Date | null, now: Date): boolean {
   return lockedUntil !== null && lockedUntil.getTime() > now.getTime()
 }
 
-export function setelahGagal(
-  failedLogins: number,
-  now: Date,
-): { failedLogins: number; lockedUntil: Date | null } {
-  const n = failedLogins + 1
-  if (n >= MAKS_GAGAL) {
-    return { failedLogins: 0, lockedUntil: new Date(now.getTime() + LAMA_KUNCI_MS) }
-  }
-  return { failedLogins: n, lockedUntil: null }
+// jumlahSetelahIncrement: hasil increment atomik dari DB
+export function kunciSetelahGagal(jumlahSetelahIncrement: number, now: Date): Date | null {
+  return jumlahSetelahIncrement >= MAKS_GAGAL ? new Date(now.getTime() + LAMA_KUNCI_MS) : null
 }

@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import { encrypt } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
-import { sedangTerkunci, setelahGagal } from '@/lib/login-lock'
+import { sedangTerkunci, kunciSetelahGagal } from '@/lib/login-lock'
 
 const DUMMY_HASH = bcrypt.hashSync('x', 10)
 
@@ -38,6 +38,7 @@ export async function login(_prevState: unknown, formData: FormData) {
 
   // Kunci dicek sebelum bcrypt agar akun terkunci tidak membocorkan benar/salahnya password
   if (user && !user.deletedAt && sedangTerkunci(user.lockedUntil, now)) {
+    // Pesan kunci membuka bahwa akun ada setelah 5 kali gagal; trade-off yang diterima
     return { error: 'Terlalu banyak percobaan. Coba lagi dalam 15 menit.' }
   }
 
@@ -45,10 +46,19 @@ export async function login(_prevState: unknown, formData: FormData) {
   const isValid = await bcrypt.compare(password, user && !user.deletedAt ? user.password : DUMMY_HASH)
   if (!user || user.deletedAt || !isValid) {
     if (user && !user.deletedAt) {
-      await prisma.user.update({
+      // Increment atomik di DB agar tebakan paralel tetap terhitung
+      const { failedLogins } = await prisma.user.update({
         where: { id: user.id },
-        data: setelahGagal(user.failedLogins, now),
+        data: { failedLogins: { increment: 1 } },
+        select: { failedLogins: true },
       })
+      const lockedUntil = kunciSetelahGagal(failedLogins, now)
+      if (lockedUntil) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { failedLogins: 0, lockedUntil },
+        })
+      }
     }
     return { error: 'Email atau password salah' }
   }
