@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { CACHE_TAGS } from '@/lib/cached-queries'
+import { toggleBaca } from '@/lib/notifikasi-baca'
+
+// updateTag hanya boleh dari Server Action, jadi route handler memakai revalidateTag (expire langsung)
+function invalidateNotifikasiRoute() {
+  revalidateTag(CACHE_TAGS.notifikasi, { expire: 0 })
+  revalidateTag(CACHE_TAGS.dashboard, { expire: 0 })
+}
 
 export async function POST(req: NextRequest) {
   const session = await getSession()
@@ -13,10 +22,8 @@ export async function POST(req: NextRequest) {
     if (!session.activeFarmId) {
       return NextResponse.json({ error: 'Pilih farm terlebih dahulu' }, { status: 400 })
     }
-    await prisma.notifikasi.updateMany({
-      where: { farmId: session.activeFarmId },
-      data: { isRead: true },
-    })
+    await prisma.$executeRaw`UPDATE "Notifikasi" SET "readBy" = array_append("readBy", ${session.id}) WHERE "farmId" = ${session.activeFarmId} AND NOT (${session.id} = ANY("readBy"))`
+    invalidateNotifikasiRoute()
     return NextResponse.json({ success: true, updated: 'all' })
   }
 
@@ -31,10 +38,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  await prisma.notifikasi.update({
-    where: { id: body.id },
-    data: { isRead: !notif.isRead },
-  })
+  const readBy = toggleBaca(notif.readBy, session.id)
+  await prisma.notifikasi.update({ where: { id: body.id }, data: { readBy } })
+  invalidateNotifikasiRoute()
 
-  return NextResponse.json({ success: true, isRead: !notif.isRead })
+  return NextResponse.json({ success: true, isRead: readBy.includes(session.id) })
 }

@@ -68,7 +68,7 @@ export const getCachedDashboardData = unstable_cache(
       }),
       prisma.notifikasi.findMany({
         where: {
-          isRead: false,
+          tanggal: { gte: awalHariWIB() },
           type: 'MEDIS',
           ...(farmId ? { farmId } : {}),
         },
@@ -78,7 +78,7 @@ export const getCachedDashboardData = unstable_cache(
       // daftar di atas dibatasi 5 baris, jadi jumlah totalnya dihitung terpisah (where sama)
       prisma.notifikasi.count({
         where: {
-          isRead: false,
+          tanggal: { gte: awalHariWIB() },
           type: 'MEDIS',
           ...(farmId ? { farmId } : {}),
         },

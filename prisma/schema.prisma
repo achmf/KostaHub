@@ -291,7 +291,7 @@ model Notifikasi {
   title     String
   message   String
   tanggal   DateTime
-  isRead    Boolean        @default(false)
+  readBy    String[]       @default([])
   type      TipeNotifikasi
   farmId    String?
   farm      Farm?          @relation(fields: [farmId], references: [id])
@@ -302,7 +302,6 @@ model Notifikasi {
 
   @@unique([farmId, refKey])
   @@index([tanggal])
-  @@index([isRead])
   @@index([farmId])
   @@index([type])
 }
