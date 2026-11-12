@@ -8,9 +8,9 @@ import { ambilOrangTua } from '@/lib/silsilah'
 import { checkInbreeding } from '@/lib/inbreeding'
 import { generateNotifikasiOtomatis } from '@/lib/notifikasi-generator'
 import { withMutationAuth } from '@/lib/auth'
-import { invalidateHewan, invalidateReproduksi } from '@/lib/cache-invalidation'
+import { invalidateHewan, invalidateNotifikasi, invalidateReproduksi } from '@/lib/cache-invalidation'
 import { hasilLahirSchema } from '@/lib/validations/reproduksi.schema'
-import { lewatHariIniWIB } from '@/lib/tanggal'
+import { lewatHariIniWIB, umurBulan } from '@/lib/tanggal'
 
 export type TambahReproduksiState = {
   warning?: boolean
@@ -36,6 +36,10 @@ export const tambahReproduksi = withMutationAuth(async (session, formData: FormD
   if (induk.kelamin !== 'BETINA') return { error: 'Induk harus betina' }
   if (pejantan.farmId !== induk.farmId) return { error: 'Orang tua harus dari farm yang sama' }
   if (pejantan.mati || ortu.get(indukId)?.mati) return { error: 'Induk/pejantan sudah mati' }
+  const sekarang = new Date()
+  if (umurBulan(induk.tanggalLahir, sekarang) < 8 || umurBulan(pejantan.tanggalLahir, sekarang) < 8) {
+    return { error: 'Induk dan pejantan minimal berumur 8 bulan' }
+  }
   const rawKawin = formData.get('tanggalKawin')
   if (typeof rawKawin !== 'string' || !rawKawin) return { error: 'Tanggal kawin tidak valid' }
   const tanggalKawin = new Date(rawKawin)
@@ -165,9 +169,13 @@ export const hapusReproduksi = withMutationAuth(async (session, id: string) => {
   // LAHIR: anak sudah terdaftar dengan induk & pejantan ini
   if (repro.status === 'LAHIR') return { error: 'Kehamilan dengan kelahiran tercatat tidak bisa dihapus' }
 
-  await prisma.reproduksi.delete({ where: { id } })
+  await prisma.$transaction(async (tx) => {
+    await tx.reproduksi.delete({ where: { id } })
+    await tx.notifikasi.deleteMany({ where: { farmId: repro.induk.farmId, refKey: { in: [`LAHIR-${id}`, `TELAT-${id}`] } } })
+  })
 
   invalidateReproduksi()
+  invalidateNotifikasi()
   revalidatePath('/reproduksi')
   revalidatePath(`/hewan/${repro.indukId}`)
   return { success: true as const }
