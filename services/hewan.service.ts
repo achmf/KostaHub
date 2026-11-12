@@ -17,7 +17,6 @@ export async function createHewanLogic(data: any, session: SessionData, override
     if (checkRfid) return { error: `RFID UID "${data.rfidUid}" sudah terdaftar di sistem` }
   }
 
-
   const bapakId: string | undefined = data.bapakId || undefined
   const indukId: string | undefined = data.indukId || undefined
   const ortu = await ambilOrangTua([bapakId, indukId])
@@ -85,8 +84,9 @@ export async function editHewanLogic(hewanId: string, data: any, session: Sessio
     if (checkRfid) return { error: `RFID UID "${data.rfidUid}" sudah digunakan oleh hewan lain` }
   }
 
-  const bapakId: string | undefined = data.bapakId || undefined
-  const indukId: string | undefined = data.indukId || undefined
+  // Hanya orang tua yang diganti yang divalidasi; data lama yang tidak valid tetap bisa diedit (trade-off yang disetujui)
+  const bapakId: string | undefined = data.bapakId && data.bapakId !== existing.bapakId ? data.bapakId : undefined
+  const indukId: string | undefined = data.indukId && data.indukId !== existing.indukId ? data.indukId : undefined
   const ortu = await ambilOrangTua([bapakId, indukId])
   if ((bapakId && !ortu.has(bapakId)) || (indukId && !ortu.has(indukId))) return { error: 'Orang tua tidak ditemukan' }
   const errOrtu = cekOrangTua({
