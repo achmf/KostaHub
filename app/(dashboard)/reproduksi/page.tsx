@@ -46,11 +46,13 @@ export default async function ReproduksiPage(props: {
         title="Perkawinan & Kehamilan"
         description="Estimasi kelahiran dihitung otomatis +150 hari dari tanggal kawin."
         action={
-          <Link href="/reproduksi/tambah">
-            <KostaButton>
-              <Plus size={13} /> Catat Perkawinan
-            </KostaButton>
-          </Link>
+          session.role !== 'DINAS' ? (
+            <Link href="/reproduksi/tambah">
+              <KostaButton>
+                <Plus size={13} /> Catat Perkawinan
+              </KostaButton>
+            </Link>
+          ) : undefined
         }
       />
 

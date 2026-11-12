@@ -21,6 +21,8 @@ export function BatalkanKematianButton({ hewanId, hewanNama }: Props) {
       const result = await batalkanKematian(hewanId)
       if (result && 'error' in result) {
         setError(result.error ?? 'Terjadi kesalahan')
+      } else if (result && 'message' in result && result.message) {
+        alert(result.message)
       }
     })
   }

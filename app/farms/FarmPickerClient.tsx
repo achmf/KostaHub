@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { motion } from 'framer-motion'
 import { Building2, MapPin, ChevronRight, Plus, Clock, AlertCircle, XCircle } from 'lucide-react'
+import { useToast } from '@/components/ToastProvider'
 import { switchFarm } from '@/actions/switchFarm'
 import { GoatMark } from '@/components/GoatMark'
 import { logout } from '@/actions/auth'
@@ -41,6 +42,7 @@ const palette = {
 export default function FarmPickerClient({ farms, userName, userRole, activeFarmId }: FarmPickerClientProps) {
   const [selectedFarmId, setSelectedFarmId] = useState<string | null>(activeFarmId)
   const [isPending, startTransition] = useTransition()
+  const { showToast } = useToast()
 
   const activeFarms = farms.filter((f) => f.status === 'AKTIF')
   const rejectedFarms = farms.filter((f) => f.status !== 'AKTIF' && f.rejectionReason !== null)
@@ -49,7 +51,14 @@ export default function FarmPickerClient({ farms, userName, userRole, activeFarm
   function handleSelectFarm(farmId: string) {
     setSelectedFarmId(farmId)
     startTransition(async () => {
-      await switchFarm(farmId)
+      try {
+        await switchFarm(farmId)
+      } catch (e) {
+        // switchFarm memakai redirect() yang melempar NEXT_REDIRECT; harus diteruskan
+        if (e instanceof Error && (e.message === 'NEXT_REDIRECT' || (e as { digest?: string }).digest?.startsWith('NEXT_REDIRECT'))) throw e
+        setSelectedFarmId(activeFarmId)
+        showToast({ title: e instanceof Error ? e.message : 'Gagal berpindah farm', type: 'error' })
+      }
     })
   }
 
@@ -158,7 +167,9 @@ export default function FarmPickerClient({ farms, userName, userRole, activeFarm
                   Belum ada farm terdaftar
                 </p>
                 <p className="mt-1" style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, color: palette.inkMuted, opacity: 0.7 }}>
-                  Tambahkan farm pertama kamu untuk mulai mengelola peternakan
+                  {userRole === 'OWNER'
+                    ? 'Tambahkan farm pertama kamu untuk mulai mengelola peternakan'
+                    : 'Akun Anda belum ditambahkan ke farm. Hubungi owner farm.'}
                 </p>
               </motion.div>
             )}

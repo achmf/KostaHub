@@ -2,6 +2,7 @@
 
 import { addBeratBadan } from '@/actions/berat'
 import Link from 'next/link'
+import { hariIniWIB } from '@/lib/tanggal'
 import { ArrowLeft } from 'lucide-react'
 import { useActionState } from 'react'
 import { KostaButton, KostaSectionLabel, palette } from '@/components/KostaUI'
@@ -69,7 +70,7 @@ export function TambahBeratForm({ hewanList, defaultHewanId }: { hewanList: Hewa
               <DatePickerField
                 name="tanggal"
                 required
-                defaultValue={new Date().toISOString().split('T')[0]}
+                defaultValue={hariIniWIB()}
                 disableFuture
                 placeholder="Pilih tanggal timbang"
               />

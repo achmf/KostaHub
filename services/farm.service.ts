@@ -49,31 +49,6 @@ export async function createAdditionalFarmLogic(data: any, session: SessionData)
   return { success: true, pendingApproval: true }
 }
 
-export async function assignUserToFarmLogic(userId: string, farmId: string, session: SessionData) {
-  if (session.role !== 'SUPER_ADMIN') return { error: 'Akses ditolak. Hanya Super Admin.' }
-  await prisma.userFarm.upsert({
-    where: { userId_farmId: { userId, farmId } },
-    create: { userId, farmId },
-    update: {},
-  })
-  return { success: true }
-}
-
-export async function assignStaffToFarmLogic(staffId: string, farmId: string, session: SessionData) {
-  if (session.role !== 'OWNER') return { error: 'Akses ditolak. Hanya Owner.' }
-  const ownerMembership = await prisma.userFarm.findUnique({ where: { userId_farmId: { userId: session.id, farmId } } })
-  if (!ownerMembership) return { error: 'Akses ditolak: Anda tidak memiliki farm ini' }
-  const staff = await prisma.user.findUnique({ where: { id: staffId } })
-  if (!staff) return { error: 'Staff tidak ditemukan' }
-  if (staff.role !== 'PETUGAS') return { error: 'Hanya PETUGAS yang bisa di-assign ke farm' }
-  await prisma.userFarm.upsert({
-    where: { userId_farmId: { userId: staffId, farmId } },
-    create: { userId: staffId, farmId },
-    update: {},
-  })
-  return { success: true }
-}
-
 export async function removeUserFromFarmLogic(userId: string, farmId: string, session: SessionData) {
   if (session.role !== 'SUPER_ADMIN') {
     if (session.role !== 'OWNER') return { error: 'Akses ditolak' }

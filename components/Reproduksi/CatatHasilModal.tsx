@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
+import { hariIniWIB } from '@/lib/tanggal'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Baby, HeartCrack } from 'lucide-react'
 import { toast } from 'sonner'
@@ -14,12 +15,6 @@ type Props = {
   induk: { tag: string; nama: string | null }
   pejantan: { tag: string; nama: string | null }
   onClose: () => void
-}
-
-// Tanggal lokal (WIB), bukan UTC — toISOString() memberi "kemarin" sebelum jam 07:00 WIB
-function hariIni() {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 const labelStyle = {
@@ -149,7 +144,7 @@ export function CatatHasilModal({ reproduksiId, induk, pejantan, onClose }: Prop
               <>
                 <div>
                   <label style={labelStyle}>TANGGAL LAHIR *</label>
-                  <DatePickerField name="tanggalLahir" required defaultValue={hariIni()} disableFuture placeholder="Pilih tanggal lahir" />
+                  <DatePickerField name="tanggalLahir" required defaultValue={hariIniWIB()} disableFuture placeholder="Pilih tanggal lahir" />
                 </div>
 
                 <div>

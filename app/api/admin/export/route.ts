@@ -10,7 +10,9 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
+import { TZ } from '@/lib/tanggal'
 import { prisma } from '@/lib/prisma'
+import { rataRataBerat } from '@/lib/statistik'
 import ExcelJS from 'exceljs'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -191,7 +193,7 @@ function buildReportHeader(ws: ExcelJS.Worksheet, opts: HeaderOptions) {
   const r3 = ws.getRow(3)
   const now = new Date()
   const dateStr = now.toLocaleDateString('id-ID', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
   r3.getCell(1).value = `${subtitle}   ·   Diekspor pada: ${dateStr}`
   r3.getCell(1).font  = F.muted(9)
@@ -504,7 +506,7 @@ export async function GET(req: NextRequest) {
     totalUser:  userCount,
     totalHewan: hewanCount,
     exportedAt: new Date().toLocaleDateString('id-ID', {
-      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+      timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
     }),
     exportedBy: session.name ?? 'Super Admin',
   }
@@ -632,7 +634,7 @@ export async function GET(req: NextRequest) {
       r.getCell(12).font      = F.body()
       r.getCell(12).alignment = al.center()
       // Date
-      r.getCell(13).value     = f.createdAt.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+      r.getCell(13).value     = f.createdAt.toLocaleDateString('id-ID', { timeZone: TZ, day: '2-digit', month: 'short', year: 'numeric' })
       r.getCell(13).font      = F.body()
       r.getCell(13).alignment = al.center()
     })
@@ -768,7 +770,7 @@ export async function GET(req: NextRequest) {
         r.getCell(9).alignment = al.center()
       }
 
-      r.getCell(10).value     = u.createdAt.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+      r.getCell(10).value     = u.createdAt.toLocaleDateString('id-ID', { timeZone: TZ, day: '2-digit', month: 'short', year: 'numeric' })
       r.getCell(10).font      = F.body()
       r.getCell(10).alignment = al.center()
     })
@@ -807,9 +809,8 @@ export async function GET(req: NextRequest) {
 
     const totalMati   = hewan.filter(h => !!h.kematian).length
     const totalHidup  = hewan.length - totalMati
-    const avgBerat    = hewan.length
-      ? (hewan.reduce((s, h) => s + (h.berat ?? 0), 0) / hewan.length).toFixed(1)
-      : 0
+    const avgBeratRaw = rataRataBerat(hewan.map(h => ({ berat: h.berat, mati: !!h.kematian })))
+    const avgBerat    = avgBeratRaw == null ? '-' : avgBeratRaw.toLocaleString('id-ID', { maximumFractionDigits: 1 })
 
     const ws = wb.addWorksheet('Data Hewan', {
       pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true },
@@ -881,7 +882,7 @@ export async function GET(req: NextRequest) {
       r.getCell(6).font      = F.body()
       r.getCell(6).alignment = al.center()
 
-      r.getCell(7).value     = new Date(h.tanggalLahir).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+      r.getCell(7).value     = new Date(h.tanggalLahir).toLocaleDateString('id-ID', { timeZone: TZ, day: '2-digit', month: 'short', year: 'numeric' })
       r.getCell(7).font      = F.body()
       r.getCell(7).alignment = al.center()
 
@@ -897,7 +898,7 @@ export async function GET(req: NextRequest) {
       r.getCell(10).value    = h.farm?.nama ?? '—'
       r.getCell(10).font     = F.body()
 
-      r.getCell(11).value    = h.createdAt.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+      r.getCell(11).value    = h.createdAt.toLocaleDateString('id-ID', { timeZone: TZ, day: '2-digit', month: 'short', year: 'numeric' })
       r.getCell(11).font     = F.body()
       r.getCell(11).alignment= al.center()
     })

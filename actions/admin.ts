@@ -4,6 +4,7 @@ import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { invalidateAdmin, invalidateFarm } from '@/lib/cache-invalidation'
+import { resetPasswordSchema } from '@/lib/validations/auth.schema'
 
 async function requireSuperAdmin() {
   const session = await getSession()
@@ -71,6 +72,26 @@ export async function deleteUser(userId: string) {
   })
   invalidateAdmin()
   revalidatePath('/admin/users')
+  return { success: true }
+}
+
+// ── Reset Password User ───────────────────────────────────────────────────────
+export async function resetPasswordUser(userId: string, passwordBaru: string): Promise<{ success?: true; error?: string }> {
+  const session = await requireSuperAdmin()
+
+  if (userId === session.id) return { error: 'Gunakan halaman Profil untuk mengganti password Anda' }
+  const parsed = resetPasswordSchema.safeParse({ password: passwordBaru })
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
+
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { deletedAt: true } })
+  if (!user || user.deletedAt) return { error: 'User tidak ditemukan' }
+
+  const bcrypt = await import('bcryptjs')
+  await prisma.user.update({
+    where: { id: userId },
+    // Sekalian buka kunci login (Task 1.6) supaya user bisa langsung masuk
+    data: { password: await bcrypt.hash(parsed.data.password, 10), failedLogins: 0, lockedUntil: null },
+  })
   return { success: true }
 }
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useToast } from '@/components/ToastProvider'
 import { createFarmRegistration } from '@/actions/farm'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -86,6 +87,7 @@ function handleBlur(e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>)
 }
 
 export default function NewFarmPage() {
+  const { showToast } = useToast()
   const [error, setError]           = useState('')
   const [isPending, setIsPending]   = useState(false)
   const [success, setSuccess]       = useState(false)
@@ -121,7 +123,15 @@ export default function NewFarmPage() {
     if (farmLat !== null) formData.set('farmLat', String(farmLat))
     if (farmLng !== null) formData.set('farmLng', String(farmLng))
 
-    const result = await createFarmRegistration(formData)
+    let result
+    try {
+      result = await createFarmRegistration(formData)
+    } catch (e) {
+      if (e instanceof Error && (e.message === 'NEXT_REDIRECT' || (e as { digest?: string }).digest?.startsWith('NEXT_REDIRECT'))) throw e
+      setIsPending(false)
+      showToast({ title: 'Gagal mendaftarkan farm. Coba lagi.', type: 'error' })
+      return
+    }
     setIsPending(false)
 
     if (result?.error) {

@@ -26,5 +26,5 @@ export const batalkanKematian = withMutationAuth(async (session, hewanId: string
   invalidateHewan()
   revalidatePath(`/hewan/${hewanId}`)
   revalidatePath('/hewan')
-  return { success: true }
+  return { success: true, message: result.message }
 })

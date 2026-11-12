@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import type { OrangTua } from '@/lib/aturan-silsilah'
 
 export type SilsilahNode = {
   id: string
@@ -37,6 +38,29 @@ export async function getAncestorIds(hewanId: string): Promise<Set<string>> {
   `
 
   return new Set(rows.map((r) => r.id))
+}
+
+/**
+ * Leluhur sampai maxDepth generasi (1 = orang tua), dengan depth terkecil per id.
+ * Batas depth juga menghentikan rekursi pada data silsilah melingkar.
+ */
+export async function getAncestorDepths(hewanId: string, maxDepth: number): Promise<Map<string, number>> {
+  const rows = await prisma.$queryRaw<{ id: string; depth: number }[]>`
+    WITH RECURSIVE ancestors AS (
+      SELECT id, "bapakId", "indukId", 0 AS depth
+      FROM "Hewan"
+      WHERE id = ${hewanId}
+
+      UNION ALL
+
+      SELECT h.id, h."bapakId", h."indukId", a.depth + 1
+      FROM "Hewan" h
+      INNER JOIN ancestors a ON h.id = a."bapakId" OR h.id = a."indukId"
+      WHERE a.depth < ${maxDepth}
+    )
+    SELECT id, MIN(depth)::int AS depth FROM ancestors WHERE id != ${hewanId} GROUP BY id
+  `
+  return new Map(rows.map((r) => [r.id, r.depth]))
 }
 
 /**
@@ -125,4 +149,15 @@ export async function buildSilsilahTree(
 
   const root = buildNode(hewanId, 0)
   return root || null
+}
+
+/** Data minimal calon orang tua (+ status mati) untuk validasi silsilah. Id kosong diabaikan. */
+export async function ambilOrangTua(ids: (string | undefined | null)[]): Promise<Map<string, OrangTua & { mati: boolean }>> {
+  const unik = [...new Set(ids.filter((i): i is string => !!i))]
+  if (unik.length === 0) return new Map()
+  const rows = await prisma.hewan.findMany({
+    where: { id: { in: unik } },
+    select: { id: true, kelamin: true, farmId: true, tanggalLahir: true, kematian: { select: { id: true } } },
+  })
+  return new Map(rows.map(({ kematian, ...r }) => [r.id, { ...r, mati: !!kematian }]))
 }

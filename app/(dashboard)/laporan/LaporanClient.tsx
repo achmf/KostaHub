@@ -77,10 +77,10 @@ export default function LaporanClient({ data, isGlobal, farmName, farmId }: { da
 
 
   const tabs: { key: TabType; label: string; sub: string; count: number }[] = [
-    { key: 'keluar-masuk', label: 'Status & Riwayat Ternak', sub: 'Aktif, masuk, keluar, mutasi', count: (data.hewanMasuk?.length ?? 0) + (data.hewanKeluar?.length ?? 0) + (data.mutasiData?.length ?? 0) },
-    { key: 'medis', label: 'Kesehatan & Medis', sub: 'Vaksin, vitamin, pengobatan', count: data.medisData?.length ?? 0 },
-    { key: 'breeding', label: 'Kartu Breeding', sub: 'Perkawinan & kelahiran', count: data.breedingData?.length ?? 0 },
-    { key: 'pertumbuhan', label: 'Pertumbuhan Bobot', sub: 'Penimbangan berkala', count: data.pertumbuhanData?.length ?? 0 },
+    { key: 'keluar-masuk', label: 'Status & Riwayat Ternak', sub: 'Aktif, masuk, keluar, mutasi', count: (data.totals?.masuk ?? 0) + (data.totals?.mati ?? 0) + (data.totals?.mutasi ?? 0) },
+    { key: 'medis', label: 'Kesehatan & Medis', sub: 'Vaksin, vitamin, pengobatan', count: data.totals?.medis ?? 0 },
+    { key: 'breeding', label: 'Kartu Breeding', sub: 'Perkawinan & kelahiran', count: data.totals?.reproduksi ?? 0 },
+    { key: 'pertumbuhan', label: 'Pertumbuhan Bobot', sub: 'Penimbangan berkala', count: data.totals?.dipantau ?? 0 },
   ]
 
   return (
@@ -169,7 +169,7 @@ export default function LaporanClient({ data, isGlobal, farmName, farmId }: { da
       <AnimatePresence mode="wait">
         {tab === 'keluar-masuk' && <LaporanKeluarMasuk key="km" data={data} />}
         {tab === 'medis' && <LaporanMedis key="medis" data={data.medisData} />}
-        {tab === 'breeding' && <LaporanBreeding key="breeding" data={data.breedingData} />}
+        {tab === 'breeding' && <LaporanBreeding key="breeding" data={data.breedingData} totals={data.totals} />}
         {tab === 'pertumbuhan' && <LaporanPertumbuhan key="pertumbuhan" data={data.pertumbuhanData} />}
       </AnimatePresence>
     </div>
@@ -188,16 +188,15 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
   const hewanMasuk = data.hewanMasuk ?? []
   const hewanKeluar = data.hewanKeluar ?? []
   const hewanMati = hewanKeluar // semua keluar = mati
-  const hewanKematianIds = new Set((hewanKeluar as any[]).map((h: any) => h.id))
-  // hewanAktif = hewan yang tidak ada di daftar kematian
-  const hewanAktif = (hewanMasuk as any[]).filter((h: any) => !hewanKematianIds.has(h.id))
+  const hewanAktif = data.hewanHidup ?? []
+  const totals = data.totals
   const mutasi = data.mutasiData ?? []
 
   const sections = [
-    { key: 'aktif' as const, label: 'Ternak Hidup', icon: <PackagePlus size={13} />, count: hewanAktif.length, color: palette.moss },
-    { key: 'masuk' as const, label: 'Ternak Masuk', icon: <PackagePlus size={13} />, count: hewanMasuk.length, color: palette.ink },
-    { key: 'mati' as const, label: 'Ternak Mati', icon: <PackageMinus size={13} />, count: hewanMati.length, color: palette.rose },
-    { key: 'mutasi' as const, label: 'Mutasi / Transfer', icon: <ArrowRightLeft size={13} />, count: mutasi.length, color: '#5B7FA6' },
+    { key: 'aktif' as const, label: 'Ternak Hidup', icon: <PackagePlus size={13} />, count: totals?.hidup ?? 0, color: palette.moss },
+    { key: 'masuk' as const, label: 'Ternak Masuk', icon: <PackagePlus size={13} />, count: totals?.masuk ?? 0, color: palette.ink },
+    { key: 'mati' as const, label: 'Ternak Mati', icon: <PackageMinus size={13} />, count: totals?.mati ?? 0, color: palette.rose },
+    { key: 'mutasi' as const, label: 'Mutasi / Transfer', icon: <ArrowRightLeft size={13} />, count: totals?.mutasi ?? 0, color: '#5B7FA6' },
   ]
 
   const getActiveData = () => {
@@ -256,6 +255,7 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
 
       <div className="mb-5 flex flex-row items-center justify-between gap-3 sm:gap-4 mt-5">
         <SearchBar placeholder="Cari tag atau nama ternak..." />
+        <span className="shrink-0" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.4 }}>100 data terbaru</span>
       </div>
 
       <KostaCard className="overflow-hidden">
@@ -331,13 +331,13 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
             <TableHeader cols={['TAG', 'NAMA', 'KATEGORI', 'KELAMIN', 'BERAT AWAL', 'TGL DAFTAR', 'FARM']} grid="0.8fr 1fr 0.9fr 0.7fr 0.7fr 0.8fr 0.8fr" />
             {filteredData.length === 0 ? <NoResults /> : pagination.paged.map((h: any, i: number) => (
               <TableRow key={h.id} i={i} grid="0.8fr 1fr 0.9fr 0.7fr 0.7fr 0.8fr 0.8fr" cells={[
-                <Link href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{h.tag}</span></Link>,
-                <Link href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{h.nama || <span style={{ opacity: 0.4 }}>—</span>}</span></Link>,
-                <Badge variant={h.kategori === 'INDUKAN' ? 'moss' : h.kategori === 'PEJANTAN' ? 'ink' : 'ochre'}>{h.kategori.replace('_', ' ')}</Badge>,
-                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{h.kelamin === 'JANTAN' ? '♂' : '♀'}</span>,
-                <span style={{ fontFamily: "'Fraunces',serif", fontSize: 14 }}>{h.berat ? `${h.berat} kg` : '—'}</span>,
-                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(h.createdAt)}</span>,
-                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, opacity: 0.7 }}>{h.farm || '—'}</span>,
+                <Link key="c1" href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{h.tag}</span></Link>,
+                <Link key="c2" href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{h.nama || <span style={{ opacity: 0.4 }}>—</span>}</span></Link>,
+                <Badge key="c3" variant={h.kategori === 'INDUKAN' ? 'moss' : h.kategori === 'PEJANTAN' ? 'ink' : 'ochre'}>{h.kategori.replace('_', ' ')}</Badge>,
+                <span key="c4" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{h.kelamin === 'JANTAN' ? '♂' : '♀'}</span>,
+                <span key="c5" style={{ fontFamily: "'Fraunces',serif", fontSize: 14 }}>{h.berat ? `${h.berat} kg` : '—'}</span>,
+                <span key="c6" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(h.createdAt)}</span>,
+                <span key="c7" style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, opacity: 0.7 }}>{h.farm || '—'}</span>,
               ]} />
             ))}
           </>
@@ -349,15 +349,15 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
             <TableHeader cols={['TAG', 'NAMA', 'BERAT', 'TGL DAFTAR', 'TANGGAL MATI', 'PENYEBAB', 'FARM']} grid="0.8fr 1fr 0.6fr 0.8fr 0.8fr 1fr 0.8fr" />
             {filteredData.length === 0 ? <NoResults /> : pagination.paged.map((h: any, i: number) => (
               <TableRow key={h.id} i={i} grid="0.8fr 1fr 0.6fr 0.8fr 0.8fr 1fr 0.8fr" cells={[
-                <Link href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{h.tag}</span></Link>,
-                <Link href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{h.nama || '—'}</span></Link>,
-                <span style={{ fontFamily: "'Fraunces',serif", fontSize: 14 }}>{h.berat ? `${h.berat} kg` : '—'}</span>,
-                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(h.createdAt)}</span>,
-                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, color: palette.rose }}>{h.tanggalMati ? formatDate(h.tanggalMati) : '—'}</span>,
-                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, opacity: 0.6 }}>
+                <Link key="c1" href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{h.tag}</span></Link>,
+                <Link key="c2" href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{h.nama || '—'}</span></Link>,
+                <span key="c3" style={{ fontFamily: "'Fraunces',serif", fontSize: 14 }}>{h.berat ? `${h.berat} kg` : '—'}</span>,
+                <span key="c4" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(h.createdAt)}</span>,
+                <span key="c5" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, color: palette.rose }}>{h.tanggalMati ? formatDate(h.tanggalMati) : '—'}</span>,
+                <span key="c6" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, opacity: 0.6 }}>
                   {h.penyebab ? h.penyebab.replace('_', ' ') : 'Ternak mati'}
                 </span>,
-                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, opacity: 0.7 }}>{h.farm || '—'}</span>,
+                <span key="c7" style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, opacity: 0.7 }}>{h.farm || '—'}</span>,
               ]} />
             ))}
           </>
@@ -369,12 +369,12 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
             <TableHeader cols={['TAG', 'NAMA', 'DARI FARM', 'KE FARM', 'TGL TRANSFER', 'ALASAN']} grid="0.7fr 0.9fr 1fr 1fr 0.8fr 1.4fr" />
             {filteredData.length === 0 ? <NoResults /> : pagination.paged.map((t: any, i: number) => (
               <TableRow key={t.id} i={i} grid="0.7fr 0.9fr 1fr 1fr 0.8fr 1.4fr" cells={[
-                <Link href={`/hewan/${t.hewanId}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{t.tag}</span></Link>,
-                <Link href={`/hewan/${t.hewanId}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{t.nama || '—'}</span></Link>,
-                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{t.fromFarm?.replace('Farm ', '')}</span>,
-                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{t.toFarm?.replace('Farm ', '')}</span>,
-                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(t.tanggal)}</span>,
-                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, opacity: 0.7 }}>{t.alasan || '—'}</span>,
+                <Link key="c1" href={`/hewan/${t.hewanId}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{t.tag}</span></Link>,
+                <Link key="c2" href={`/hewan/${t.hewanId}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{t.nama || '—'}</span></Link>,
+                <span key="c3" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{t.fromFarm?.replace('Farm ', '')}</span>,
+                <span key="c4" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{t.toFarm?.replace('Farm ', '')}</span>,
+                <span key="c5" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(t.tanggal)}</span>,
+                <span key="c6" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, opacity: 0.7 }}>{t.alasan || '—'}</span>,
               ]} />
             ))}
           </>
@@ -465,7 +465,7 @@ function LaporanMedis({ data }: { data: any[] }) {
               {KATEGORI_MEDIS_LABEL[filterKategori]} ✕
             </button>
           )}
-          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.4 }}>{filtered.length} rekaman</span>
+          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.4 }}>{filtered.length} rekaman · 200 data terbaru</span>
         </div>
 
         {/* ── MOBILE: card list ── */}
@@ -521,12 +521,12 @@ function LaporanMedis({ data }: { data: any[] }) {
         />
         {filtered.length === 0 ? <NoResults /> : medisP.paged.map((m: any, i: number) => (
           <TableRow key={m.id} i={i} grid="0.7fr 0.7fr 0.9fr 1.6fr 1fr 0.9fr 0.7fr" cells={[
-            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(m.tanggal)}</span>,
-            <Link href={`/hewan/${m.hewanId}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}>
+            <span key="c1" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(m.tanggal)}</span>,
+            <Link key="c2" href={`/hewan/${m.hewanId}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}>
               <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{m.hewanTag}</div>
               {m.hewanNama && <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, opacity: 0.5 }}>{m.hewanNama}</div>}
             </Link>,
-            <span
+            <span key="c3"
               className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs"
               style={{
                 background: `${KATEGORI_MEDIS_COLOR[m.kategori]}15`,
@@ -537,13 +537,13 @@ function LaporanMedis({ data }: { data: any[] }) {
               {KATEGORI_MEDIS_ICON[m.kategori]}
               {KATEGORI_MEDIS_LABEL[m.kategori]}
             </span>,
-            <div>
+            <div key="c4">
               <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{m.diagnosis}</div>
               {m.notes && <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, opacity: 0.5, marginTop: 2 }}>{m.notes}</div>}
             </div>,
-            <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{m.obat || <span style={{ opacity: 0.35 }}>—</span>}</span>,
-            <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, opacity: 0.7 }}>{m.namaDokter || '—'}</span>,
-            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.6 }}>
+            <span key="c5" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{m.obat || <span style={{ opacity: 0.35 }}>—</span>}</span>,
+            <span key="c6" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, opacity: 0.7 }}>{m.namaDokter || '—'}</span>,
+            <span key="c7" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.6 }}>
               {m.tanggalLanjut ? formatDate(m.tanggalLanjut) : '—'}
             </span>,
           ]} />
@@ -561,7 +561,7 @@ function LaporanMedis({ data }: { data: any[] }) {
 
 
 // ─── LAPORAN 3: BREEDING ────────────────────────────────────
-function LaporanBreeding({ data }: { data: any[] }) {
+function LaporanBreeding({ data, totals }: { data: any[]; totals: any }) {
   const [filterStatus, setFilterStatus] = useState<string>('ALL')
   const searchParams = useSearchParams()
   const q = searchParams.get('q')?.toLowerCase() || ''
@@ -579,12 +579,12 @@ function LaporanBreeding({ data }: { data: any[] }) {
 
   const breedingP = usePagination(filtered, 15)
 
-  const stats = useMemo(() => ({
-    HAMIL: (data ?? []).filter((r: any) => r.status === 'HAMIL').length,
-    LAHIR: (data ?? []).filter((r: any) => r.status === 'LAHIR').length,
-    GAGAL: (data ?? []).filter((r: any) => r.status === 'GAGAL').length,
-    inbreeding: (data ?? []).filter((r: any) => r.inbreedingWarning).length,
-  }), [data])
+  const stats = {
+    HAMIL: totals?.reproduksiHamil ?? 0,
+    LAHIR: totals?.reproduksiLahir ?? 0,
+    GAGAL: totals?.reproduksiGagal ?? 0,
+    inbreeding: totals?.reproduksiInbreeding ?? 0,
+  }
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
@@ -619,7 +619,7 @@ function LaporanBreeding({ data }: { data: any[] }) {
 
       <KostaCard className="overflow-hidden">
         <div className="px-5 py-3 flex items-center gap-3 border-b" style={{ borderColor: palette.border }}>
-          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.4 }}>{filtered.length} kartu</span>
+          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.4 }}>{filtered.length} kartu · 100 data terbaru</span>
         </div>
 
         {/* Breeding cards */}

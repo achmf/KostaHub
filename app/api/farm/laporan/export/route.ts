@@ -10,6 +10,7 @@ import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import ExcelJS from 'exceljs'
+import { formatTanggalWIB } from '@/lib/tanggal'
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 
@@ -82,9 +83,7 @@ const WRP: Partial<ExcelJS.Alignment> = { horizontal: 'left',   vertical: 'middl
 
 function formatDate(date: Date | string | null | undefined): string {
   if (!date) return '—'
-  return new Date(date).toLocaleDateString('id-ID', {
-    day: '2-digit', month: 'short', year: 'numeric',
-  })
+  return formatTanggalWIB(new Date(date))
 }
 
 // ─── Sheet header builder ─────────────────────────────────────────────────────

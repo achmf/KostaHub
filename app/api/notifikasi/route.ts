@@ -14,7 +14,15 @@ export async function GET() {
     if (session.role !== 'SUPER_ADMIN') return NextResponse.json([])
   } else {
     try {
-      await generateNotifikasiOtomatis(farmId)
+      // shortcut: throttle dari notifikasi terakhir; farm tanpa kandidat tetap jalan tiap poll, ganti ke kolom Farm.notifCheckedAt kalau terasa
+      const terakhir = await prisma.notifikasi.findFirst({
+        where: { farmId, refKey: { not: null } },
+        orderBy: { createdAt: 'desc' },
+        select: { createdAt: true },
+      })
+      if (!terakhir || Date.now() - terakhir.createdAt.getTime() > 10 * 60 * 1000) {
+        await generateNotifikasiOtomatis(farmId)
+      }
     } catch (err) {
       console.error('[Notifikasi] Generator error:', err)
     }
@@ -22,11 +30,16 @@ export async function GET() {
 
   const notifikasi = await prisma.notifikasi.findMany({
     where: farmId ? { farmId } : {},
-    orderBy: [{ isRead: 'asc' }, { tanggal: 'desc' }],
+    orderBy: { tanggal: 'desc' },
     take: 100,
   })
 
-  return NextResponse.json(
-    notifikasi.map((n) => ({ ...n, tanggal: n.tanggal.toISOString() }))
-  )
+  // Sort stabil: belum dibaca di atas, urutan tanggal tetap di dalam tiap kelompok
+  const hasil = notifikasi.map(({ readBy, ...n }) => ({
+    ...n,
+    tanggal: n.tanggal.toISOString(),
+    isRead: readBy.includes(session.id),
+  }))
+  hasil.sort((a, b) => Number(a.isRead) - Number(b.isRead))
+  return NextResponse.json(hasil)
 }

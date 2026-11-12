@@ -10,26 +10,15 @@ export default async function MapPage(props: { searchParams: Promise<{ [key: str
   if (session.role === 'PETUGAS') redirect('/')
 
   let rawFarms: Awaited<ReturnType<typeof prisma.farm.findMany>>
-  const hewanByFarm: Record<string, { kematian: { hewanId: string } | null; kategori: string }[]> = {}
+  let hewanWhere: { farmId?: string | { in: string[] } } = {}
 
   if (session.role === 'SUPER_ADMIN') {
     const farmId = searchParams.farmId
     const farmWhere = farmId ? { id: farmId, deletedAt: null } : { deletedAt: null }
-    // Parallel: farms + hewan in one batch
-    const [farms, hewanList] = await Promise.all([
-      prisma.farm.findMany({ where: farmWhere }),
-      prisma.hewan.findMany({
-        where: farmId ? { farmId } : {},
-        select: { farmId: true, kematian: { select: { hewanId: true } }, kategori: true },
-      }),
-    ])
-    rawFarms = farms
-    for (const h of hewanList) {
-      if (!hewanByFarm[h.farmId]) hewanByFarm[h.farmId] = []
-      hewanByFarm[h.farmId].push({ kematian: h.kematian, kategori: h.kategori })
-    }
+    rawFarms = await prisma.farm.findMany({ where: farmWhere })
+    if (farmId) hewanWhere = { farmId }
   } else {
-    // Owner/Petugas/Dokter: single query with nested includes instead of 3 sequential queries
+    // Owner/Petugas/Dokter
     const userFarms = await prisma.userFarm.findMany({
       where: { userId: session.id },
       include: {
@@ -39,22 +28,26 @@ export default async function MapPage(props: { searchParams: Promise<{ [key: str
     rawFarms = userFarms
       .map(uf => uf.farm)
       .filter(f => f.deletedAt === null)
-
-    if (rawFarms.length > 0) {
-      const farmIds = rawFarms.map(f => f.id)
-      const hewanList = await prisma.hewan.findMany({
-        where: { farmId: { in: farmIds } },
-        select: { farmId: true, kematian: { select: { hewanId: true } }, kategori: true },
-      })
-      for (const h of hewanList) {
-        if (!hewanByFarm[h.farmId]) hewanByFarm[h.farmId] = []
-        hewanByFarm[h.farmId].push({ kematian: h.kematian, kategori: h.kategori })
-      }
-    }
+    hewanWhere = { farmId: { in: rawFarms.map(f => f.id) } }
   }
 
+  // Hitung di database: hewan hidup per farm+kategori, dan hewan mati per farm
+  const [hidupGrouped, matiGrouped] = rawFarms.length > 0
+    ? await Promise.all([
+        prisma.hewan.groupBy({ by: ['farmId', 'kategori'], where: { kematian: { is: null }, ...hewanWhere }, _count: true }),
+        prisma.hewan.groupBy({ by: ['farmId'], where: { kematian: { isNot: null }, ...hewanWhere }, _count: true }),
+      ])
+    : [[], []]
+  const hidupFarm = new Map<string, number>()
+  const hidupKategori = new Map<string, number>()
+  for (const g of hidupGrouped) {
+    hidupFarm.set(g.farmId, (hidupFarm.get(g.farmId) ?? 0) + g._count)
+    hidupKategori.set(`${g.farmId}:${g.kategori}`, g._count)
+  }
+  const matiFarm = new Map(matiGrouped.map((g) => [g.farmId, g._count]))
+
   const farms = rawFarms.map(f => {
-    const hewan = hewanByFarm[f.id] ?? []
+    const hidup = hidupFarm.get(f.id) ?? 0
     return {
       id: f.id,
       nama: f.nama,
@@ -64,11 +57,11 @@ export default async function MapPage(props: { searchParams: Promise<{ [key: str
       geojson: f.geojson,
       deskripsi: f.deskripsi,
       status: f.status as string,
-      _count: { hewan: hewan.length },
-      hewanAktif: hewan.filter(h => !h.kematian).length,
-      hewanMati: hewan.filter(h => !!h.kematian).length,
-      hewanIndukan: hewan.filter(h => h.kategori === 'INDUKAN').length,
-      hewanPejantan: hewan.filter(h => h.kategori === 'PEJANTAN').length,
+      _count: { hewan: hidup },
+      hewanAktif: hidup,
+      hewanMati: matiFarm.get(f.id) ?? 0,
+      hewanIndukan: hidupKategori.get(`${f.id}:INDUKAN`) ?? 0,
+      hewanPejantan: hidupKategori.get(`${f.id}:PEJANTAN`) ?? 0,
     }
   })
 

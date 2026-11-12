@@ -7,6 +7,8 @@ import {
   CheckCheck, BellOff, BellRing, RefreshCw, Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
+import type { TipeNotifikasi } from '@prisma/client'
+import { TUJUAN_NOTIF } from '@/components/Layout/NotificationDropdown'
 import { useNotifikasi } from '@/hooks/useNotifikasi'
 import { usePushSubscription } from '@/hooks/usePushSubscription'
 import { KostaPageHeader, KostaButton, Badge, palette } from '@/components/KostaUI'
@@ -212,6 +214,9 @@ export function ClientNotifList() {
               const Icon = ICONS[n.type] ?? Bell
               const tone = { bg: 'rgba(13,20,15,0.08)', fg: palette.ink }
               const isPending = pendingId === n.id
+              const href = TUJUAN_NOTIF[n.type as TipeNotifikasi]
+              // Tombol tandai-dibaca tetap di luar Link agar tidak ada interaktif bersarang
+              const Isi = href ? Link : 'div'
 
               return (
                 <motion.div
@@ -239,7 +244,7 @@ export function ClientNotifList() {
                   </div>
 
                   {/* Content */}
-                  <div className="flex-1 min-w-0">
+                  <Isi href={href as string} className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant="default">
                         {TYPE_LABEL[n.type] ?? n.type}
@@ -273,7 +278,7 @@ export function ClientNotifList() {
                         day: '2-digit', month: 'long', year: 'numeric',
                       })}
                     </div>
-                  </div>
+                  </Isi>
 
                   {/* Mark read button */}
                   <button

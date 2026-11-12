@@ -31,5 +31,5 @@ export default async function HewanPage(props: { searchParams: Promise<{ [key: s
 
   const isSuperAdmin = session.role === 'SUPER_ADMIN'
 
-  return <HewanClient hewanList={hewanList as any} isSuperAdmin={isSuperAdmin} />
+  return <HewanClient hewanList={hewanList as any} isSuperAdmin={isSuperAdmin} canEdit={session.role !== 'DINAS'} />
 }

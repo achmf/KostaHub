@@ -23,9 +23,9 @@ const labelStyle: React.CSSProperties = {
   marginBottom: 8,
 }
 
-export function TambahMedisForm({ hewan }: { hewan: { id: string; tag: string; nama: string | null }[] }) {
+export function TambahMedisForm({ hewan, defaultHewanId }: { hewan: { id: string; tag: string; nama: string | null }[]; defaultHewanId?: string }) {
   const [obatKategori, setObatKategori] = useState('')
-  const [hewanId, setHewanId] = useState('')
+  const [hewanId, setHewanId] = useState(defaultHewanId ?? '')
   const [butuhNotifikasi, setButuhNotifikasi] = useState(false)
 
   const [state, formAction, isPending] = useActionState(async (_: unknown, formData: FormData) => {

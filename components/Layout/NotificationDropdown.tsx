@@ -5,6 +5,15 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bell } from 'lucide-react'
 import { palette } from '@/components/KostaUI'
+import type { TipeNotifikasi } from '@prisma/client'
+
+/** Tujuan klik notifikasi; generator tidak menulis [ref:], jadi ditentukan dari type. CUSTOM tanpa link. */
+export const TUJUAN_NOTIF: Partial<Record<TipeNotifikasi, string>> = {
+  MEDIS: '/medis',
+  VAKSIN: '/medis',
+  LAHIR: '/reproduksi',
+  BERAT: '/berat',
+}
 
 type NotifikasiType = {
   id: string
@@ -148,7 +157,9 @@ export default function NotificationDropdown() {
                     Tidak ada notifikasi.
                   </div>
                 ) : (
-                  displayNotifications.map((notif) => (
+                  displayNotifications.map((notif) => {
+                    const href = TUJUAN_NOTIF[notif.type as TipeNotifikasi]
+                    const item = (
                     <div
                       key={notif.id}
                       className="px-4 py-3 flex gap-3 relative"
@@ -174,7 +185,13 @@ export default function NotificationDropdown() {
                         </p>
                       </div>
                     </div>
-                  ))
+                    )
+                    return href ? (
+                      <Link key={notif.id} href={href} onClick={() => setOpen(false)} className="block hover:bg-white/5 transition-colors">
+                        {item}
+                      </Link>
+                    ) : item
+                  })
                 )}
               </div>
 

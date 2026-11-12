@@ -10,8 +10,16 @@ import { prisma } from '@/lib/prisma'
  * Memvalidasi bahwa user memang memiliki akses ke farm tersebut.
  */
 export const switchFarm = withAuth(async (session, farmId: string) => {
-  // Super Admin boleh akses semua farm
-  if (session.role !== 'SUPER_ADMIN') {
+  const farm = await prisma.farm.findUnique({
+    where: { id: farmId },
+    select: { status: true },
+  })
+  if (!farm || farm.status !== 'AKTIF') {
+    throw new Error('Farm belum aktif atau tidak ditemukan')
+  }
+
+  // Super Admin dan Dinas (read-only) boleh masuk farm aktif mana pun
+  if (session.role !== 'SUPER_ADMIN' && session.role !== 'DINAS') {
     // Validasi: apakah user punya akses ke farm ini?
     const membership = await prisma.userFarm.findUnique({
       where: { userId_farmId: { userId: session.id, farmId } },

@@ -2,6 +2,8 @@ import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { cache } from 'react'
+import { prisma } from './prisma'
+import { resolveSession } from './session-guard'
 
 // Kunci cadangan hanya untuk development lokal. Di production (termasuk Preview Vercel) wajib JWT_SECRET,
 // kalau tidak siapa pun bisa menandatangani sesi palsu dengan kunci cadangan yang ada di kode ini.
@@ -44,11 +46,34 @@ export const getSession = cache(async () => {
   const cookieStore = await cookies()
   const session = cookieStore.get('session')?.value
   if (!session) return null
+  let payload: SessionPayload | null
   try {
-    return await decrypt(session)
+    payload = await decrypt(session)
   } catch {
     return null
   }
+  if (!payload) return null
+
+  // JWT hanya bukti identitas; role, status hapus, dan status farm selalu dicek ulang ke DB.
+  const { activeFarmId } = payload
+  const user = await prisma.user.findUnique({
+    where: { id: payload.id },
+    select: {
+      deletedAt: true,
+      role: true,
+      farms: {
+        where: { farmId: activeFarmId ?? '' },
+        select: { farm: { select: { status: true } } },
+      },
+    },
+  })
+  let membership = user?.farms[0] ? { farmStatus: user.farms[0].farm.status } : null
+  // DINAS boleh membuka farm mana pun tanpa membership, tapi farm harus ada dan AKTIF.
+  if (user?.role === 'DINAS' && activeFarmId) {
+    const farm = await prisma.farm.findUnique({ where: { id: activeFarmId }, select: { status: true } })
+    membership = { farmStatus: farm?.status ?? 'DELETED' }
+  }
+  return resolveSession(payload, user && { deletedAt: user.deletedAt, role: user.role, membership })
 })
 
 /**

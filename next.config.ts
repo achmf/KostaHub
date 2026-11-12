@@ -11,7 +11,6 @@ const nextConfig: NextConfig = {
       'lucide-react',
       'recharts',
       'framer-motion',
-      'date-fns',
       'react-icons',
     ],
   },

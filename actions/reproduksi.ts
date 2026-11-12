@@ -4,11 +4,13 @@ import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { after } from 'next/server'
+import { ambilOrangTua } from '@/lib/silsilah'
 import { checkInbreeding } from '@/lib/inbreeding'
 import { generateNotifikasiOtomatis } from '@/lib/notifikasi-generator'
 import { withMutationAuth } from '@/lib/auth'
-import { invalidateHewan, invalidateReproduksi } from '@/lib/cache-invalidation'
+import { invalidateHewan, invalidateNotifikasi, invalidateReproduksi } from '@/lib/cache-invalidation'
 import { hasilLahirSchema } from '@/lib/validations/reproduksi.schema'
+import { lewatHariIniWIB, umurBulan } from '@/lib/tanggal'
 
 export type TambahReproduksiState = {
   warning?: boolean
@@ -26,9 +28,26 @@ export const tambahReproduksi = withMutationAuth(async (session, formData: FormD
     return { error: 'Akses ditolak' }
   }
   const pejantanId = formData.get('pejantanId') as string
-  const tanggalKawin = new Date(formData.get('tanggalKawin') as string)
-  // Override kawin sedarah hanya untuk Super Admin — jangan percaya hidden field dari client
-  const forceSubmit = formData.get('forceSubmit') === 'true' && session.role === 'SUPER_ADMIN'
+  if (!pejantanId) return { error: 'Pejantan tidak dipilih' }
+  const ortu = await ambilOrangTua([indukId, pejantanId])
+  const pejantan = ortu.get(pejantanId)
+  if (!pejantan) return { error: 'Pejantan tidak ditemukan' }
+  if (pejantan.kelamin !== 'JANTAN') return { error: 'Bapak harus jantan' }
+  if (induk.kelamin !== 'BETINA') return { error: 'Induk harus betina' }
+  if (pejantan.farmId !== induk.farmId) return { error: 'Orang tua harus dari farm yang sama' }
+  if (pejantan.mati || ortu.get(indukId)?.mati) return { error: 'Induk/pejantan sudah mati' }
+  const rawKawin = formData.get('tanggalKawin')
+  if (typeof rawKawin !== 'string' || !rawKawin) return { error: 'Tanggal kawin tidak valid' }
+  const tanggalKawin = new Date(rawKawin)
+  if (isNaN(tanggalKawin.getTime()) || lewatHariIniWIB(tanggalKawin)) return { error: 'Tanggal kawin tidak valid' }
+  // Umur dihitung pada tanggal kawin, bukan hari ini: perkawinan lampau tetap harus memenuhi batas umur saat itu.
+  if (umurBulan(induk.tanggalLahir, tanggalKawin) < 8 || umurBulan(pejantan.tanggalLahir, tanggalKawin) < 8) {
+    return { error: 'Induk dan pejantan minimal berumur 8 bulan saat kawin' }
+  }
+  const masihHamil = await prisma.reproduksi.count({ where: { indukId, status: 'HAMIL' } })
+  if (masihHamil > 0) return { error: 'Induk ini masih tercatat hamil' }
+  // Override kawin sedarah hanya untuk Super Admin dan Owner — jangan percaya hidden field dari client
+  const forceSubmit = formData.get('forceSubmit') === 'true' && (session.role === 'SUPER_ADMIN' || session.role === 'OWNER')
 
   // Estimasi lahir = +150 hari
   const estimasiLahir = new Date(tanggalKawin)
@@ -72,10 +91,11 @@ export type CatatHasilState = { success: true; jumlahAnak: number } | { error: s
 export const catatHasilReproduksi = withMutationAuth(async (session, reproduksiId: string, formData: FormData): Promise<CatatHasilState> => {
   const repro = await prisma.reproduksi.findUnique({
     where: { id: reproduksiId },
-    include: { induk: { select: { farmId: true } } },
+    include: { induk: { select: { farmId: true, kematian: { select: { id: true } } } } },
   })
   if (!repro) return { error: 'Data kehamilan tidak ditemukan' }
   if (session.role !== 'SUPER_ADMIN' && repro.induk.farmId !== session.activeFarmId) return { error: 'Akses ditolak' }
+  if (repro.induk.kematian) return { error: 'Hewan sudah tercatat mati' }
   if (repro.status !== 'HAMIL') return { error: 'Hasil kehamilan ini sudah pernah dicatat' }
 
   const hasil = formData.get('hasil')
@@ -99,7 +119,7 @@ export const catatHasilReproduksi = withMutationAuth(async (session, reproduksiI
   if (!parsed.success) return { error: parsed.error.issues[0].message }
   const { tanggalLahir, anak } = parsed.data
 
-  if (tanggalLahir > new Date()) return { error: 'Tanggal lahir tidak boleh di masa depan' }
+  if (lewatHariIniWIB(tanggalLahir)) return { error: 'Tanggal lahir tidak boleh di masa depan' }
   if (tanggalLahir < repro.tanggalKawin) return { error: 'Tanggal lahir tidak boleh sebelum tanggal kawin' }
 
   const farmId = repro.induk.farmId
@@ -137,4 +157,26 @@ export const catatHasilReproduksi = withMutationAuth(async (session, reproduksiI
   invalidateHewan()
   revalidatePath('/reproduksi')
   return { success: true, jumlahAnak: anak.length }
+})
+
+export const hapusReproduksi = withMutationAuth(async (session, id: string) => {
+  const repro = await prisma.reproduksi.findUnique({
+    where: { id },
+    include: { induk: { select: { farmId: true } } },
+  })
+  if (!repro) return { error: 'Data kehamilan tidak ditemukan' }
+  if (session.role !== 'SUPER_ADMIN' && repro.induk.farmId !== session.activeFarmId) return { error: 'Akses ditolak' }
+  // LAHIR: anak sudah terdaftar dengan induk & pejantan ini
+  if (repro.status === 'LAHIR') return { error: 'Kehamilan dengan kelahiran tercatat tidak bisa dihapus' }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.reproduksi.delete({ where: { id } })
+    await tx.notifikasi.deleteMany({ where: { farmId: repro.induk.farmId, refKey: { in: [`LAHIR-${id}`, `TELAT-${id}`] } } })
+  })
+
+  invalidateReproduksi()
+  invalidateNotifikasi()
+  revalidatePath('/reproduksi')
+  revalidatePath(`/hewan/${repro.indukId}`)
+  return { success: true as const }
 })

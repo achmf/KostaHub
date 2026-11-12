@@ -93,6 +93,8 @@ model User {
   approvalStatus  ApprovalStatus @default(APPROVED)
   rejectionReason String? // alasan penolakan dari admin
   deletedAt       DateTime?
+  failedLogins    Int            @default(0)
+  lockedUntil     DateTime?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
@@ -289,7 +291,7 @@ model Notifikasi {
   title     String
   message   String
   tanggal   DateTime
-  isRead    Boolean        @default(false)
+  readBy    String[]       @default([])
   type      TipeNotifikasi
   farmId    String?
   farm      Farm?          @relation(fields: [farmId], references: [id])
@@ -300,7 +302,6 @@ model Notifikasi {
 
   @@unique([farmId, refKey])
   @@index([tanggal])
-  @@index([isRead])
   @@index([farmId])
   @@index([type])
 }

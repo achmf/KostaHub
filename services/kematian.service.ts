@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { type PenyebabKematian } from '@prisma/client'
 import type { SessionData } from '@/services/hewan.service'
+import { lewatHariIniWIB } from '@/lib/tanggal'
 
 export type CatatKematianData = {
   tanggalMati: Date
@@ -19,14 +20,20 @@ export async function catatKematianLogic(hewanId: string, data: CatatKematianDat
   const existing = await prisma.kematianHewan.findUnique({ where: { hewanId } })
   if (existing) return { error: 'Hewan ini sudah tercatat mati' }
 
-  await prisma.kematianHewan.create({
-    data: {
-      hewanId,
-      tanggalMati: data.tanggalMati,
-      penyebab: data.penyebab,
-      catatan: data.catatan || null,
-    },
-  })
+  if (lewatHariIniWIB(data.tanggalMati) || data.tanggalMati < hewan.tanggalLahir) return { error: 'Tanggal kematian tidak valid' }
+
+  // Kehamilan yang masih berjalan ikut ditutup supaya tidak jadi data yatim
+  await prisma.$transaction([
+    prisma.kematianHewan.create({
+      data: {
+        hewanId,
+        tanggalMati: data.tanggalMati,
+        penyebab: data.penyebab,
+        catatan: data.catatan || null,
+      },
+    }),
+    prisma.reproduksi.updateMany({ where: { indukId: hewanId, status: 'HAMIL' }, data: { status: 'GAGAL' } }),
+  ])
   return { success: true }
 }
 
@@ -42,7 +49,7 @@ export async function batalkanKematianLogic(hewanId: string, session: SessionDat
   if (!existing) return { error: 'Tidak ada catatan kematian untuk hewan ini' }
 
   await prisma.kematianHewan.delete({ where: { hewanId } })
-  return { success: true }
+  return { success: true, message: 'Kematian dibatalkan. Status kehamilan yang sudah ditutup tidak berubah.' }
 }
 
 /**

@@ -14,13 +14,16 @@ export default async function TambahReproduksiPage(props: { searchParams: Promis
   }
   const farmFilter = farmId ? { farmId } : {}
 
+  const batasLahir = new Date()
+  batasLahir.setMonth(batasLahir.getMonth() - 8) // minimal berumur 8 bulan
+
   const [indukan, pejantan] = await Promise.all([
     prisma.hewan.findMany({
-      where: { kematian: { is: null }, kategori: 'INDUKAN', ...farmFilter },
+      where: { kematian: { is: null }, kelamin: 'BETINA', tanggalLahir: { lte: batasLahir }, ...farmFilter },
       select: { id: true, tag: true, nama: true },
     }),
     prisma.hewan.findMany({
-      where: { kematian: { is: null }, kategori: 'PEJANTAN', ...farmFilter },
+      where: { kematian: { is: null }, kelamin: 'JANTAN', tanggalLahir: { lte: batasLahir }, ...farmFilter },
       select: { id: true, tag: true, nama: true },
     }),
   ])
@@ -29,7 +32,7 @@ export default async function TambahReproduksiPage(props: { searchParams: Promis
     <TambahReproduksiForm
       indukan={indukan}
       pejantan={pejantan}
-      isSuperAdmin={session.role === 'SUPER_ADMIN'}
+      isSuperAdmin={session.role === 'SUPER_ADMIN' || session.role === 'OWNER'}
     />
   )
 }

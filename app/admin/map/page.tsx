@@ -22,17 +22,28 @@ export default async function AdminMapPage() {
       status: true,
       members: {
         select: { user: { select: { name: true } } },
+        where: { user: { role: 'OWNER', deletedAt: null } },
         take: 1,
-      },
-      hewan: {
-        select: { kematian: { select: { hewanId: true } }, kategori: true },
       },
     },
     orderBy: { createdAt: 'desc' },
   })
 
+  // Hitung di database: hewan hidup per farm+kategori, dan hewan mati per farm
+  const [hidupGrouped, matiGrouped] = await Promise.all([
+    prisma.hewan.groupBy({ by: ['farmId', 'kategori'], where: { kematian: { is: null } }, _count: true }),
+    prisma.hewan.groupBy({ by: ['farmId'], where: { kematian: { isNot: null } }, _count: true }),
+  ])
+  const hidupFarm = new Map<string, number>()
+  const hidupKategori = new Map<string, number>()
+  for (const g of hidupGrouped) {
+    hidupFarm.set(g.farmId, (hidupFarm.get(g.farmId) ?? 0) + g._count)
+    hidupKategori.set(`${g.farmId}:${g.kategori}`, g._count)
+  }
+  const matiFarm = new Map(matiGrouped.map((g) => [g.farmId, g._count]))
+
   const farms = rawFarms.map((f) => {
-    const totalHewan = f.hewan.length
+    const hidup = hidupFarm.get(f.id) ?? 0
     return {
       id: f.id,
       nama: f.nama,
@@ -43,11 +54,11 @@ export default async function AdminMapPage() {
       deskripsi: f.deskripsi,
       status: f.status,
       ownerName: f.members[0]?.user.name ?? 'Tidak ada owner',
-      _count: { hewan: totalHewan },
-      hewanAktif: f.hewan.filter((h) => !h.kematian).length,
-      hewanMati: f.hewan.filter((h) => !!h.kematian).length,
-      hewanIndukan: f.hewan.filter((h) => h.kategori === 'INDUKAN').length,
-      hewanPejantan: f.hewan.filter((h) => h.kategori === 'PEJANTAN').length,
+      _count: { hewan: hidup },
+      hewanAktif: hidup,
+      hewanMati: matiFarm.get(f.id) ?? 0,
+      hewanIndukan: hidupKategori.get(`${f.id}:INDUKAN`) ?? 0,
+      hewanPejantan: hidupKategori.get(`${f.id}:PEJANTAN`) ?? 0,
     }
   })
 

@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { revalidatePath } from 'next/cache'
 import { type Role } from '@prisma/client'
+import { createStaffSchema } from '@/lib/validations/auth.schema'
 
 async function requireOwnerWithFarm() {
   const session = await getSession()
@@ -34,9 +35,57 @@ export async function createStaff(formData: FormData) {
     return { error: 'Role harus PETUGAS' }
   }
 
-  const existingUser = await prisma.user.findUnique({ where: { email } })
+  const parsed = createStaffSchema.safeParse({ name, email, password })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
+  }
+
+  const farmId = session.activeFarmId!
+  const existingUser = await prisma.user.findUnique({
+    where: { email },
+    include: { farms: { select: { farmId: true } } },
+  })
   if (existingUser) {
-    return { error: 'Email sudah terdaftar' }
+    // Sengaja tidak melampirkan user aktif yang sudah ada: mencegah pengambilalihan akun lintas farm.
+    // Aturan: PETUGAS terhapus boleh diaktifkan lagi hanya jika SEMUA baris UserFarm-nya milik farm aktif
+    // (nol baris juga boleh; deleteStaff lama menyisakan baris UserFarm). Punya farm lain atau masih aktif -> ditolak.
+    if (
+      existingUser.role !== 'PETUGAS' ||
+      !existingUser.deletedAt ||
+      existingUser.farms.some((f) => f.farmId !== farmId)
+    ) {
+      return { error: 'Email sudah terdaftar' }
+    }
+
+    const hashed = await bcrypt.hash(password, 10)
+    try {
+      const direaktivasi = await prisma.$transaction(async (tx) => {
+        // Update bersyarat: Postgres mengecek ulang deletedAt setelah baris dikunci, jadi dari dua owner
+        // yang mengaktifkan user yang sama bersamaan hanya satu yang berhasil (yang kedua dapat count 0).
+        const { count } = await tx.user.updateMany({
+          where: {
+            id: existingUser.id,
+            role: 'PETUGAS',
+            deletedAt: { not: null },
+            farms: { every: { farmId } },
+          },
+          data: { deletedAt: null, password: hashed, name, phone: phone || null, failedLogins: 0, lockedUntil: null },
+        })
+        if (count === 0) return false
+        await tx.userFarm.upsert({
+          where: { userId_farmId: { userId: existingUser.id, farmId } },
+          create: { userId: existingUser.id, farmId },
+          update: {},
+        })
+        return true
+      })
+      if (!direaktivasi) return { error: 'Email sudah terdaftar' }
+    } catch (e) {
+      if ((e as { code?: string }).code === 'P2002') return { error: 'Staff sudah terdaftar di farm ini' }
+      throw e
+    }
+    revalidatePath('/staff')
+    return { success: true }
   }
 
   const hashedPassword = await bcrypt.hash(password, 10)
@@ -85,9 +134,14 @@ export async function deleteStaff(staffId: string) {
     return { error: 'Hanya bisa menghapus PETUGAS' }
   }
 
-  await prisma.user.update({
-    where: { id: staffId },
-    data: { deletedAt: new Date() },
+  // Lepas dari farm aktif saja; soft-delete user hanya jika tidak punya farm lain
+  await prisma.$transaction(async (tx) => {
+    await tx.userFarm.delete({
+      where: { userId_farmId: { userId: staffId, farmId: session.activeFarmId! } },
+    })
+    if (staff.farms.length <= 1) {
+      await tx.user.update({ where: { id: staffId }, data: { deletedAt: new Date() } })
+    }
   })
 
   revalidatePath('/staff')
@@ -116,9 +170,15 @@ export async function updateStaff(staffId: string, formData: FormData) {
   )
   if (!isMemberOfActiveFarm) return { error: 'Bukan staff farm Anda' }
 
+  if (staff.role !== 'PETUGAS') return { error: 'Hanya bisa mengubah PETUGAS' }
+  if (staff.farms.some((uf) => uf.farmId !== session.activeFarmId)) {
+    return { error: 'Staff juga terdaftar di farm lain; data akun tidak bisa diubah dari sini' }
+  }
+
   const updateData: any = { name, phone: phone || null }
-  
-  if (password && password.length >= 6) {
+
+  if (password) {
+    if (password.length < 6) return { error: 'Password minimal 6 karakter' }
     updateData.password = await bcrypt.hash(password, 10)
   }
 

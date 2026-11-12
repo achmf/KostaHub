@@ -167,7 +167,7 @@ function MapResizer() {
 }
 
 // ─── Popup HTML ───────────────────────────────────────────────────────────────
-function buildPopupHtml(farm: Farm) {
+function buildPopupHtml(farm: Farm, isAdmin: boolean) {
   const isActive = farm.status === 'AKTIF'
   return `
     <div style="font-family:'Inter',sans-serif; min-width:220px; max-width:240px; overflow-wrap:break-word; padding:4px 0;">
@@ -189,9 +189,9 @@ function buildPopupHtml(farm: Farm) {
           `).join('')}
       </div>
       ${farm.deskripsi ? `<p style="font-size:11px;color:rgba(13,20,15,0.55);margin-bottom:10px;line-height:1.5;">${escapeHtml(farm.deskripsi)}</p>` : ''}
-      <a href="/farm/${escapeHtml(farm.id)}" class="min-h-10 lg:min-h-0" style="display:flex;align-items:center;justify-content:center;text-align:center;padding:8px 12px;background:#1B2A1F;color:#F2EDE0;border-radius:99px;font-size:12px;font-weight:500;text-decoration:none;">
+      ${isAdmin ? `<a href="/admin/farms/${escapeHtml(farm.id)}" class="min-h-10 lg:min-h-0" style="display:flex;align-items:center;justify-content:center;text-align:center;padding:8px 12px;background:#1B2A1F;color:#F2EDE0;border-radius:99px;font-size:12px;font-weight:500;text-decoration:none;">
         Lihat Detail Farm →
-      </a>
+      </a>` : ''}
       ${farm.lat ? `
         <a href="https://www.google.com/maps?q=${farm.lat},${farm.lng}" target="_blank" class="min-h-10 lg:min-h-0"
           style="display:flex;align-items:center;justify-content:center;text-align:center;padding:6px;margin-top:6px;border:1px solid rgba(13,20,15,0.12);border-radius:99px;font-size:11px;color:rgba(13,20,15,0.55);text-decoration:none;">
@@ -209,6 +209,7 @@ export interface FarmMapProps {
   onSelectFarm: (farm: Farm | null) => void
   layer: MapLayer
   role: string
+  isAdmin?: boolean
   showHeatmap: boolean
   showRadius: boolean
   drawMode: boolean
@@ -226,6 +227,7 @@ export default function FarmMap({
   onSelectFarm,
   layer,
   role,
+  isAdmin = false,
   showHeatmap,
   showRadius,
   drawMode,
@@ -338,7 +340,7 @@ export default function FarmMap({
               }}
             >
               <Popup className="farm-popup-custom" minWidth={240}>
-                <div dangerouslySetInnerHTML={{ __html: buildPopupHtml(farm) }} />
+                <div dangerouslySetInnerHTML={{ __html: buildPopupHtml(farm, isAdmin) }} />
               </Popup>
             </Marker>
           )

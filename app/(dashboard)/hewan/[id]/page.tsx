@@ -18,8 +18,12 @@ import { RekamMedisHistory } from '@/components/Hewan/RekamMedisHistory'
 import { buildSilsilahTree } from '@/lib/silsilah'
 import { SilsilahTree } from '@/components/Hewan/SilsilahTree'
 import { HewanAvatarProfile } from '@/components/Hewan/HewanAvatarProfile'
+import { FITUR_RFID } from '@/lib/utils'
 import { HybridTagManager } from '@/components/Hewan/HybridTagManager'
 import { BatalkanKematianButton } from '@/components/Hewan/BatalkanKematianButton'
+import { umurBulan } from '@/lib/tanggal'
+import { HapusRecordButton } from '@/components/HapusRecordButton'
+import { hapusBeratBadan } from '@/actions/berat'
 
 const KATEGORI_LABEL: Record<string, string> = {
   INDUKAN: 'Indukan', PEJANTAN: 'Pejantan', ANAKAN: 'Anakan',
@@ -77,11 +81,10 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
 
   if (!hewan) notFound()
   if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.activeFarmId) redirect('/hewan')
+  const canEdit = session.role !== 'DINAS'
 
   const isMati = !!hewan.kematian
-  const umurBulan = Math.max(0, Math.floor(
-    (Date.now() - hewan.tanggalLahir.getTime()) / (1000 * 60 * 60 * 24 * 30)
-  ))
+  const umur = umurBulan(hewan.tanggalLahir, hewan.kematian?.tanggalMati ?? new Date())
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -94,11 +97,13 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
         >
           <ArrowLeft size={16} className="md:w-[14px] md:h-[14px]" /> <span>Kembali ke Populasi</span>
         </Link>
-        <Link href={`/hewan/${hewan.id}/edit`}>
-          <KostaButton variant="outline" className="hover:bg-black/5 px-3 md:px-4">
-            <Edit size={16} className="md:w-[13px] md:h-[13px]" /> <span>Edit Data</span>
-          </KostaButton>
-        </Link>
+        {canEdit && (
+          <Link href={`/hewan/${hewan.id}/edit`}>
+            <KostaButton variant="outline" className="hover:bg-black/5 px-3 md:px-4">
+              <Edit size={16} className="md:w-[13px] md:h-[13px]" /> <span>Edit Data</span>
+            </KostaButton>
+          </Link>
+        )}
       </div>
 
       {/* Hero card */}
@@ -135,7 +140,7 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
         <div className="px-5 sm:px-8 -mt-10 pb-5 sm:pb-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { icon: <Calendar size={12} />, l: 'TANGGAL LAHIR', v: hewan.tanggalLahir.toLocaleDateString('id-ID'), sub: `${umurBulan} bulan` },
+              { icon: <Calendar size={12} />, l: 'TANGGAL LAHIR', v: hewan.tanggalLahir.toLocaleDateString('id-ID'), sub: `${umur} bulan` },
               { icon: <Scale size={12} />, l: 'BERAT TERKINI', v: hewan.berat ? `${hewan.berat} kg` : '—', sub: 'tertimbang terakhir' },
               { icon: <MapPin size={12} />, l: 'FARM', v: hewan.farm.nama.replace('Farm ', ''), sub: 'lokasi terdaftar' },
               { icon: <Stethoscope size={12} />, l: 'REKAM MEDIS', v: `${hewan.rekamMedis.length}`, sub: 'catatan tersimpan' },
@@ -177,7 +182,7 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
                 )}
               </div>
             </div>
-            <BatalkanKematianButton hewanId={hewan.id} hewanNama={hewan.nama || hewan.tag} />
+            {canEdit && <BatalkanKematianButton hewanId={hewan.id} hewanNama={hewan.nama || hewan.tag} />}
           </div>
         </KostaCard>
       )}
@@ -203,6 +208,7 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
                   {h.berat}
                   <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, opacity: 0.6 }}> kg</span>
                 </div>
+                {canEdit && <HapusRecordButton id={h.id} action={hapusBeratBadan} label="penimbangan" />}
               </div>
             ))}
           </div>
@@ -210,7 +216,7 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
       )}
 
       {/* Medical records */}
-      <RekamMedisHistory records={hewan.rekamMedis} />
+      <RekamMedisHistory records={hewan.rekamMedis} canEdit={canEdit} />
 
       {/* Silsilah — deferred via Suspense so hero renders immediately */}
       <KostaCard className="p-5 sm:p-6 mt-5">
@@ -226,7 +232,7 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
         </Suspense>
       </KostaCard>
 
-      <HybridTagManager hewanId={hewan.id} tagStr={hewan.tag} existingTags={hewan.tagsRfid} />
+      {FITUR_RFID && canEdit && <HybridTagManager hewanId={hewan.id} tagStr={hewan.tag} existingTags={hewan.tagsRfid} />}
     </div>
   )
 }

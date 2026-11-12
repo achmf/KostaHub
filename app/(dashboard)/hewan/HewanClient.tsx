@@ -20,6 +20,7 @@ import {
   palette,
 } from '@/components/KostaUI'
 import { SearchBar } from '@/components/Layout/SearchBar'
+import { FITUR_RFID } from '@/lib/utils'
 import { NfcScanButton } from '@/components/Hewan/NfcScanButton'
 import { FilterSheet } from '@/components/Layout/FilterSheet'
 
@@ -67,14 +68,16 @@ function StatusBadge({ kematian }: { kematian: { tanggalMati: Date } | null }) {
 export function HewanClient({
   hewanList,
   isSuperAdmin,
+  canEdit,
 }: {
   hewanList: HewanWithRelations[]
   isSuperAdmin: boolean
+  canEdit: boolean
 }) {
   const searchParams = useSearchParams()
   const q = searchParams.get('q') || ''
   const kat = searchParams.get('kategori') || 'ALL'
-  const statusFilter = searchParams.get('status') || 'ALL'
+  const statusFilter = searchParams.get('status') || 'HIDUP'
   const kelaminFilter = searchParams.get('kelamin') || 'ALL'
   const farmFilter = searchParams.get('farm') || 'ALL'
   const router = useRouter()
@@ -99,7 +102,7 @@ export function HewanClient({
   const PER_PAGE = 15
   const { paged, page, totalPages, onPrev, onNext } = usePagination(filtered, PER_PAGE)
 
-  const activeFilterCount = (kat !== 'ALL' ? 1 : 0) + (statusFilter !== 'ALL' ? 1 : 0) + (kelaminFilter !== 'ALL' ? 1 : 0) + (farmFilter !== 'ALL' ? 1 : 0)
+  const activeFilterCount = (kat !== 'ALL' ? 1 : 0) + (statusFilter !== 'HIDUP' ? 1 : 0) + (kelaminFilter !== 'ALL' ? 1 : 0) + (farmFilter !== 'ALL' ? 1 : 0)
 
   const cats = ['ALL', 'INDUKAN', 'PEJANTAN', 'ANAKAN', 'DARA', 'JANTAN_MUDA']
   const statuses = ['ALL', 'HIDUP', 'MATI']
@@ -125,8 +128,9 @@ export function HewanClient({
     {
       paramName: 'status',
       title: 'Status',
+      defaultValue: 'HIDUP',
       options: [
-        { value: 'ALL', label: 'Semua' },
+        { value: 'SEMUA', label: 'Semua' },
         { value: 'HIDUP', label: 'Hidup' },
         { value: 'MATI', label: 'Mati' }
       ]
@@ -159,13 +163,15 @@ export function HewanClient({
         title="Daftar Hewan"
         description={`${filtered.length} ekor ditampilkan. Klik baris untuk membuka profil lengkap.`}
         action={
-          <div className="flex gap-2 w-full sm:w-auto">
-            <Link href="/hewan/tambah" className="flex-1 sm:flex-none">
-              <KostaButton className="w-full sm:w-auto justify-center">
-                <Plus size={13} /> <span>Tambah Hewan</span>
-              </KostaButton>
-            </Link>
-          </div>
+          canEdit ? (
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Link href="/hewan/tambah" className="flex-1 sm:flex-none">
+                <KostaButton className="w-full sm:w-auto justify-center">
+                  <Plus size={13} /> <span>Tambah Hewan</span>
+                </KostaButton>
+              </Link>
+            </div>
+          ) : undefined
         }
       />
 
@@ -173,7 +179,7 @@ export function HewanClient({
       <div className="mb-5 flex flex-row items-center justify-between gap-3 sm:gap-4">
         <div className="flex flex-1 min-w-0 items-center gap-2">
           <SearchBar placeholder="Cari tag (KST-…), nama, atau UID RFID..." />
-          <NfcScanButton />
+          {FITUR_RFID && <NfcScanButton />}
         </div>
         <FilterSheet filters={filterGroups} />
       </div>

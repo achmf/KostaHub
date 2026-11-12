@@ -2,6 +2,7 @@
 
 import { tambahReproduksi, type TambahReproduksiState } from '@/actions/reproduksi'
 import Link from 'next/link'
+import { hariIniWIB } from '@/lib/tanggal'
 import { ArrowLeft, AlertTriangle, ShieldAlert, CheckCircle2 } from 'lucide-react'
 import { useActionState, useState, useCallback, useRef } from 'react'
 import { KostaButton, KostaSectionLabel, palette } from '@/components/KostaUI'
@@ -134,7 +135,7 @@ export function TambahReproduksiForm({
             <DatePickerField
               name="tanggalKawin"
               required
-              defaultValue={new Date().toISOString().split('T')[0]}
+              defaultValue={hariIniWIB()}
               disableFuture
               placeholder="Pilih tanggal kawin"
             />
@@ -220,7 +221,7 @@ export function TambahReproduksiForm({
               ) : (
                 <div className="flex items-center gap-2 pt-1" style={{ color: 'rgba(13,20,15,0.6)', fontFamily: "'Inter',sans-serif", fontSize: 12 }}>
                   <ShieldAlert size={14} style={{ color: palette.rose }} />
-                  Hanya Super Admin yang dapat melanjutkan perkawinan dengan risiko kawin sedarah.
+                  Hanya Super Admin atau Owner yang dapat melanjutkan perkawinan dengan risiko kawin sedarah.
                 </div>
               )}
             </div>

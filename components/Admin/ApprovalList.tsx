@@ -152,7 +152,7 @@ function RejectModal({
               lineHeight: 1.6,
             }}
           >
-            Owner akan mendapat notifikasi email dengan alasan penolakan dan
+            Owner akan melihat alasan penolakan di halaman Farm dan
             dapat{" "}
             <strong style={{ color: palette.ink }}>mengajukan ulang</strong>{" "}
             setelah merevisi data farm.
@@ -364,7 +364,9 @@ export default function ApprovalList({
   function handleBulkReject() {
     const ids = Array.from(selectedIds);
     if (!ids.length) return;
-    const reason = window.prompt("Alasan penolakan (opsional):") ?? "";
+    const r = window.prompt("Alasan penolakan (opsional):");
+    if (r === null) return;
+    const reason = r;
     startBulkTransition(async () => {
       const res = await bulkRejectFarms(ids, reason);
       if (res?.error) {
