@@ -6,7 +6,7 @@ import { farmSchema, farmRegistrationSchema } from '@/lib/validations/farm.schem
 import { invalidateFarm } from '@/lib/cache-invalidation'
 import { simpanFile } from '@/lib/storage'
 
-import { createFarmLogic, createAdditionalFarmLogic, assignUserToFarmLogic, assignStaffToFarmLogic, removeUserFromFarmLogic, updateFarmLogic, deleteFarmLogic, getFarmsLogic, createFarmRegistrationLogic } from '@/services/farm.service'
+import { createFarmLogic, createAdditionalFarmLogic, removeUserFromFarmLogic, updateFarmLogic, deleteFarmLogic, getFarmsLogic, createFarmRegistrationLogic } from '@/services/farm.service'
 
 export const createFarm = withMutationAuth(async (session, formData: FormData) => {
   const parsed = farmSchema.safeParse(Object.fromEntries(formData))
@@ -30,22 +30,6 @@ export const createAdditionalFarm = withMutationAuth(async (session, formData: F
   invalidateFarm()
   revalidatePath('/farms')
   return { success: true, pendingApproval: true }
-})
-
-export const assignUserToFarm = withAuth(async (session, userId: string, farmId: string) => {
-  const result = await assignUserToFarmLogic(userId, farmId, session as any)
-  if ('error' in result) return result
-
-  revalidatePath('/admin/users')
-  return { success: true }
-})
-
-export const assignStaffToFarm = withMutationAuth(async (session, staffId: string, farmId: string) => {
-  const result = await assignStaffToFarmLogic(staffId, farmId, session as any)
-  if ('error' in result) return result
-
-  revalidatePath('/staff')
-  return { success: true }
 })
 
 export const removeUserFromFarm = withMutationAuth(async (session, userId: string, farmId: string) => {

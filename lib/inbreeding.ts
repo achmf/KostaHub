@@ -2,8 +2,6 @@ import { prisma } from '@/lib/prisma'
 import { getAncestorDepths } from '@/lib/silsilah'
 import { BATAS_GENERASI, leluhurBersama } from '@/lib/inbreeding-rules'
 
-export { BATAS_GENERASI, leluhurBersama }
-
 export type SharedAncestor = {
   id: string
   tag: string
