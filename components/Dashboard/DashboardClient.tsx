@@ -545,6 +545,7 @@ export default function DashboardClient({
   stats,
   reproduksiHamil,
   notifikasiMedis,
+  jumlahJadwalMedis,
   kategoriStats,
   isSuperAdmin,
   farmCount,
@@ -564,6 +565,7 @@ export default function DashboardClient({
   }
   reproduksiHamil: ReproItem[]
   notifikasiMedis: NotifItem[]
+  jumlahJadwalMedis: number
   kategoriStats: KategoriStat[]
   isSuperAdmin: boolean
   farmCount: number
@@ -728,8 +730,8 @@ export default function DashboardClient({
           },
           {
             l: 'Jadwal Medis',
-            v: notifikasiMedis.length,
-            hint: 'minggu ini',
+            v: jumlahJadwalMedis,
+            hint: 'belum ditangani',
             icon: <Syringe size={14} style={{ color: palette.ink }} />,
           },
           {
@@ -1289,7 +1291,7 @@ export default function DashboardClient({
                 Notifikasi
               </div>
             </div>
-            <Badge variant="ochre">{notifikasiMedis.length} BARU</Badge>
+            <Badge variant="ochre">{jumlahJadwalMedis} BARU</Badge>
           </div>
           <div className="space-y-2.5">
             {notifikasiMedis.length === 0 && (

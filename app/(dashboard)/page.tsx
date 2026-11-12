@@ -43,6 +43,7 @@ export default async function DashboardPage(props: { searchParams: Promise<{ [ke
         createdAt: new Date(n.createdAt).toISOString(),
         updatedAt: new Date(n.updatedAt).toISOString(),
       }))}
+      jumlahJadwalMedis={data.jumlahJadwalMedis}
       kategoriStats={data.kategoriStats}
       isSuperAdmin={session.role === 'SUPER_ADMIN'}
       farmCount={farmCount as number}
