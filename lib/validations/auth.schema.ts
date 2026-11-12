@@ -31,3 +31,7 @@ export const createStaffSchema = z.object({
   email: z.email({ message: 'Email tidak valid' }),
   password: z.string().min(6, { message: 'Password minimal 6 karakter' }),
 })
+
+export const resetPasswordSchema = z.object({
+  password: z.string().min(6, { message: 'Password minimal 6 karakter' }),
+})
