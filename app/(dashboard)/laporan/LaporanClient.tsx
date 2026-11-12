@@ -331,13 +331,13 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
             <TableHeader cols={['TAG', 'NAMA', 'KATEGORI', 'KELAMIN', 'BERAT AWAL', 'TGL DAFTAR', 'FARM']} grid="0.8fr 1fr 0.9fr 0.7fr 0.7fr 0.8fr 0.8fr" />
             {filteredData.length === 0 ? <NoResults /> : pagination.paged.map((h: any, i: number) => (
               <TableRow key={h.id} i={i} grid="0.8fr 1fr 0.9fr 0.7fr 0.7fr 0.8fr 0.8fr" cells={[
-                <Link href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{h.tag}</span></Link>,
-                <Link href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{h.nama || <span style={{ opacity: 0.4 }}>—</span>}</span></Link>,
-                <Badge variant={h.kategori === 'INDUKAN' ? 'moss' : h.kategori === 'PEJANTAN' ? 'ink' : 'ochre'}>{h.kategori.replace('_', ' ')}</Badge>,
-                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{h.kelamin === 'JANTAN' ? '♂' : '♀'}</span>,
-                <span style={{ fontFamily: "'Fraunces',serif", fontSize: 14 }}>{h.berat ? `${h.berat} kg` : '—'}</span>,
-                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(h.createdAt)}</span>,
-                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, opacity: 0.7 }}>{h.farm || '—'}</span>,
+                <Link key="c1" href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{h.tag}</span></Link>,
+                <Link key="c2" href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{h.nama || <span style={{ opacity: 0.4 }}>—</span>}</span></Link>,
+                <Badge key="c3" variant={h.kategori === 'INDUKAN' ? 'moss' : h.kategori === 'PEJANTAN' ? 'ink' : 'ochre'}>{h.kategori.replace('_', ' ')}</Badge>,
+                <span key="c4" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{h.kelamin === 'JANTAN' ? '♂' : '♀'}</span>,
+                <span key="c5" style={{ fontFamily: "'Fraunces',serif", fontSize: 14 }}>{h.berat ? `${h.berat} kg` : '—'}</span>,
+                <span key="c6" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(h.createdAt)}</span>,
+                <span key="c7" style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, opacity: 0.7 }}>{h.farm || '—'}</span>,
               ]} />
             ))}
           </>
@@ -349,15 +349,15 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
             <TableHeader cols={['TAG', 'NAMA', 'BERAT', 'TGL DAFTAR', 'TANGGAL MATI', 'PENYEBAB', 'FARM']} grid="0.8fr 1fr 0.6fr 0.8fr 0.8fr 1fr 0.8fr" />
             {filteredData.length === 0 ? <NoResults /> : pagination.paged.map((h: any, i: number) => (
               <TableRow key={h.id} i={i} grid="0.8fr 1fr 0.6fr 0.8fr 0.8fr 1fr 0.8fr" cells={[
-                <Link href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{h.tag}</span></Link>,
-                <Link href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{h.nama || '—'}</span></Link>,
-                <span style={{ fontFamily: "'Fraunces',serif", fontSize: 14 }}>{h.berat ? `${h.berat} kg` : '—'}</span>,
-                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(h.createdAt)}</span>,
-                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, color: palette.rose }}>{h.tanggalMati ? formatDate(h.tanggalMati) : '—'}</span>,
-                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, opacity: 0.6 }}>
+                <Link key="c1" href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{h.tag}</span></Link>,
+                <Link key="c2" href={`/hewan/${h.id}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{h.nama || '—'}</span></Link>,
+                <span key="c3" style={{ fontFamily: "'Fraunces',serif", fontSize: 14 }}>{h.berat ? `${h.berat} kg` : '—'}</span>,
+                <span key="c4" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(h.createdAt)}</span>,
+                <span key="c5" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, color: palette.rose }}>{h.tanggalMati ? formatDate(h.tanggalMati) : '—'}</span>,
+                <span key="c6" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, opacity: 0.6 }}>
                   {h.penyebab ? h.penyebab.replace('_', ' ') : 'Ternak mati'}
                 </span>,
-                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, opacity: 0.7 }}>{h.farm || '—'}</span>,
+                <span key="c7" style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, opacity: 0.7 }}>{h.farm || '—'}</span>,
               ]} />
             ))}
           </>
@@ -369,12 +369,12 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
             <TableHeader cols={['TAG', 'NAMA', 'DARI FARM', 'KE FARM', 'TGL TRANSFER', 'ALASAN']} grid="0.7fr 0.9fr 1fr 1fr 0.8fr 1.4fr" />
             {filteredData.length === 0 ? <NoResults /> : pagination.paged.map((t: any, i: number) => (
               <TableRow key={t.id} i={i} grid="0.7fr 0.9fr 1fr 1fr 0.8fr 1.4fr" cells={[
-                <Link href={`/hewan/${t.hewanId}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{t.tag}</span></Link>,
-                <Link href={`/hewan/${t.hewanId}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{t.nama || '—'}</span></Link>,
-                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{t.fromFarm?.replace('Farm ', '')}</span>,
-                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{t.toFarm?.replace('Farm ', '')}</span>,
-                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(t.tanggal)}</span>,
-                <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, opacity: 0.7 }}>{t.alasan || '—'}</span>,
+                <Link key="c1" href={`/hewan/${t.hewanId}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{t.tag}</span></Link>,
+                <Link key="c2" href={`/hewan/${t.hewanId}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}><span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{t.nama || '—'}</span></Link>,
+                <span key="c3" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{t.fromFarm?.replace('Farm ', '')}</span>,
+                <span key="c4" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{t.toFarm?.replace('Farm ', '')}</span>,
+                <span key="c5" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(t.tanggal)}</span>,
+                <span key="c6" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, opacity: 0.7 }}>{t.alasan || '—'}</span>,
               ]} />
             ))}
           </>
@@ -521,12 +521,12 @@ function LaporanMedis({ data }: { data: any[] }) {
         />
         {filtered.length === 0 ? <NoResults /> : medisP.paged.map((m: any, i: number) => (
           <TableRow key={m.id} i={i} grid="0.7fr 0.7fr 0.9fr 1.6fr 1fr 0.9fr 0.7fr" cells={[
-            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(m.tanggal)}</span>,
-            <Link href={`/hewan/${m.hewanId}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}>
+            <span key="c1" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>{formatDate(m.tanggal)}</span>,
+            <Link key="c2" href={`/hewan/${m.hewanId}`} className="hover:underline hover:text-moss transition-colors block py-3 -my-3" onClick={(e) => e.stopPropagation()}>
               <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5 }}>{m.hewanTag}</div>
               {m.hewanNama && <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, opacity: 0.5 }}>{m.hewanNama}</div>}
             </Link>,
-            <span
+            <span key="c3"
               className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs"
               style={{
                 background: `${KATEGORI_MEDIS_COLOR[m.kategori]}15`,
@@ -537,13 +537,13 @@ function LaporanMedis({ data }: { data: any[] }) {
               {KATEGORI_MEDIS_ICON[m.kategori]}
               {KATEGORI_MEDIS_LABEL[m.kategori]}
             </span>,
-            <div>
+            <div key="c4">
               <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{m.diagnosis}</div>
               {m.notes && <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, opacity: 0.5, marginTop: 2 }}>{m.notes}</div>}
             </div>,
-            <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{m.obat || <span style={{ opacity: 0.35 }}>—</span>}</span>,
-            <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, opacity: 0.7 }}>{m.namaDokter || '—'}</span>,
-            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.6 }}>
+            <span key="c4" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{m.obat || <span style={{ opacity: 0.35 }}>—</span>}</span>,
+            <span key="c5" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, opacity: 0.7 }}>{m.namaDokter || '—'}</span>,
+            <span key="c6" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.6 }}>
               {m.tanggalLanjut ? formatDate(m.tanggalLanjut) : '—'}
             </span>,
           ]} />
