@@ -57,7 +57,6 @@ export default async function AdminLaporanPage() {
       ...farm,
       aktif,
       mati,
-      terjual: 0,
       hamil,
       totalMedis,
       lahir,
@@ -140,7 +139,7 @@ export default async function AdminLaporanPage() {
           <table className="w-full min-w-[880px]">
             <thead>
               <tr style={{ borderBottom: `1px solid ${palette.border}`, background: 'rgba(13,20,15,0.02)' }}>
-                {['No', 'Nama Farm', 'Status', 'Hewan Aktif', 'Kematian', 'Terjual', 'Hamil', 'Rekam Medis', 'Mortality %', 'Staf'].map((col) => (
+                {['No', 'Nama Farm', 'Status', 'Hewan Aktif', 'Kematian', 'Hamil', 'Rekam Medis', 'Mortality %', 'Staf'].map((col) => (
                   <th
                     key={col}
                     className="text-left px-4 py-3"
@@ -196,9 +195,6 @@ export default async function AdminLaporanPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3.5 text-center">
-                    <span style={{ fontFamily: "'Fraunces',serif", fontSize: 16, color: palette.ochre }}>{farm.terjual}</span>
-                  </td>
-                  <td className="px-4 py-3.5 text-center">
                     <span style={{ fontFamily: "'Fraunces',serif", fontSize: 16, color: palette.info }}>{farm.hamil}</span>
                   </td>
                   <td className="px-4 py-3.5 text-center">
@@ -238,11 +234,6 @@ export default async function AdminLaporanPage() {
                 <td className="px-4 py-3.5 text-center">
                   <span style={{ fontFamily: "'Fraunces',serif", fontSize: 17, fontWeight: 500, color: palette.danger }}>
                     {farmDetailList.reduce((s, f) => s + f.mati, 0)}
-                  </span>
-                </td>
-                <td className="px-4 py-3.5 text-center">
-                  <span style={{ fontFamily: "'Fraunces',serif", fontSize: 17, fontWeight: 500, color: palette.ochre }}>
-                    {farmDetailList.reduce((s, f) => s + f.terjual, 0)}
                   </span>
                 </td>
                 <td className="px-4 py-3.5 text-center">

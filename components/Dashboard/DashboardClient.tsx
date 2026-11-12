@@ -403,12 +403,12 @@ function buildBeratData(
 ) {
   const { from, to } = getDateRange(filter)
 
-  const map = new Map<string, { masuk: number; mati: number; terjual: number }>()
+  const map = new Map<string, { masuk: number; mati: number }>()
   const cur = new Date(from.getFullYear(), from.getMonth(), 1)
   const end = new Date(to.getFullYear(), to.getMonth(), 1)
   while (cur <= end) {
     const key = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '00')}`
-    map.set(key, { masuk: 0, mati: 0, terjual: 0 })
+    map.set(key, { masuk: 0, mati: 0 })
     cur.setMonth(cur.getMonth() + 1)
   }
 
