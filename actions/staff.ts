@@ -46,27 +46,25 @@ export async function createStaff(formData: FormData) {
     include: { farms: { select: { farmId: true } } },
   })
   if (existingUser) {
-    if (existingUser.role !== 'PETUGAS') return { error: 'Email sudah terdaftar' }
-    if (existingUser.farms.some((uf) => uf.farmId === farmId)) {
-      return { error: 'Staff sudah terdaftar di farm ini' }
+    // Sengaja tidak melampirkan user aktif yang sudah ada: mencegah pengambilalihan akun lintas farm.
+    // Hanya PETUGAS terhapus tanpa keanggotaan farm (sisa deleteStaff) yang boleh diaktifkan lagi.
+    if (existingUser.role !== 'PETUGAS' || !existingUser.deletedAt || existingUser.farms.length > 0) {
+      return { error: 'Email sudah terdaftar' }
     }
 
-    if (!existingUser.deletedAt) {
-      // Petugas aktif di farm lain: tambahkan ke farm ini tanpa mengubah password
-      await prisma.userFarm.create({ data: { userId: existingUser.id, farmId } })
-      revalidatePath('/staff')
-      return { success: true, existing: true }
-    }
-
-    // Petugas yang pernah dihapus: aktifkan lagi dengan password & data baru
     const hashed = await bcrypt.hash(password, 10)
-    await prisma.$transaction(async (tx) => {
-      await tx.user.update({
-        where: { id: existingUser.id },
-        data: { deletedAt: null, password: hashed, name, phone: phone || null },
+    try {
+      await prisma.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: existingUser.id },
+          data: { deletedAt: null, password: hashed, name, phone: phone || null, failedLogins: 0, lockedUntil: null },
+        })
+        await tx.userFarm.create({ data: { userId: existingUser.id, farmId } })
       })
-      await tx.userFarm.create({ data: { userId: existingUser.id, farmId } })
-    })
+    } catch (e) {
+      if ((e as { code?: string }).code === 'P2002') return { error: 'Staff sudah terdaftar di farm ini' }
+      throw e
+    }
     revalidatePath('/staff')
     return { success: true }
   }
@@ -154,6 +152,9 @@ export async function updateStaff(staffId: string, formData: FormData) {
   if (!isMemberOfActiveFarm) return { error: 'Bukan staff farm Anda' }
 
   if (staff.role !== 'PETUGAS') return { error: 'Hanya bisa mengubah PETUGAS' }
+  if (staff.farms.some((uf) => uf.farmId !== session.activeFarmId)) {
+    return { error: 'Staff juga terdaftar di farm lain; data akun tidak bisa diubah dari sini' }
+  }
 
   const updateData: any = { name, phone: phone || null }
 
