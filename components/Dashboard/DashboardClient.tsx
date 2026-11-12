@@ -538,7 +538,7 @@ interface OverviewData {
   totalGagal: number
   totalHamil: number
   lahir7Hari: number
-  avgBerat: number
+  avgBerat: number | null
   kategoriData: { name: string; value: number }[]
   distribusiUmur: { name: string; value: number }[]
 }
@@ -697,7 +697,7 @@ export default function DashboardClient({
                 color: s.tone,
               }}
             >
-              <Count to={s.v} desimal={(s as { desimal?: number }).desimal} />
+              <Count to={s.v} />
             </div>
             <div
               className="mt-2"
@@ -747,7 +747,7 @@ export default function DashboardClient({
               className="mt-1"
               style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(24px, 7vw, 28px)', letterSpacing: '-0.02em' }}
             >
-              <Count to={s.v} />
+              {s.v == null ? '—' : <Count to={s.v} desimal={s.desimal} />}
             </div>
             <div
               style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, color: 'rgba(13,20,15,0.55)' }}
@@ -1126,7 +1126,7 @@ export default function DashboardClient({
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <KostaSectionLabel>TREN RATA-RATA BERAT BADAN</KostaSectionLabel>
-              <Badge variant="ochre">AVG {overviewData.avgBerat.toLocaleString('id-ID', { maximumFractionDigits: 1 })} kg</Badge>
+              <Badge variant="ochre">AVG {overviewData.avgBerat == null ? '—' : `${overviewData.avgBerat.toLocaleString('id-ID', { maximumFractionDigits: 1 })} kg`}</Badge>
             </div>
             <ChartFilter value={beratFilter} onChange={setBeratFilter} />
           </div>

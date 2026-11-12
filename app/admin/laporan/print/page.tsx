@@ -16,7 +16,7 @@ export default async function PrintPage() {
     prisma.farm.count(),
     prisma.farm.count({ where: { status: 'AKTIF' } }),
     prisma.user.count({ where: { deletedAt: null } }),
-    prisma.hewan.count(),
+    prisma.hewan.count({ where: { kematian: { is: null } } }),
     prisma.kematianHewan.count(),
     prisma.farm.count({ where: { status: 'NONAKTIF', deletedAt: null, rejectionReason: null } }),
     prisma.farm.count({ where: { createdAt: { gte: thisMonthStart } } }),
@@ -26,15 +26,16 @@ export default async function PrintPage() {
     prisma.farm.findMany({
       select: {
         id: true, nama: true, status: true, alamat: true, createdAt: true,
-        _count: { select: { hewan: true, members: true } },
+        _count: { select: { hewan: { where: { kematian: { is: null } } }, members: true } },
       },
       orderBy: { createdAt: 'desc' },
       take: 50,
     }),
-    prisma.hewan.groupBy({ by: ['kategori'], _count: true }),
+    prisma.hewan.groupBy({ by: ['kategori'], _count: true, where: { kematian: { is: null } } }),
   ])
 
-  const mortalityRate = totalHewan > 0 ? Math.round((totalMati / totalHewan) * 100) : 0
+  // totalHewan hanya hewan hidup; penyebut = semua hewan yang pernah tercatat
+  const mortalityRate = totalHewan + totalMati > 0 ? Math.round((totalMati / (totalHewan + totalMati)) * 100) : 0
   const totalRepro = totalLahir + totalGagal
   const birthSuccessRate = totalRepro > 0 ? Math.round((totalLahir / totalRepro) * 100) : 0
 

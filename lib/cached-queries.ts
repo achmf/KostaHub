@@ -139,7 +139,7 @@ export const getCachedDashboardData = unstable_cache(
       .filter(d => d.value > 0)
 
     // Rata-rata berat (exclude dead animals)
-    const avgBerat = rataRataBerat(allWeights.map(h => ({ berat: h.berat, mati: matiIdSet.has(h.id) }))) ?? 0
+    const avgBerat = rataRataBerat(allWeights.map(h => ({ berat: h.berat, mati: matiIdSet.has(h.id) })))
 
     // Kategori data (hidup saja)
     const kategoriData = kategoriStats.map(k => ({
