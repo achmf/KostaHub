@@ -20,6 +20,7 @@ import {
   palette,
 } from '@/components/KostaUI'
 import { SearchBar } from '@/components/Layout/SearchBar'
+import { FITUR_RFID } from '@/lib/utils'
 import { NfcScanButton } from '@/components/Hewan/NfcScanButton'
 import { FilterSheet } from '@/components/Layout/FilterSheet'
 
@@ -178,7 +179,7 @@ export function HewanClient({
       <div className="mb-5 flex flex-row items-center justify-between gap-3 sm:gap-4">
         <div className="flex flex-1 min-w-0 items-center gap-2">
           <SearchBar placeholder="Cari tag (KST-…), nama, atau UID RFID..." />
-          <NfcScanButton />
+          {FITUR_RFID && <NfcScanButton />}
         </div>
         <FilterSheet filters={filterGroups} />
       </div>

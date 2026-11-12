@@ -1,6 +1,9 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
+// shortcut: flag statis, fitur RFID/NFC belum masuk lingkup skripsi
+export const FITUR_RFID = false
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }

@@ -18,6 +18,7 @@ import { RekamMedisHistory } from '@/components/Hewan/RekamMedisHistory'
 import { buildSilsilahTree } from '@/lib/silsilah'
 import { SilsilahTree } from '@/components/Hewan/SilsilahTree'
 import { HewanAvatarProfile } from '@/components/Hewan/HewanAvatarProfile'
+import { FITUR_RFID } from '@/lib/utils'
 import { HybridTagManager } from '@/components/Hewan/HybridTagManager'
 import { BatalkanKematianButton } from '@/components/Hewan/BatalkanKematianButton'
 import { umurBulan } from '@/lib/tanggal'
@@ -228,7 +229,7 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
         </Suspense>
       </KostaCard>
 
-      {canEdit && <HybridTagManager hewanId={hewan.id} tagStr={hewan.tag} existingTags={hewan.tagsRfid} />}
+      {FITUR_RFID && canEdit && <HybridTagManager hewanId={hewan.id} tagStr={hewan.tag} existingTags={hewan.tagsRfid} />}
     </div>
   )
 }
