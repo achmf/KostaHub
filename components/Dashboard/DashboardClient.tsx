@@ -414,9 +414,10 @@ function buildBeratData(
 
   const beratMap = new Map<string, { total: number; count: number }>()
   raw.forEach((b) => {
+    // titik sudah per bulan: pilih berdasarkan kunci bulan, bukan rentang waktu
     const d = new Date(b.tanggal)
-    if (d >= from && d <= to) {
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '00')}`
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '00')}`
+    if (map.has(key)) {
       const entry = beratMap.get(key) || { total: 0, count: 0 }
       entry.total += b.berat
       entry.count++
@@ -460,7 +461,7 @@ function buildTopDiagnosis(
 }
 
 // ─── UTILITIES ─────────────────────────────────────────────
-function Count({ to, suffix = '' }: { to: number; suffix?: string }) {
+function Count({ to, suffix = '', desimal = 0 }: { to: number; suffix?: string; desimal?: number }) {
   const ref = useRef<HTMLSpanElement>(null)
   const inView = useInView(ref, { once: true })
   const [v, setV] = useState(0)
@@ -475,7 +476,9 @@ function Count({ to, suffix = '' }: { to: number; suffix?: string }) {
   }, [inView, to])
   return (
     <span ref={ref}>
-      {Math.round(v).toLocaleString()}
+      {desimal > 0
+        ? v.toLocaleString('id-ID', { minimumFractionDigits: desimal, maximumFractionDigits: desimal })
+        : Math.round(v).toLocaleString()}
       {suffix}
     </span>
   )
@@ -535,7 +538,7 @@ interface OverviewData {
   totalGagal: number
   totalHamil: number
   lahir7Hari: number
-  avgBerat: number
+  avgBerat: number | null
   kategoriData: { name: string; value: number }[]
   distribusiUmur: { name: string; value: number }[]
 }
@@ -545,6 +548,7 @@ export default function DashboardClient({
   stats,
   reproduksiHamil,
   notifikasiMedis,
+  jumlahJadwalMedis,
   kategoriStats,
   isSuperAdmin,
   farmCount,
@@ -560,10 +564,10 @@ export default function DashboardClient({
     pejantan: number
     sedangSakit: number
     mati: number
-    terjual: number
   }
   reproduksiHamil: ReproItem[]
   notifikasiMedis: NotifItem[]
+  jumlahJadwalMedis: number
   kategoriStats: KategoriStat[]
   isSuperAdmin: boolean
   farmCount: number
@@ -706,19 +710,13 @@ export default function DashboardClient({
       </div>
 
       {/* ─── SECONDARY STAT STRIP ────────────────────────── */}
-      <KostaCard className="p-4 sm:p-5 mb-4 grid grid-cols-2 md:grid-cols-5 gap-x-4 gap-y-5 sm:gap-6">
+      <KostaCard className="p-4 sm:p-5 mb-4 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-5 sm:gap-6">
         {[
           {
             l: 'Angka kematian',
             v: stats.mati,
             hint: `${overviewData.mortalityRate}% dari total`,
             icon: <TrendingDown size={14} style={{ color: palette.ink }} />,
-          },
-          {
-            l: 'Total terjual',
-            v: stats.terjual,
-            hint: 'sepanjang waktu',
-            icon: <TrendingUp size={14} style={{ color: palette.ink }} />,
           },
           {
             l: 'Estimasi lahir 7 hari',
@@ -728,13 +726,14 @@ export default function DashboardClient({
           },
           {
             l: 'Jadwal Medis',
-            v: notifikasiMedis.length,
-            hint: 'minggu ini',
+            v: jumlahJadwalMedis,
+            hint: 'belum ditangani',
             icon: <Syringe size={14} style={{ color: palette.ink }} />,
           },
           {
             l: 'Rata-rata Berat',
             v: overviewData.avgBerat,
+            desimal: 1,
             hint: 'kg populasi aktif',
             icon: <Scale size={14} style={{ color: palette.ink }} />,
           },
@@ -748,7 +747,7 @@ export default function DashboardClient({
               className="mt-1"
               style={{ fontFamily: "'Fraunces',serif", fontSize: 'clamp(24px, 7vw, 28px)', letterSpacing: '-0.02em' }}
             >
-              <Count to={s.v} />
+              {s.v == null ? '—' : <Count to={s.v} desimal={s.desimal} />}
             </div>
             <div
               style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, color: 'rgba(13,20,15,0.55)' }}
@@ -1127,7 +1126,7 @@ export default function DashboardClient({
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <KostaSectionLabel>TREN RATA-RATA BERAT BADAN</KostaSectionLabel>
-              <Badge variant="ochre">AVG {overviewData.avgBerat} kg</Badge>
+              <Badge variant="ochre">AVG {overviewData.avgBerat == null ? '—' : `${overviewData.avgBerat.toLocaleString('id-ID', { maximumFractionDigits: 1 })} kg`}</Badge>
             </div>
             <ChartFilter value={beratFilter} onChange={setBeratFilter} />
           </div>
@@ -1289,7 +1288,7 @@ export default function DashboardClient({
                 Notifikasi
               </div>
             </div>
-            <Badge variant="ochre">{notifikasiMedis.length} BARU</Badge>
+            <Badge variant="ochre">{jumlahJadwalMedis} BARU</Badge>
           </div>
           <div className="space-y-2.5">
             {notifikasiMedis.length === 0 && (

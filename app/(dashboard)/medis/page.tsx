@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { KostaPageHeader, KostaButton, KostaSectionLabel } from '@/components/KostaUI'
 import { palette } from '@/lib/palette'
+import { awalBulanWIB } from '@/lib/tanggal'
 import { HewanMedisList } from '@/components/Hewan/HewanMedisList'
 
 
@@ -34,14 +35,23 @@ export default async function MedisPage(props: {
     }
   })
 
-  const medisList = hewans.flatMap(h => h.rekamMedis)
   const totalMedis = hewans.reduce((sum, h) => sum + h._count.rekamMedis, 0)
 
-  const vaccinCount = medisList.filter((m) =>
-    m.diagnosis.toLowerCase().includes('vaksin')
-  ).length
-  const uniqueDiagnoses = new Set(medisList.map((m) => m.diagnosis)).size
-  const uniqueDoctors = new Set(medisList.map((m) => m.namaDokter).filter(Boolean)).size
+  // Statistik dihitung di database; daftar hewan di atas hanya memuat 10 rekam terbaru per hewan
+  const medisFarmFilter = farmId ? { hewan: { farmId } } : {}
+  const [catatanBulanIni, vaccinCount, diagnosesGrouped, doctorsGrouped] = await Promise.all([
+    prisma.rekamMedis.count({ where: { ...medisFarmFilter, tanggal: { gte: awalBulanWIB() } } }),
+    prisma.rekamMedis.count({
+      where: { ...medisFarmFilter, diagnosis: { contains: 'vaksin', mode: 'insensitive' } },
+    }),
+    prisma.rekamMedis.groupBy({ by: ['diagnosis'], where: medisFarmFilter }),
+    prisma.rekamMedis.groupBy({
+      by: ['namaDokter'],
+      where: { ...medisFarmFilter, namaDokter: { not: null }, NOT: { namaDokter: '' } },
+    }),
+  ])
+  const uniqueDiagnoses = diagnosesGrouped.length
+  const uniqueDoctors = doctorsGrouped.length
 
   return (
     <div>
@@ -60,7 +70,7 @@ export default async function MedisPage(props: {
       {/* Stat cards */}
       <div className="grid grid-cols-12 gap-3 sm:gap-4 mb-6">
         {[
-          { l: 'Catatan bulan ini', v: totalMedis, tone: palette.moss },
+          { l: 'Catatan bulan ini', v: catatanBulanIni, tone: palette.moss },
           { l: 'Vaksinasi PMK', v: vaccinCount, tone: palette.ochre },
           { l: 'Tindakan unik', v: uniqueDiagnoses, tone: palette.ink },
           { l: 'Dokter terlibat', v: uniqueDoctors, tone: palette.emerald },

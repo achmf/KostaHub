@@ -10,6 +10,7 @@ import { KostaPageHeader, KostaCard, KostaButton, KostaSectionLabel, Badge, Kost
 import { LineChart, Line, ResponsiveContainer, Tooltip, XAxis } from 'recharts'
 import PaginationControl from '@/components/Admin/PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
+import { rataRataBerat } from '@/lib/statistik'
 import { useSearchParams } from 'next/navigation'
 import { SearchBar } from '@/components/Layout/SearchBar'
 import { FilterSheet } from '@/components/Layout/FilterSheet'
@@ -148,9 +149,8 @@ export default function BeratPageClient({ hewanList }: { hewanList: HewanBerat[]
 
   const cats = ['ALL', 'INDUKAN', 'PEJANTAN', 'ANAKAN', 'DARA', 'JANTAN_MUDA']
 
-  const avg = Math.round(
-    filteredHewanList.reduce((s, h) => s + (h.berat ?? 0), 0) / Math.max(filteredHewanList.length, 1)
-  )
+  const avgRaw = rataRataBerat(filteredHewanList.map((h) => ({ berat: h.berat, mati: false })))
+  const avg = avgRaw == null ? '—' : avgRaw.toLocaleString('id-ID', { maximumFractionDigits: 1 })
   const top = [...filteredHewanList].sort((a, b) => (b.berat ?? 0) - (a.berat ?? 0))[0]
 
   return (

@@ -77,10 +77,10 @@ export default function LaporanClient({ data, isGlobal, farmName, farmId }: { da
 
 
   const tabs: { key: TabType; label: string; sub: string; count: number }[] = [
-    { key: 'keluar-masuk', label: 'Status & Riwayat Ternak', sub: 'Aktif, masuk, keluar, mutasi', count: (data.hewanMasuk?.length ?? 0) + (data.hewanKeluar?.length ?? 0) + (data.mutasiData?.length ?? 0) },
-    { key: 'medis', label: 'Kesehatan & Medis', sub: 'Vaksin, vitamin, pengobatan', count: data.medisData?.length ?? 0 },
-    { key: 'breeding', label: 'Kartu Breeding', sub: 'Perkawinan & kelahiran', count: data.breedingData?.length ?? 0 },
-    { key: 'pertumbuhan', label: 'Pertumbuhan Bobot', sub: 'Penimbangan berkala', count: data.pertumbuhanData?.length ?? 0 },
+    { key: 'keluar-masuk', label: 'Status & Riwayat Ternak', sub: 'Aktif, masuk, keluar, mutasi', count: (data.totals?.masuk ?? 0) + (data.totals?.mati ?? 0) + (data.totals?.mutasi ?? 0) },
+    { key: 'medis', label: 'Kesehatan & Medis', sub: 'Vaksin, vitamin, pengobatan', count: data.totals?.medis ?? 0 },
+    { key: 'breeding', label: 'Kartu Breeding', sub: 'Perkawinan & kelahiran', count: data.totals?.reproduksi ?? 0 },
+    { key: 'pertumbuhan', label: 'Pertumbuhan Bobot', sub: 'Penimbangan berkala', count: data.totals?.dipantau ?? 0 },
   ]
 
   return (
@@ -188,16 +188,15 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
   const hewanMasuk = data.hewanMasuk ?? []
   const hewanKeluar = data.hewanKeluar ?? []
   const hewanMati = hewanKeluar // semua keluar = mati
-  const hewanKematianIds = new Set((hewanKeluar as any[]).map((h: any) => h.id))
-  // hewanAktif = hewan yang tidak ada di daftar kematian
-  const hewanAktif = (hewanMasuk as any[]).filter((h: any) => !hewanKematianIds.has(h.id))
+  const hewanAktif = data.hewanHidup ?? []
+  const totals = data.totals
   const mutasi = data.mutasiData ?? []
 
   const sections = [
-    { key: 'aktif' as const, label: 'Ternak Hidup', icon: <PackagePlus size={13} />, count: hewanAktif.length, color: palette.moss },
-    { key: 'masuk' as const, label: 'Ternak Masuk', icon: <PackagePlus size={13} />, count: hewanMasuk.length, color: palette.ink },
-    { key: 'mati' as const, label: 'Ternak Mati', icon: <PackageMinus size={13} />, count: hewanMati.length, color: palette.rose },
-    { key: 'mutasi' as const, label: 'Mutasi / Transfer', icon: <ArrowRightLeft size={13} />, count: mutasi.length, color: '#5B7FA6' },
+    { key: 'aktif' as const, label: 'Ternak Hidup', icon: <PackagePlus size={13} />, count: totals?.hidup ?? 0, color: palette.moss },
+    { key: 'masuk' as const, label: 'Ternak Masuk', icon: <PackagePlus size={13} />, count: totals?.masuk ?? 0, color: palette.ink },
+    { key: 'mati' as const, label: 'Ternak Mati', icon: <PackageMinus size={13} />, count: totals?.mati ?? 0, color: palette.rose },
+    { key: 'mutasi' as const, label: 'Mutasi / Transfer', icon: <ArrowRightLeft size={13} />, count: totals?.mutasi ?? 0, color: '#5B7FA6' },
   ]
 
   const getActiveData = () => {
@@ -256,6 +255,7 @@ function LaporanKeluarMasuk({ data }: { data: any }) {
 
       <div className="mb-5 flex flex-row items-center justify-between gap-3 sm:gap-4 mt-5">
         <SearchBar placeholder="Cari tag atau nama ternak..." />
+        <span className="shrink-0" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.4 }}>100 data terbaru</span>
       </div>
 
       <KostaCard className="overflow-hidden">
@@ -465,7 +465,7 @@ function LaporanMedis({ data }: { data: any[] }) {
               {KATEGORI_MEDIS_LABEL[filterKategori]} ✕
             </button>
           )}
-          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.4 }}>{filtered.length} rekaman</span>
+          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.4 }}>{filtered.length} rekaman · 200 data terbaru</span>
         </div>
 
         {/* ── MOBILE: card list ── */}
@@ -619,7 +619,7 @@ function LaporanBreeding({ data }: { data: any[] }) {
 
       <KostaCard className="overflow-hidden">
         <div className="px-5 py-3 flex items-center gap-3 border-b" style={{ borderColor: palette.border }}>
-          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.4 }}>{filtered.length} kartu</span>
+          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.4 }}>{filtered.length} kartu · 100 data terbaru</span>
         </div>
 
         {/* Breeding cards */}

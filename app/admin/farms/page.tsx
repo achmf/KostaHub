@@ -21,7 +21,7 @@ export default async function AdminFarmsPage() {
   const session = await getSession()
   const farms = await prisma.farm.findMany({
     include: {
-      _count: { select: { members: true, hewan: true } },
+      _count: { select: { members: true, hewan: { where: { kematian: { is: null } } } } },
     },
     orderBy: { createdAt: 'desc' },
   })

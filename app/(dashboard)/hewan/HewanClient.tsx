@@ -74,7 +74,7 @@ export function HewanClient({
   const searchParams = useSearchParams()
   const q = searchParams.get('q') || ''
   const kat = searchParams.get('kategori') || 'ALL'
-  const statusFilter = searchParams.get('status') || 'ALL'
+  const statusFilter = searchParams.get('status') || 'HIDUP'
   const kelaminFilter = searchParams.get('kelamin') || 'ALL'
   const farmFilter = searchParams.get('farm') || 'ALL'
   const router = useRouter()
@@ -99,7 +99,7 @@ export function HewanClient({
   const PER_PAGE = 15
   const { paged, page, totalPages, onPrev, onNext } = usePagination(filtered, PER_PAGE)
 
-  const activeFilterCount = (kat !== 'ALL' ? 1 : 0) + (statusFilter !== 'ALL' ? 1 : 0) + (kelaminFilter !== 'ALL' ? 1 : 0) + (farmFilter !== 'ALL' ? 1 : 0)
+  const activeFilterCount = (kat !== 'ALL' ? 1 : 0) + (statusFilter !== 'HIDUP' ? 1 : 0) + (kelaminFilter !== 'ALL' ? 1 : 0) + (farmFilter !== 'ALL' ? 1 : 0)
 
   const cats = ['ALL', 'INDUKAN', 'PEJANTAN', 'ANAKAN', 'DARA', 'JANTAN_MUDA']
   const statuses = ['ALL', 'HIDUP', 'MATI']
@@ -125,8 +125,9 @@ export function HewanClient({
     {
       paramName: 'status',
       title: 'Status',
+      defaultValue: 'HIDUP',
       options: [
-        { value: 'ALL', label: 'Semua' },
+        { value: 'SEMUA', label: 'Semua' },
         { value: 'HIDUP', label: 'Hidup' },
         { value: 'MATI', label: 'Mati' }
       ]

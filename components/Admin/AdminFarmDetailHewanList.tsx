@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { KostaSectionLabel, palette } from '@/components/KostaUI'
+import { umurBulan } from '@/lib/tanggal'
 import { Activity, ChevronLeft, ChevronRight, Search, X } from 'lucide-react'
 
 const kategoriLabel: Record<string, string> = {
@@ -41,10 +42,8 @@ interface Props {
 
 const PAGE_SIZE = 20
 
-function hitungUmur(tanggalLahir: Date | string) {
-  const lahir = new Date(tanggalLahir)
-  const now = new Date()
-  const bulan = (now.getFullYear() - lahir.getFullYear()) * 12 + now.getMonth() - lahir.getMonth()
+function hitungUmur(tanggalLahir: Date | string, tanggalMati?: Date | string) {
+  const bulan = umurBulan(new Date(tanggalLahir), tanggalMati ? new Date(tanggalMati) : new Date())
   if (bulan < 12) return `${bulan} bln`
   return `${Math.floor(bulan / 12)} thn`
 }
@@ -235,7 +234,7 @@ export default function AdminFarmDetailHewanList({ hewan }: Props) {
                       color: palette.muted,
                     }}
                   >
-                    {hitungUmur(h.tanggalLahir)}
+                    {hitungUmur(h.tanggalLahir, h.kematian?.tanggalMati)}
                   </span>
                   {h.berat && (
                     <span

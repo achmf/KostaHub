@@ -23,7 +23,7 @@ export default async function DashboardPage(props: { searchParams: Promise<{ [ke
 
   return (
     <DashboardClient
-      stats={{ totalHewan: data.totalHewan, indukan: data.indukan, pejantan: data.pejantan, sedangSakit: data.dalamPerawatan, mati: data.mati, terjual: 0 }}
+      stats={{ totalHewan: data.totalHewan, indukan: data.indukan, pejantan: data.pejantan, sedangSakit: data.dalamPerawatan, mati: data.mati }}
       reproduksiHamil={data.reproduksiHamil.map(r => ({
         ...r,
         tanggalKawin: new Date(r.tanggalKawin).toISOString(),
@@ -43,6 +43,7 @@ export default async function DashboardPage(props: { searchParams: Promise<{ [ke
         createdAt: new Date(n.createdAt).toISOString(),
         updatedAt: new Date(n.updatedAt).toISOString(),
       }))}
+      jumlahJadwalMedis={data.jumlahJadwalMedis}
       kategoriStats={data.kategoriStats}
       isSuperAdmin={session.role === 'SUPER_ADMIN'}
       farmCount={farmCount as number}

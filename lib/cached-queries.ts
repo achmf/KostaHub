@@ -1,5 +1,8 @@
 import { unstable_cache } from 'next/cache'
+import { Prisma } from '@prisma/client'
 import { prisma } from './prisma'
+import { awalHariWIB } from './tanggal'
+import { rataRataBerat } from './statistik'
 
 // ─── Revalidation windows ────────────────────────────────────
 const REVALIDATE_SHORT = 30   // 30 detik — dashboard data
@@ -20,8 +23,9 @@ export const CACHE_TAGS = {
   notifikasi: 'notifikasi',
 } as const
 
-const startOfToday = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }
-const daysFromToday = (n: number) => { const d = startOfToday(); d.setDate(d.getDate() + n); d.setHours(23, 59, 59, 999); return d }
+const startOfToday = () => awalHariWIB()
+// Akhir hari ke-n dari hari ini (WIB)
+const daysFromToday = (n: number) => new Date(startOfToday().getTime() + (n + 1) * 86_400_000 - 1)
 
 // ─── DASHBOARD STATS ─────────────────────────────────────────
 export const getCachedDashboardData = unstable_cache(
@@ -38,6 +42,7 @@ export const getCachedDashboardData = unstable_cache(
       mati,
       reproduksiHamil,
       notifikasiMedis,
+      jumlahJadwalMedis,
       kategoriStats,
       totalLahir,
       totalGagal,
@@ -69,6 +74,14 @@ export const getCachedDashboardData = unstable_cache(
         },
         orderBy: { tanggal: 'asc' },
         take: 5,
+      }),
+      // daftar di atas dibatasi 5 baris, jadi jumlah totalnya dihitung terpisah (where sama)
+      prisma.notifikasi.count({
+        where: {
+          isRead: false,
+          type: 'MEDIS',
+          ...(farmId ? { farmId } : {}),
+        },
       }),
       prisma.hewan.groupBy({
         by: ['kategori'],
@@ -126,19 +139,10 @@ export const getCachedDashboardData = unstable_cache(
       .filter(d => d.value > 0)
 
     // Rata-rata berat (exclude dead animals)
-    const livingWeights = allWeights.filter(h => !matiIdSet.has(h.id))
-    const avgBerat = livingWeights.length > 0
-      ? Math.round((livingWeights.reduce((a, h) => a + (h.berat || 0), 0) / livingWeights.length) * 10) / 10
-      : 0
+    const avgBerat = rataRataBerat(allWeights.map(h => ({ berat: h.berat, mati: matiIdSet.has(h.id) })))
 
     // Kategori data (hidup saja)
-    // Reuse the existing groupBy but filter out dead
-    const kategoriCounts = await prisma.hewan.groupBy({
-      by: ['kategori'],
-      _count: true,
-      where: { id: { notIn: [...matiIdSet] }, ...farmFilter },
-    })
-    const kategoriData = kategoriCounts.map(k => ({
+    const kategoriData = kategoriStats.map(k => ({
       name: k.kategori === 'INDUKAN' ? 'Indukan'
         : k.kategori === 'PEJANTAN' ? 'Pejantan'
         : k.kategori === 'ANAKAN' ? 'Anakan'
@@ -162,6 +166,7 @@ export const getCachedDashboardData = unstable_cache(
       kategoriStats,
       reproduksiHamil,
       notifikasiMedis,
+      jumlahJadwalMedis,
       totalHamil,
       lahir7Hari,
       dalamPerawatan,
@@ -191,12 +196,19 @@ export const getCachedDashboardTrends = unstable_cache(
         where: { tanggalMati: { gte: twoYearsAgo }, ...kematianFarmFilter },
         select: { tanggalMati: true },
       }),
-      prisma.beratBadan.findMany({
-        where: { tanggal: { gte: twoYearsAgo }, hewan: farmFilter },
-        select: { tanggal: true, berat: true },
-        orderBy: { tanggal: 'asc' },
-        take: 1000,
-      }),
+      // Rata-rata berat per bulan (WIB), tanpa batas jumlah baris.
+      // "tanggal" bertipe timestamp tanpa zona dan disimpan Prisma sebagai UTC, jadi
+      // dianggap UTC dulu, baru dikonversi ke WIB sebelum dipotong per bulan.
+      prisma.$queryRaw<{ bulan: string; berat: number }[]>`
+        SELECT to_char(date_trunc('month', b."tanggal" AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta'), 'YYYY-MM') AS bulan,
+               AVG(b."berat")::float8 AS berat
+        FROM "BeratBadan" b
+        JOIN "Hewan" h ON h."id" = b."hewanId"
+        WHERE b."tanggal" >= ${twoYearsAgo}
+        ${farmId ? Prisma.sql`AND h."farmId" = ${farmId}` : Prisma.empty}
+        GROUP BY 1
+        ORDER BY 1
+      `,
       prisma.rekamMedis.findMany({
         where: { ...medisFarmFilter, tanggal: { gte: twoYearsAgo } },
         select: { diagnosis: true, tanggal: true },
@@ -206,7 +218,8 @@ export const getCachedDashboardTrends = unstable_cache(
     return {
       trendRaw: trendRaw.map(h => ({ createdAt: h.createdAt.toISOString(), status: 'AKTIF' })),
       kematianTrendRaw: kematianTrendRaw.map(k => ({ tanggalMati: k.tanggalMati.toISOString() })),
-      beratRaw: beratRaw.map(b => ({ tanggal: b.tanggal.toISOString(), berat: b.berat })),
+      // satu titik per bulan; diberi tanggal 2 WIB agar jatuh di bulan yang sama di zona waktu browser mana pun
+      beratRaw: beratRaw.map(b => ({ tanggal: new Date(`${b.bulan}-02T00:00:00+07:00`).toISOString(), berat: b.berat })),
       diagnosisRaw: diagnosisRaw.map(d => ({ diagnosis: d.diagnosis, tanggal: d.tanggal.toISOString() })),
     }
   },
@@ -236,7 +249,7 @@ export const getCachedAdminDashboard = unstable_cache(
       prisma.farm.count(),
       prisma.farm.count({ where: { status: 'AKTIF' } }),
       prisma.user.count({ where: { deletedAt: null, approvalStatus: 'APPROVED' } }),
-      prisma.hewan.count(),
+      prisma.hewan.count({ where: { kematian: { is: null } } }),
       prisma.kematianHewan.count(),
       prisma.farm.count({ where: { status: 'NONAKTIF', deletedAt: null, rejectionReason: null } }),
       prisma.user.count({ where: { role: 'OWNER', deletedAt: null } }),
@@ -254,7 +267,7 @@ export const getCachedAdminDashboard = unstable_cache(
       prisma.reproduksi.count({ where: { status: 'GAGAL' } }),
       prisma.reproduksi.count({ where: { status: 'HAMIL' } }),
       // Kategori
-      prisma.hewan.groupBy({ by: ['kategori'], _count: true }),
+      prisma.hewan.groupBy({ by: ['kategori'], _count: true, where: { kematian: { is: null } } }),
     ])
 
     // ── Second batch: heavier queries ──
@@ -331,7 +344,8 @@ export const getCachedAdminDashboard = unstable_cache(
       return Math.round(((curr - prev) / prev) * 100)
     }
 
-    const mortalityRate = totalHewan > 0 ? Math.round((totalMati / totalHewan) * 100) : 0
+    // totalHewan hanya hewan hidup; angka kematian dibagi hewan yang pernah tercatat (hidup + mati)
+    const mortalityRate = totalHewan + totalMati > 0 ? Math.round((totalMati / (totalHewan + totalMati)) * 100) : 0
     const totalReproduksiSelesai = totalLahir + totalGagal
     const birthSuccessRate = totalReproduksiSelesai > 0
       ? Math.round((totalLahir / totalReproduksiSelesai) * 100) : 0
@@ -377,7 +391,7 @@ export const getCachedAdminDashboard = unstable_cache(
       id: f.id,
       nama: f.nama.length > 18 ? f.nama.slice(0, 18) + '…' : f.nama,
       namaPanjang: f.nama,
-      hewan: f._count.hewan,
+      hewan: f.aktif,
       user: f._count.members,
       status: f.status,
       healthScore: f.healthScore,
@@ -470,6 +484,7 @@ export const getCachedAdminAnalytics = unstable_cache(
       prisma.hewan.groupBy({
         by: ['farmId', 'kategori'],
         _count: true,
+        where: { kematian: { is: null } },
       }),
       prisma.kematianHewan.findMany({ select: { hewanId: true } }),
       prisma.hewan.findMany({ select: { id: true, tanggalLahir: true, farmId: true } }),
@@ -500,8 +515,9 @@ export const getCachedAdminAnalytics = unstable_cache(
     const hewanPerFarm = farms.map(farm => {
       const farmHewan = hewanGrouped.filter(h => h.farmId === farm.id)
       const getCount = (kategori: string) => farmHewan.find(h => h.kategori === kategori)?._count ?? 0
-      const totalHewan = farmHewan.reduce((sum, h) => sum + h._count, 0)
+      const hidup = farmHewan.reduce((sum, h) => sum + h._count, 0)
       const mati = kematianMap.get(farm.id) ?? 0
+      const totalHewan = hidup + mati
       return {
         id: farm.id,
         nama: farm.nama.length > 14 ? farm.nama.slice(0, 14) + '…' : farm.nama,
@@ -512,7 +528,7 @@ export const getCachedAdminAnalytics = unstable_cache(
         anakan: getCount('ANAKAN'),
         dara: getCount('DARA'),
         jantanMuda: getCount('JANTAN_MUDA'),
-        total: totalHewan - mati,
+        total: hidup,
         mati,
         terjual: 0,
         mortalityRate: totalHewan > 0 ? Math.round((mati / totalHewan) * 100) : 0,
