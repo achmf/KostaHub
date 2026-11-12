@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
+import { lewatHariIniWIB } from '@/lib/tanggal'
 import { withAuth, withMutationAuth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { invalidateBerat } from '@/lib/cache-invalidation'
@@ -32,7 +33,7 @@ export const addBeratBadan = withMutationAuth(async (session, formData: FormData
   })
   if (!parsed.success) return { error: parsed.error.issues[0].message }
   const { berat, tanggal, catatan } = parsed.data
-  if (tanggal > new Date()) return { error: 'Tanggal penimbangan tidak boleh di masa depan' }
+  if (lewatHariIniWIB(tanggal)) return { error: 'Tanggal penimbangan tidak boleh di masa depan' }
 
   // Hewan.berat = penimbangan bertanggal terbaru, bukan input terakhir (backdate aman)
   await prisma.$transaction(async (tx) => {

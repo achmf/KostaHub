@@ -10,6 +10,7 @@ import { generateNotifikasiOtomatis } from '@/lib/notifikasi-generator'
 import { withMutationAuth } from '@/lib/auth'
 import { invalidateHewan, invalidateReproduksi } from '@/lib/cache-invalidation'
 import { hasilLahirSchema } from '@/lib/validations/reproduksi.schema'
+import { lewatHariIniWIB } from '@/lib/tanggal'
 
 export type TambahReproduksiState = {
   warning?: boolean
@@ -35,8 +36,10 @@ export const tambahReproduksi = withMutationAuth(async (session, formData: FormD
   if (induk.kelamin !== 'BETINA') return { error: 'Induk harus betina' }
   if (pejantan.farmId !== induk.farmId) return { error: 'Orang tua harus dari farm yang sama' }
   if (pejantan.mati || ortu.get(indukId)?.mati) return { error: 'Induk/pejantan sudah mati' }
-  const tanggalKawin = new Date(formData.get('tanggalKawin') as string)
-  if (isNaN(tanggalKawin.getTime()) || tanggalKawin > new Date()) return { error: 'Tanggal kawin tidak valid' }
+  const rawKawin = formData.get('tanggalKawin')
+  if (typeof rawKawin !== 'string' || !rawKawin) return { error: 'Tanggal kawin tidak valid' }
+  const tanggalKawin = new Date(rawKawin)
+  if (isNaN(tanggalKawin.getTime()) || lewatHariIniWIB(tanggalKawin)) return { error: 'Tanggal kawin tidak valid' }
   const masihHamil = await prisma.reproduksi.count({ where: { indukId, status: 'HAMIL' } })
   if (masihHamil > 0) return { error: 'Induk ini masih tercatat hamil' }
   // Override kawin sedarah hanya untuk Super Admin — jangan percaya hidden field dari client
