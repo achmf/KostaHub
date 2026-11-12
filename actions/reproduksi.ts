@@ -8,9 +8,9 @@ import { ambilOrangTua } from '@/lib/silsilah'
 import { checkInbreeding } from '@/lib/inbreeding'
 import { generateNotifikasiOtomatis } from '@/lib/notifikasi-generator'
 import { withMutationAuth } from '@/lib/auth'
-import { invalidateHewan, invalidateReproduksi } from '@/lib/cache-invalidation'
+import { invalidateHewan, invalidateNotifikasi, invalidateReproduksi } from '@/lib/cache-invalidation'
 import { hasilLahirSchema } from '@/lib/validations/reproduksi.schema'
-import { lewatHariIniWIB } from '@/lib/tanggal'
+import { lewatHariIniWIB, umurBulan } from '@/lib/tanggal'
 
 export type TambahReproduksiState = {
   warning?: boolean
@@ -40,6 +40,10 @@ export const tambahReproduksi = withMutationAuth(async (session, formData: FormD
   if (typeof rawKawin !== 'string' || !rawKawin) return { error: 'Tanggal kawin tidak valid' }
   const tanggalKawin = new Date(rawKawin)
   if (isNaN(tanggalKawin.getTime()) || lewatHariIniWIB(tanggalKawin)) return { error: 'Tanggal kawin tidak valid' }
+  // Umur dihitung pada tanggal kawin, bukan hari ini: perkawinan lampau tetap harus memenuhi batas umur saat itu.
+  if (umurBulan(induk.tanggalLahir, tanggalKawin) < 8 || umurBulan(pejantan.tanggalLahir, tanggalKawin) < 8) {
+    return { error: 'Induk dan pejantan minimal berumur 8 bulan saat kawin' }
+  }
   const masihHamil = await prisma.reproduksi.count({ where: { indukId, status: 'HAMIL' } })
   if (masihHamil > 0) return { error: 'Induk ini masih tercatat hamil' }
   // Override kawin sedarah hanya untuk Super Admin dan Owner — jangan percaya hidden field dari client
@@ -165,9 +169,13 @@ export const hapusReproduksi = withMutationAuth(async (session, id: string) => {
   // LAHIR: anak sudah terdaftar dengan induk & pejantan ini
   if (repro.status === 'LAHIR') return { error: 'Kehamilan dengan kelahiran tercatat tidak bisa dihapus' }
 
-  await prisma.reproduksi.delete({ where: { id } })
+  await prisma.$transaction(async (tx) => {
+    await tx.reproduksi.delete({ where: { id } })
+    await tx.notifikasi.deleteMany({ where: { farmId: repro.induk.farmId, refKey: { in: [`LAHIR-${id}`, `TELAT-${id}`] } } })
+  })
 
   invalidateReproduksi()
+  invalidateNotifikasi()
   revalidatePath('/reproduksi')
   revalidatePath(`/hewan/${repro.indukId}`)
   return { success: true as const }

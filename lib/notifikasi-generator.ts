@@ -113,7 +113,7 @@ async function kelahiranMendekat(now: Date, farmId: string): Promise<Kandidat[]>
   const kehamilan = await prisma.reproduksi.findMany({
     where: {
       status: 'HAMIL',
-      estimasiLahir: { gte: now, lte: new Date(now.getTime() + 7 * HARI) },
+      estimasiLahir: { gte: awalHariWIB(now), lte: new Date(now.getTime() + 7 * HARI) },
       induk: { farmId, kematian: { is: null } },
     },
     include: { induk: { select: { tag: true, nama: true } } },
@@ -136,7 +136,7 @@ async function kehamilanTelat(now: Date, farmId: string): Promise<Kandidat[]> {
   const kehamilan = await prisma.reproduksi.findMany({
     where: {
       status: 'HAMIL',
-      estimasiLahir: { lt: now },
+      estimasiLahir: { lt: awalHariWIB(now) },
       induk: { farmId, kematian: { is: null } },
     },
     include: { induk: { select: { tag: true, nama: true } } },

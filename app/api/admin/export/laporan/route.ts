@@ -106,8 +106,8 @@ function mortalityStyle(rate: number): { fill: string; font: string } {
 
 // ─── Health Score ─────────────────────────────────────────────────────────────
 
-function healthScore(aktif: number, mati: number, terjual: number): number {
-  const total = aktif + mati + terjual
+function healthScore(aktif: number, mati: number): number {
+  const total = aktif + mati
   if (total === 0) return 100
   return Math.round((aktif / total) * 100)
 }
@@ -315,11 +315,10 @@ export async function GET() {
         prisma.reproduksi.count({ where: { induk: { farmId: farm.id }, status: 'LAHIR' } }),
       ])
       const aktif    = totalHewan - mati
-      const terjual  = 0
       const total    = totalHewan
       const mortality = total > 0 ? Math.round((mati / total) * 100) : 0
-      const health   = healthScore(aktif, mati, 0)
-      return { ...farm, aktif, mati, terjual, hamil, totalMedis, lahir, mortality, health, total }
+      const health   = healthScore(aktif, mati)
+      return { ...farm, aktif, mati, hamil, totalMedis, lahir, mortality, health, total }
     })
   )
 
@@ -331,7 +330,6 @@ export async function GET() {
   const totalMedis  = farmDetails.reduce((s, f) => s + f.totalMedis, 0)
   const totalStaf   = farmDetails.reduce((s, f) => s + f._count.members, 0)
   const totalHamil  = farmDetails.reduce((s, f) => s + f.hamil, 0)
-  const totalTerjual= farmDetails.reduce((s, f) => s + f.terjual, 0)
   const avgMortality= farmDetails.length
     ? Math.round(farmDetails.reduce((s, f) => s + f.mortality, 0) / farmDetails.length)
     : 0
@@ -489,7 +487,6 @@ export async function GET() {
     { width: 12, label: 'Status Farm'    },
     { width: 12, label: 'Hewan Aktif'   },
     { width: 12, label: 'Kematian'       },
-    { width: 12, label: 'Terjual'        },
     { width: 12, label: 'Hamil'          },
     { width: 14, label: 'Rekam Medis'   },
     { width: 14, label: 'Mortality %'    },
@@ -563,53 +560,46 @@ export async function GET() {
       align: CENTER, border: thinBorder(), numFmt: '#,##0',
     })
 
-    // Terjual
-    setCell(r.getCell(7), farm.terjual, {
-      font:  { name: 'Calibri', size: 13, color: { argb: C.blue } },
-      fill:  farm.terjual > 0 ? solid(C.blueFill) : rowFill,
-      align: CENTER, border: thinBorder(), numFmt: '#,##0',
-    })
-
     // Hamil
-    setCell(r.getCell(8), farm.hamil, {
+    setCell(r.getCell(7), farm.hamil, {
       font:  { name: 'Calibri', size: 13, color: { argb: C.amber } },
       fill:  farm.hamil > 0 ? solid(C.amberFill) : rowFill,
       align: CENTER, border: thinBorder(), numFmt: '#,##0',
     })
 
     // Rekam Medis
-    setCell(r.getCell(9), farm.totalMedis, {
+    setCell(r.getCell(8), farm.totalMedis, {
       font:  { name: 'Calibri', size: 11, color: { argb: C.moss } },
       fill:  rowFill, align: CENTER, border: thinBorder(), numFmt: '#,##0',
     })
 
     // Mortality %
     const ms = mortalityStyle(farm.mortality)
-    setCell(r.getCell(10), farm.mortality / 100, {
+    setCell(r.getCell(9), farm.mortality / 100, {
       font:  { name: 'Calibri', size: 11, bold: true, color: { argb: ms.font } },
       fill:  solid(ms.fill),
       align: CENTER, border: thinBorder(), numFmt: '0"%"',
     })
     // Override: store as number for proper display
-    r.getCell(10).value = farm.mortality
-    r.getCell(10).numFmt = '0"%"'
+    r.getCell(9).value = farm.mortality
+    r.getCell(9).numFmt = '0"%"'
 
     // Health Score
     const hs = healthStyle(farm.health)
-    setCell(r.getCell(11), farm.health, {
+    setCell(r.getCell(10), farm.health, {
       font:  { name: 'Calibri', size: 11, bold: true, color: { argb: hs.font } },
       fill:  solid(hs.fill),
       align: CENTER, border: thinBorder(), numFmt: '0"%"',
     })
 
     // Staf
-    setCell(r.getCell(12), farm._count.members, {
+    setCell(r.getCell(11), farm._count.members, {
       font:  { name: 'Calibri', size: 11, color: { argb: C.forest } },
       fill:  rowFill, align: CENTER, border: thinBorder(), numFmt: '#,##0',
     })
 
     // Tgl Daftar
-    setCell(r.getCell(13), farm.createdAt.toLocaleDateString('id-ID', {
+    setCell(r.getCell(12), farm.createdAt.toLocaleDateString('id-ID', {
       day: '2-digit', month: 'short', year: 'numeric',
     }), {
       font:  { name: 'Calibri', size: 10, color: { argb: C.muted } },
@@ -631,10 +621,9 @@ export async function GET() {
   const totalsData: [number, ExcelJS.CellValue, string, string][] = [
     [5,  totalHewan,   '#,##0', C.forest ],
     [6,  totalMati,    '#,##0', C.red    ],
-    [7,  totalTerjual, '#,##0', C.blue   ],
-    [8,  totalHamil,   '#,##0', C.amber  ],
-    [9,  totalMedis,   '#,##0', C.moss   ],
-    [12, totalStaf,    '#,##0', C.forest ],
+    [7,  totalHamil,   '#,##0', C.amber  ],
+    [8,  totalMedis,   '#,##0', C.moss   ],
+    [11, totalStaf,    '#,##0', C.forest ],
   ]
   totalsData.forEach(([col, val, fmt, argb]) => {
     setCell(tr.getCell(col as number), val, {
@@ -647,7 +636,7 @@ export async function GET() {
   })
 
   // Avg mortality in totals
-  setCell(tr.getCell(10), avgMortality, {
+  setCell(tr.getCell(9), avgMortality, {
     font:   { name: 'Calibri', size: 12, bold: true, color: { argb: avgMortality > 15 ? C.red : avgMortality > 7 ? C.amber : C.moss } },
     fill:   solid(C.totals),
     align:  CENTER,

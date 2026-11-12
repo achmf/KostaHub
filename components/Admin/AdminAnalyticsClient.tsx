@@ -86,7 +86,7 @@ function ChartLegend({ items }: { items: { label: string; color: string }[] }) {
 interface HewanPerFarm {
   id: string; nama: string; namaPanjang: string; status: string;
   indukan: number; pejantan: number; anakan: number; dara: number; jantanMuda: number;
-  total: number; mati: number; terjual: number; mortalityRate: number;
+  total: number; mati: number; mortalityRate: number;
 }
 
 interface ReproPerFarm {
@@ -257,7 +257,7 @@ export default function AdminAnalyticsClient({
                     </div>
                     <div className="flex gap-4 mt-1">
                       <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: 'rgba(13,20,15,0.4)' }}>
-                        {farm.mati} mati · {farm.terjual} terjual · {farm.total} aktif
+                        {farm.mati} mati · {farm.total} aktif
                       </span>
                     </div>
                   </div>
@@ -509,7 +509,7 @@ export default function AdminAnalyticsClient({
               <table className="min-w-[600px]" style={{ width: '100%', borderCollapse: 'collapse', fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
                 <thead>
                   <tr style={{ borderBottom: `2px solid ${palette.border}` }}>
-                    {['#', 'Farm', 'Status', 'Hewan Aktif', 'Mati', 'Terjual', 'Mortality', 'Health Score'].map((h) => (
+                    {['#', 'Farm', 'Status', 'Hewan Aktif', 'Mati', 'Mortality', 'Health Score'].map((h) => (
                       <th
                         key={h}
                         style={{
@@ -526,7 +526,7 @@ export default function AdminAnalyticsClient({
                 <tbody>
                   {pagedFarms.map((farm, rank) => {
                     const rankActual = page * 10 + rank
-                    const healthScore = farm.total > 0 ? Math.round((farm.total / (farm.total + farm.mati + farm.terjual)) * 100) : 100
+                    const healthScore = farm.total > 0 ? Math.round((farm.total / (farm.total + farm.mati)) * 100) : 100
                     const scoreColor = healthScore >= 80 ? palette.moss : healthScore >= 60 ? palette.ochre : palette.danger
                     const medalColor = rankActual === 0 ? '#C7873E' : rankActual === 1 ? '#9B9B9B' : rankActual === 2 ? '#C67B3A' : 'rgba(13,20,15,0.3)'
                     return (
@@ -547,7 +547,6 @@ export default function AdminAnalyticsClient({
                         </td>
                         <td style={{ padding: '10px 12px', fontFamily: "'Fraunces',serif", fontSize: 18, color: palette.ink }}>{farm.total}</td>
                         <td style={{ padding: '10px 12px', fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: palette.danger }}>{farm.mati}</td>
-                        <td style={{ padding: '10px 12px', fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: palette.info }}>{farm.terjual}</td>
                         <td style={{ padding: '10px 12px', fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: farm.mortalityRate > 15 ? palette.danger : 'rgba(13,20,15,0.6)', fontWeight: 600 }}>
                           {farm.mortalityRate}%
                         </td>

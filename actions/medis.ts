@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { after } from 'next/server'
 import { withMutationAuth } from '@/lib/auth'
-import { invalidateMedis } from '@/lib/cache-invalidation'
+import { invalidateMedis, invalidateNotifikasi } from '@/lib/cache-invalidation'
 import { generateNotifikasiOtomatis } from '@/lib/notifikasi-generator'
 import { medisSchema } from '@/lib/validations/medis.schema'
 
@@ -70,9 +70,13 @@ export const hapusRekamMedis = withMutationAuth(async (session, id: string) => {
     return { error: 'Akses ditolak' }
   }
 
-  await prisma.rekamMedis.delete({ where: { id } })
+  await prisma.$transaction(async (tx) => {
+    await tx.rekamMedis.delete({ where: { id } })
+    await tx.notifikasi.deleteMany({ where: { farmId: rec.hewan.farmId, refKey: `MEDIS-${id}` } })
+  })
 
   invalidateMedis()
+  invalidateNotifikasi()
   revalidatePath('/medis')
   revalidatePath(`/medis/${rec.hewanId}`)
   revalidatePath(`/hewan/${rec.hewanId}`)

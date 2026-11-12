@@ -47,20 +47,39 @@ export async function createStaff(formData: FormData) {
   })
   if (existingUser) {
     // Sengaja tidak melampirkan user aktif yang sudah ada: mencegah pengambilalihan akun lintas farm.
-    // Hanya PETUGAS terhapus tanpa keanggotaan farm (sisa deleteStaff) yang boleh diaktifkan lagi.
-    if (existingUser.role !== 'PETUGAS' || !existingUser.deletedAt || existingUser.farms.length > 0) {
+    // Aturan: PETUGAS terhapus boleh diaktifkan lagi hanya jika SEMUA baris UserFarm-nya milik farm aktif
+    // (nol baris juga boleh; deleteStaff lama menyisakan baris UserFarm). Punya farm lain atau masih aktif -> ditolak.
+    if (
+      existingUser.role !== 'PETUGAS' ||
+      !existingUser.deletedAt ||
+      existingUser.farms.some((f) => f.farmId !== farmId)
+    ) {
       return { error: 'Email sudah terdaftar' }
     }
 
     const hashed = await bcrypt.hash(password, 10)
     try {
-      await prisma.$transaction(async (tx) => {
-        await tx.user.update({
-          where: { id: existingUser.id },
+      const direaktivasi = await prisma.$transaction(async (tx) => {
+        // Update bersyarat: Postgres mengecek ulang deletedAt setelah baris dikunci, jadi dari dua owner
+        // yang mengaktifkan user yang sama bersamaan hanya satu yang berhasil (yang kedua dapat count 0).
+        const { count } = await tx.user.updateMany({
+          where: {
+            id: existingUser.id,
+            role: 'PETUGAS',
+            deletedAt: { not: null },
+            farms: { every: { farmId } },
+          },
           data: { deletedAt: null, password: hashed, name, phone: phone || null, failedLogins: 0, lockedUntil: null },
         })
-        await tx.userFarm.create({ data: { userId: existingUser.id, farmId } })
+        if (count === 0) return false
+        await tx.userFarm.upsert({
+          where: { userId_farmId: { userId: existingUser.id, farmId } },
+          create: { userId: existingUser.id, farmId },
+          update: {},
+        })
+        return true
       })
+      if (!direaktivasi) return { error: 'Email sudah terdaftar' }
     } catch (e) {
       if ((e as { code?: string }).code === 'P2002') return { error: 'Staff sudah terdaftar di farm ini' }
       throw e

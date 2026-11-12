@@ -530,7 +530,6 @@ export const getCachedAdminAnalytics = unstable_cache(
         jantanMuda: getCount('JANTAN_MUDA'),
         total: hidup,
         mati,
-        terjual: 0,
         mortalityRate: totalHewan > 0 ? Math.round((mati / totalHewan) * 100) : 0,
       }
     })
