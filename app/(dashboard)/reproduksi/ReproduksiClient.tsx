@@ -8,6 +8,8 @@ import { CatatHasilModal } from '@/components/Reproduksi/CatatHasilModal'
 import PaginationControl from '@/components/Admin/PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
 import { useSearchParams } from 'next/navigation'
+import { HapusRecordButton } from '@/components/HapusRecordButton'
+import { hapusReproduksi } from '@/actions/reproduksi'
 import { SearchBar } from '@/components/Layout/SearchBar'
 import { FilterSheet } from '@/components/Layout/FilterSheet'
 
@@ -38,6 +40,9 @@ function StatusCell({ r, canEdit, onCatat }: { r: ReproduksiRow; canEdit: boolea
         <div className="opacity-60 break-all" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5 }}>
           Anak: {r.anakTag}
         </div>
+      )}
+      {r.status !== 'LAHIR' && canEdit && (
+        <HapusRecordButton id={r.id} action={hapusReproduksi} label="data kehamilan" />
       )}
       {r.status === 'HAMIL' && canEdit && (
         <button

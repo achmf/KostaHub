@@ -57,7 +57,7 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
         setError(result.error)
       } else {
         setShowForm(false)
-        showToast({ title: 'Berhasil', message: 'Staff baru telah ditambahkan.', type: 'success' })
+        showToast({ title: 'Berhasil', message: result.existing ? 'Staff yang sudah terdaftar ditambahkan ke farm ini (password tidak diubah).' : 'Staff baru telah ditambahkan.', type: 'success' })
       }
     })
   }

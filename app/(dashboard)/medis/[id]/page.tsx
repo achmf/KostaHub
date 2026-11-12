@@ -85,7 +85,7 @@ export default async function RekamMedisHewanPage(props: { params: Promise<{ id:
       </KostaCard>
 
       {/* Medical records list */}
-      <RekamMedisHistory records={hewan.rekamMedis} />
+      <RekamMedisHistory records={hewan.rekamMedis} canEdit={session.role !== 'DINAS'} />
     </div>
   )
 }

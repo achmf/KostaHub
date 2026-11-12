@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 import { after } from 'next/server'
 import { withMutationAuth } from '@/lib/auth'
 import { invalidateMedis } from '@/lib/cache-invalidation'
@@ -57,4 +58,23 @@ export const tambahRekamMedis = withMutationAuth(async (session, formData: FormD
 
   invalidateMedis()
   redirect('/medis')
+})
+
+export const hapusRekamMedis = withMutationAuth(async (session, id: string) => {
+  const rec = await prisma.rekamMedis.findUnique({
+    where: { id },
+    include: { hewan: { select: { farmId: true } } },
+  })
+  if (!rec) return { error: 'Rekam medis tidak ditemukan' }
+  if (session.role !== 'SUPER_ADMIN' && rec.hewan.farmId !== session.activeFarmId) {
+    return { error: 'Akses ditolak' }
+  }
+
+  await prisma.rekamMedis.delete({ where: { id } })
+
+  invalidateMedis()
+  revalidatePath('/medis')
+  revalidatePath(`/medis/${rec.hewanId}`)
+  revalidatePath(`/hewan/${rec.hewanId}`)
+  return { success: true as const }
 })

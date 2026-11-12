@@ -22,6 +22,8 @@ import { FITUR_RFID } from '@/lib/utils'
 import { HybridTagManager } from '@/components/Hewan/HybridTagManager'
 import { BatalkanKematianButton } from '@/components/Hewan/BatalkanKematianButton'
 import { umurBulan } from '@/lib/tanggal'
+import { HapusRecordButton } from '@/components/HapusRecordButton'
+import { hapusBeratBadan } from '@/actions/berat'
 
 const KATEGORI_LABEL: Record<string, string> = {
   INDUKAN: 'Indukan', PEJANTAN: 'Pejantan', ANAKAN: 'Anakan',
@@ -206,6 +208,7 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
                   {h.berat}
                   <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, opacity: 0.6 }}> kg</span>
                 </div>
+                {canEdit && <HapusRecordButton id={h.id} action={hapusBeratBadan} label="penimbangan" />}
               </div>
             ))}
           </div>
@@ -213,7 +216,7 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
       )}
 
       {/* Medical records */}
-      <RekamMedisHistory records={hewan.rekamMedis} />
+      <RekamMedisHistory records={hewan.rekamMedis} canEdit={canEdit} />
 
       {/* Silsilah — deferred via Suspense so hero renders immediately */}
       <KostaCard className="p-5 sm:p-6 mt-5">

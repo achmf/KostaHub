@@ -40,9 +40,35 @@ export async function createStaff(formData: FormData) {
     return { error: parsed.error.issues[0].message }
   }
 
-  const existingUser = await prisma.user.findUnique({ where: { email } })
+  const farmId = session.activeFarmId!
+  const existingUser = await prisma.user.findUnique({
+    where: { email },
+    include: { farms: { select: { farmId: true } } },
+  })
   if (existingUser) {
-    return { error: 'Email sudah terdaftar' }
+    if (existingUser.role !== 'PETUGAS') return { error: 'Email sudah terdaftar' }
+    if (existingUser.farms.some((uf) => uf.farmId === farmId)) {
+      return { error: 'Staff sudah terdaftar di farm ini' }
+    }
+
+    if (!existingUser.deletedAt) {
+      // Petugas aktif di farm lain: tambahkan ke farm ini tanpa mengubah password
+      await prisma.userFarm.create({ data: { userId: existingUser.id, farmId } })
+      revalidatePath('/staff')
+      return { success: true, existing: true }
+    }
+
+    // Petugas yang pernah dihapus: aktifkan lagi dengan password & data baru
+    const hashed = await bcrypt.hash(password, 10)
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: existingUser.id },
+        data: { deletedAt: null, password: hashed, name, phone: phone || null },
+      })
+      await tx.userFarm.create({ data: { userId: existingUser.id, farmId } })
+    })
+    revalidatePath('/staff')
+    return { success: true }
   }
 
   const hashedPassword = await bcrypt.hash(password, 10)
@@ -91,9 +117,14 @@ export async function deleteStaff(staffId: string) {
     return { error: 'Hanya bisa menghapus PETUGAS' }
   }
 
-  await prisma.user.update({
-    where: { id: staffId },
-    data: { deletedAt: new Date() },
+  // Lepas dari farm aktif saja; soft-delete user hanya jika tidak punya farm lain
+  await prisma.$transaction(async (tx) => {
+    await tx.userFarm.delete({
+      where: { userId_farmId: { userId: staffId, farmId: session.activeFarmId! } },
+    })
+    if (staff.farms.length <= 1) {
+      await tx.user.update({ where: { id: staffId }, data: { deletedAt: new Date() } })
+    }
   })
 
   revalidatePath('/staff')

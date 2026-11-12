@@ -50,6 +50,32 @@ export const addBeratBadan = withMutationAuth(async (session, formData: FormData
   redirect('/berat')
 })
 
+export const hapusBeratBadan = withMutationAuth(async (session, id: string) => {
+  const rec = await prisma.beratBadan.findUnique({
+    where: { id },
+    include: { hewan: { select: { farmId: true } } },
+  })
+  if (!rec) return { error: 'Data penimbangan tidak ditemukan' }
+  if (session.role !== 'SUPER_ADMIN' && rec.hewan.farmId !== session.activeFarmId) {
+    return { error: 'Akses ditolak' }
+  }
+
+  // Hewan.berat kembali ke penimbangan terbaru yang tersisa (null jika habis)
+  await prisma.$transaction(async (tx) => {
+    await tx.beratBadan.delete({ where: { id } })
+    const terbaru = await tx.beratBadan.findFirst({
+      where: { hewanId: rec.hewanId },
+      orderBy: [{ tanggal: 'desc' }, { createdAt: 'desc' }],
+    })
+    await tx.hewan.update({ where: { id: rec.hewanId }, data: { berat: terbaru?.berat ?? null } })
+  })
+
+  invalidateBerat()
+  revalidatePath('/berat')
+  revalidatePath(`/hewan/${rec.hewanId}`)
+  return { success: true as const }
+})
+
 export const getBeratHistory = withAuth(async (session, hewanId: string) => {
   const hewan = await prisma.hewan.findUnique({ where: { id: hewanId } })
   if (!hewan) throw new Error('Hewan tidak ditemukan')

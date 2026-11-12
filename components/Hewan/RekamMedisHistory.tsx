@@ -6,6 +6,8 @@ import { Calendar, User, Pill, FileText, ImageIcon, Stethoscope } from 'lucide-r
 import Image from 'next/image'
 import PaginationControl from '@/components/Admin/PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
+import { HapusRecordButton } from '@/components/HapusRecordButton'
+import { hapusRekamMedis } from '@/actions/medis'
 
 
 
@@ -20,7 +22,7 @@ interface RekamMedis {
   tanggalLanjut: Date | null
 }
 
-export function RekamMedisHistory({ records }: { records: RekamMedis[] }) {
+export function RekamMedisHistory({ records, canEdit = false }: { records: RekamMedis[]; canEdit?: boolean }) {
   const [selectedRecord, setSelectedRecord] = useState<RekamMedis | null>(null)
 
   const PER_PAGE = 5
@@ -70,6 +72,7 @@ export function RekamMedisHistory({ records }: { records: RekamMedis[] }) {
                   </span>
                 )}
               </div>
+              {canEdit && <HapusRecordButton id={m.id} action={hapusRekamMedis} label="rekam medis" />}
             </div>
           ))}
         </div>
