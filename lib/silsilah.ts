@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import type { OrangTua } from '@/lib/aturan-silsilah'
 
 export type SilsilahNode = {
   id: string
@@ -125,4 +126,15 @@ export async function buildSilsilahTree(
 
   const root = buildNode(hewanId, 0)
   return root || null
+}
+
+/** Data minimal calon orang tua (+ status mati) untuk validasi silsilah. Id kosong diabaikan. */
+export async function ambilOrangTua(ids: (string | undefined | null)[]): Promise<Map<string, OrangTua & { mati: boolean }>> {
+  const unik = [...new Set(ids.filter((i): i is string => !!i))]
+  if (unik.length === 0) return new Map()
+  const rows = await prisma.hewan.findMany({
+    where: { id: { in: unik } },
+    select: { id: true, kelamin: true, farmId: true, tanggalLahir: true, kematian: { select: { id: true } } },
+  })
+  return new Map(rows.map(({ kematian, ...r }) => [r.id, { ...r, mati: !!kematian }]))
 }

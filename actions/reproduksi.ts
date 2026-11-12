@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { after } from 'next/server'
+import { ambilOrangTua } from '@/lib/silsilah'
 import { checkInbreeding } from '@/lib/inbreeding'
 import { generateNotifikasiOtomatis } from '@/lib/notifikasi-generator'
 import { withMutationAuth } from '@/lib/auth'
@@ -26,6 +27,14 @@ export const tambahReproduksi = withMutationAuth(async (session, formData: FormD
     return { error: 'Akses ditolak' }
   }
   const pejantanId = formData.get('pejantanId') as string
+  if (!pejantanId) return { error: 'Pejantan tidak dipilih' }
+  const ortu = await ambilOrangTua([indukId, pejantanId])
+  const pejantan = ortu.get(pejantanId)
+  if (!pejantan) return { error: 'Pejantan tidak ditemukan' }
+  if (pejantan.kelamin !== 'JANTAN') return { error: 'Bapak harus jantan' }
+  if (induk.kelamin !== 'BETINA') return { error: 'Induk harus betina' }
+  if (pejantan.farmId !== induk.farmId) return { error: 'Orang tua harus dari farm yang sama' }
+  if (pejantan.mati || ortu.get(indukId)?.mati) return { error: 'Induk/pejantan sudah mati' }
   const tanggalKawin = new Date(formData.get('tanggalKawin') as string)
   // Override kawin sedarah hanya untuk Super Admin — jangan percaya hidden field dari client
   const forceSubmit = formData.get('forceSubmit') === 'true' && session.role === 'SUPER_ADMIN'

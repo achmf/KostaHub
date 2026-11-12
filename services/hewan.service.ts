@@ -1,4 +1,6 @@
 import { prisma } from '@/lib/prisma'
+import { cekOrangTua } from '@/lib/aturan-silsilah'
+import { ambilOrangTua, getAncestorIds } from '@/lib/silsilah'
 import { type Kelamin, type KategoriHewan } from '@prisma/client'
 
 export type SessionData = { role: string; activeFarmId?: string | null }
@@ -14,6 +16,18 @@ export async function createHewanLogic(data: any, session: SessionData, override
     const checkRfid = await prisma.tagRfid.findUnique({ where: { rfidUid: data.rfidUid } })
     if (checkRfid) return { error: `RFID UID "${data.rfidUid}" sudah terdaftar di sistem` }
   }
+
+
+  const bapakId: string | undefined = data.bapakId || undefined
+  const indukId: string | undefined = data.indukId || undefined
+  const ortu = await ambilOrangTua([bapakId, indukId])
+  if ((bapakId && !ortu.has(bapakId)) || (indukId && !ortu.has(indukId))) return { error: 'Orang tua tidak ditemukan' }
+  const errOrtu = cekOrangTua({
+    anak: { farmId, tanggalLahir: data.tanggalLahir },
+    bapak: bapakId ? ortu.get(bapakId) : null,
+    induk: indukId ? ortu.get(indukId) : null,
+  })
+  if (errOrtu) return { error: errOrtu }
 
   await prisma.hewan.create({
     data: {
@@ -70,6 +84,19 @@ export async function editHewanLogic(hewanId: string, data: any, session: Sessio
     const checkRfid = await prisma.tagRfid.findUnique({ where: { rfidUid: data.rfidUid } })
     if (checkRfid) return { error: `RFID UID "${data.rfidUid}" sudah digunakan oleh hewan lain` }
   }
+
+  const bapakId: string | undefined = data.bapakId || undefined
+  const indukId: string | undefined = data.indukId || undefined
+  const ortu = await ambilOrangTua([bapakId, indukId])
+  if ((bapakId && !ortu.has(bapakId)) || (indukId && !ortu.has(indukId))) return { error: 'Orang tua tidak ditemukan' }
+  const errOrtu = cekOrangTua({
+    anak: { id: hewanId, farmId: existing.farmId, tanggalLahir: data.tanggalLahir },
+    bapak: bapakId ? ortu.get(bapakId) : null,
+    induk: indukId ? ortu.get(indukId) : null,
+    leluhurBapak: bapakId ? await getAncestorIds(bapakId) : undefined,
+    leluhurInduk: indukId ? await getAncestorIds(indukId) : undefined,
+  })
+  if (errOrtu) return { error: errOrtu }
 
   await prisma.$transaction(async (tx) => {
     // Form edit tidak mengirim rfidUid (undefined) → jangan sentuh tag; tag dikelola di HybridTagManager
