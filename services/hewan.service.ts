@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { hariIniWIB } from '@/lib/tanggal'
 import { cekOrangTua } from '@/lib/aturan-silsilah'
 import { ambilOrangTua, getAncestorIds } from '@/lib/silsilah'
 import { type Kelamin, type KategoriHewan } from '@prisma/client'
@@ -35,7 +36,7 @@ export async function createHewanLogic(data: any, session: SessionData, override
       kelamin: data.kelamin as Kelamin,
       kategori: data.kategori as KategoriHewan,
       berat: typeof data.berat === 'number' ? data.berat : null,
-      ...(typeof data.berat === 'number' && { beratHistory: { create: { tanggal: new Date(), berat: data.berat, catatan: 'Berat awal' } } }),
+      ...(typeof data.berat === 'number' && { beratHistory: { create: { tanggal: new Date(hariIniWIB()), berat: data.berat, catatan: 'Berat awal' } } }),
       tanggalLahir: data.tanggalLahir,
       farmId,
       bapakId: data.bapakId || null,
