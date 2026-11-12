@@ -36,14 +36,14 @@ export const tambahReproduksi = withMutationAuth(async (session, formData: FormD
   if (induk.kelamin !== 'BETINA') return { error: 'Induk harus betina' }
   if (pejantan.farmId !== induk.farmId) return { error: 'Orang tua harus dari farm yang sama' }
   if (pejantan.mati || ortu.get(indukId)?.mati) return { error: 'Induk/pejantan sudah mati' }
-  const sekarang = new Date()
-  if (umurBulan(induk.tanggalLahir, sekarang) < 8 || umurBulan(pejantan.tanggalLahir, sekarang) < 8) {
-    return { error: 'Induk dan pejantan minimal berumur 8 bulan' }
-  }
   const rawKawin = formData.get('tanggalKawin')
   if (typeof rawKawin !== 'string' || !rawKawin) return { error: 'Tanggal kawin tidak valid' }
   const tanggalKawin = new Date(rawKawin)
   if (isNaN(tanggalKawin.getTime()) || lewatHariIniWIB(tanggalKawin)) return { error: 'Tanggal kawin tidak valid' }
+  // Umur dihitung pada tanggal kawin, bukan hari ini: perkawinan lampau tetap harus memenuhi batas umur saat itu.
+  if (umurBulan(induk.tanggalLahir, tanggalKawin) < 8 || umurBulan(pejantan.tanggalLahir, tanggalKawin) < 8) {
+    return { error: 'Induk dan pejantan minimal berumur 8 bulan saat kawin' }
+  }
   const masihHamil = await prisma.reproduksi.count({ where: { indukId, status: 'HAMIL' } })
   if (masihHamil > 0) return { error: 'Induk ini masih tercatat hamil' }
   // Override kawin sedarah hanya untuk Super Admin dan Owner — jangan percaya hidden field dari client
