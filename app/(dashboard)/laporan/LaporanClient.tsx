@@ -169,7 +169,7 @@ export default function LaporanClient({ data, isGlobal, farmName, farmId }: { da
       <AnimatePresence mode="wait">
         {tab === 'keluar-masuk' && <LaporanKeluarMasuk key="km" data={data} />}
         {tab === 'medis' && <LaporanMedis key="medis" data={data.medisData} />}
-        {tab === 'breeding' && <LaporanBreeding key="breeding" data={data.breedingData} />}
+        {tab === 'breeding' && <LaporanBreeding key="breeding" data={data.breedingData} totals={data.totals} />}
         {tab === 'pertumbuhan' && <LaporanPertumbuhan key="pertumbuhan" data={data.pertumbuhanData} />}
       </AnimatePresence>
     </div>
@@ -561,7 +561,7 @@ function LaporanMedis({ data }: { data: any[] }) {
 
 
 // ─── LAPORAN 3: BREEDING ────────────────────────────────────
-function LaporanBreeding({ data }: { data: any[] }) {
+function LaporanBreeding({ data, totals }: { data: any[]; totals: any }) {
   const [filterStatus, setFilterStatus] = useState<string>('ALL')
   const searchParams = useSearchParams()
   const q = searchParams.get('q')?.toLowerCase() || ''
@@ -579,12 +579,12 @@ function LaporanBreeding({ data }: { data: any[] }) {
 
   const breedingP = usePagination(filtered, 15)
 
-  const stats = useMemo(() => ({
-    HAMIL: (data ?? []).filter((r: any) => r.status === 'HAMIL').length,
-    LAHIR: (data ?? []).filter((r: any) => r.status === 'LAHIR').length,
-    GAGAL: (data ?? []).filter((r: any) => r.status === 'GAGAL').length,
-    inbreeding: (data ?? []).filter((r: any) => r.inbreedingWarning).length,
-  }), [data])
+  const stats = {
+    HAMIL: totals?.reproduksiHamil ?? 0,
+    LAHIR: totals?.reproduksiLahir ?? 0,
+    GAGAL: totals?.reproduksiGagal ?? 0,
+    inbreeding: totals?.reproduksiInbreeding ?? 0,
+  }
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>

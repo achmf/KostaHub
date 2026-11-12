@@ -27,7 +27,7 @@ export default async function LaporanPage(props: { searchParams: Promise<{ [key:
     kehamilanAktif, jadwalMedis, inbreedingAlerts,
     hewanMasuk, hewanKeluar, mutasiData,
     medisData, breedingData, beratData,
-    hewanHidup, totalMasuk, totalHidup, totalMati, totalMutasi, totalMedis, totalReproduksi, beratDipantau,
+    hewanHidup, totalMasuk, totalHidup, totalMati, totalMutasi, totalMedis, totalReproduksi, beratDipantau, reproduksiPerStatus, totalInbreeding,
   ] = await Promise.all([
     // Farm name lookup
     farmId
@@ -129,6 +129,9 @@ export default async function LaporanPage(props: { searchParams: Promise<{ [key:
     prisma.rekamMedis.count({ where: medisFarmFilter }),
     prisma.reproduksi.count({ where: reproduksiFarmFilter }),
     prisma.beratBadan.groupBy({ by: ['hewanId'], where: beratFarmFilter }),
+    // Kartu statistik breeding: hitung dari seluruh data, bukan dari 100 baris tabel
+    prisma.reproduksi.groupBy({ by: ['status'], where: reproduksiFarmFilter, _count: { _all: true } }),
+    prisma.reproduksi.count({ where: { ...reproduksiFarmFilter, inbreedingWarning: true } }),
   ])
 
   const totals = {
@@ -139,6 +142,10 @@ export default async function LaporanPage(props: { searchParams: Promise<{ [key:
     medis: totalMedis,
     reproduksi: totalReproduksi,
     dipantau: beratDipantau.length,
+    reproduksiHamil: reproduksiPerStatus.find((r) => r.status === 'HAMIL')?._count._all ?? 0,
+    reproduksiLahir: reproduksiPerStatus.find((r) => r.status === 'LAHIR')?._count._all ?? 0,
+    reproduksiGagal: reproduksiPerStatus.find((r) => r.status === 'GAGAL')?._count._all ?? 0,
+    reproduksiInbreeding: totalInbreeding,
   }
 
   const farmName = farmResult?.nama ?? ''
