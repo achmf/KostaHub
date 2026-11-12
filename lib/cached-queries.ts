@@ -207,10 +207,9 @@ export const getCachedDashboardTrends = unstable_cache(
       // Rata-rata berat per bulan (WIB), tanpa batas jumlah baris.
       // "tanggal" bertipe timestamp tanpa zona dan disimpan Prisma sebagai UTC, jadi
       // dianggap UTC dulu, baru dikonversi ke WIB sebelum dipotong per bulan.
-      prisma.$queryRaw<{ bulan: string; berat: number; jumlah: number }[]>`
+      prisma.$queryRaw<{ bulan: string; berat: number }[]>`
         SELECT to_char(date_trunc('month', b."tanggal" AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta'), 'YYYY-MM') AS bulan,
-               AVG(b."berat")::float8 AS berat,
-               COUNT(*)::int AS jumlah
+               AVG(b."berat")::float8 AS berat
         FROM "BeratBadan" b
         JOIN "Hewan" h ON h."id" = b."hewanId"
         WHERE b."tanggal" >= ${twoYearsAgo}

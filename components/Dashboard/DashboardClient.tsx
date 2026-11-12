@@ -414,9 +414,10 @@ function buildBeratData(
 
   const beratMap = new Map<string, { total: number; count: number }>()
   raw.forEach((b) => {
+    // titik sudah per bulan: pilih berdasarkan kunci bulan, bukan rentang waktu
     const d = new Date(b.tanggal)
-    if (d >= from && d <= to) {
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '00')}`
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '00')}`
+    if (map.has(key)) {
       const entry = beratMap.get(key) || { total: 0, count: 0 }
       entry.total += b.berat
       entry.count++
