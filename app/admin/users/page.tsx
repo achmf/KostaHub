@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { redirect } from 'next/navigation'
 import { Users, ShieldCheck, Stethoscope, UserCog, Clock, CheckCircle2, XCircle } from 'lucide-react'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { getSession } from '@/lib/auth'
@@ -28,6 +29,7 @@ const approvalBadge: Record<string, { label: string; color: string; bg: string; 
 
 export default async function AdminUsersPage() {
   const session = await getSession()
+  if (session?.role !== 'SUPER_ADMIN') redirect('/admin')
   const users = await prisma.user.findMany({
     where: { deletedAt: null },
     include: {

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { redirect } from 'next/navigation'
 import ApprovalList from '@/components/Admin/ApprovalList'
 import { CheckCircle2 } from 'lucide-react'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -6,6 +7,7 @@ import { getSession } from '@/lib/auth'
 
 export default async function ApprovalsPage() {
   const session = await getSession()
+  if (session?.role !== 'SUPER_ADMIN') redirect('/admin')
   // Cari semua farm yang masih NONAKTIF (menunggu approval)
   const pendingFarms = await prisma.farm.findMany({
     where: { status: 'NONAKTIF', deletedAt: null, rejectionReason: null },
