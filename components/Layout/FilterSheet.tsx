@@ -16,6 +16,8 @@ export type FilterGroup = {
   paramName: string
   title: string
   options: FilterOption[]
+  /** Nilai bila parameter URL tidak ada (default 'ALL'). */
+  defaultValue?: string
 }
 
 interface FilterSheetProps {
@@ -38,7 +40,7 @@ export function FilterSheet({ filters }: FilterSheetProps) {
     if (isOpen) {
       const state: Record<string, string> = {}
       filters.forEach(f => {
-        state[f.paramName] = searchParams.get(f.paramName) || 'ALL'
+        state[f.paramName] = searchParams.get(f.paramName) || f.defaultValue || 'ALL'
       })
       setLocalState(state)
     }
@@ -54,7 +56,7 @@ export function FilterSheet({ filters }: FilterSheetProps) {
     const params = new URLSearchParams(searchParams.toString())
     filters.forEach(f => {
       const val = localState[f.paramName]
-      if (!val || val === 'ALL') {
+      if (!val || val === (f.defaultValue ?? 'ALL')) {
         params.delete(f.paramName)
       } else {
         params.set(f.paramName, val)

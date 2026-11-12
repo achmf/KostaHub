@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 import { TZ } from '@/lib/tanggal'
 import { prisma } from '@/lib/prisma'
+import { rataRataBerat } from '@/lib/statistik'
 import ExcelJS from 'exceljs'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -808,9 +809,8 @@ export async function GET(req: NextRequest) {
 
     const totalMati   = hewan.filter(h => !!h.kematian).length
     const totalHidup  = hewan.length - totalMati
-    const avgBerat    = hewan.length
-      ? (hewan.reduce((s, h) => s + (h.berat ?? 0), 0) / hewan.length).toFixed(1)
-      : 0
+    const avgBeratRaw = rataRataBerat(hewan.map(h => ({ berat: h.berat, mati: !!h.kematian })))
+    const avgBerat    = avgBeratRaw == null ? '-' : avgBeratRaw.toLocaleString('id-ID', { maximumFractionDigits: 1 })
 
     const ws = wb.addWorksheet('Data Hewan', {
       pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true },

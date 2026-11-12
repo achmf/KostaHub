@@ -2,6 +2,7 @@ import { unstable_cache } from 'next/cache'
 import { Prisma } from '@prisma/client'
 import { prisma } from './prisma'
 import { awalHariWIB } from './tanggal'
+import { rataRataBerat } from './statistik'
 
 // ─── Revalidation windows ────────────────────────────────────
 const REVALIDATE_SHORT = 30   // 30 detik — dashboard data
@@ -138,19 +139,10 @@ export const getCachedDashboardData = unstable_cache(
       .filter(d => d.value > 0)
 
     // Rata-rata berat (exclude dead animals)
-    const livingWeights = allWeights.filter(h => !matiIdSet.has(h.id))
-    const avgBerat = livingWeights.length > 0
-      ? Math.round((livingWeights.reduce((a, h) => a + (h.berat || 0), 0) / livingWeights.length) * 10) / 10
-      : 0
+    const avgBerat = rataRataBerat(allWeights.map(h => ({ berat: h.berat, mati: matiIdSet.has(h.id) }))) ?? 0
 
     // Kategori data (hidup saja)
-    // Reuse the existing groupBy but filter out dead
-    const kategoriCounts = await prisma.hewan.groupBy({
-      by: ['kategori'],
-      _count: true,
-      where: { id: { notIn: [...matiIdSet] }, ...farmFilter },
-    })
-    const kategoriData = kategoriCounts.map(k => ({
+    const kategoriData = kategoriStats.map(k => ({
       name: k.kategori === 'INDUKAN' ? 'Indukan'
         : k.kategori === 'PEJANTAN' ? 'Pejantan'
         : k.kategori === 'ANAKAN' ? 'Anakan'
@@ -257,7 +249,7 @@ export const getCachedAdminDashboard = unstable_cache(
       prisma.farm.count(),
       prisma.farm.count({ where: { status: 'AKTIF' } }),
       prisma.user.count({ where: { deletedAt: null, approvalStatus: 'APPROVED' } }),
-      prisma.hewan.count(),
+      prisma.hewan.count({ where: { kematian: { is: null } } }),
       prisma.kematianHewan.count(),
       prisma.farm.count({ where: { status: 'NONAKTIF', deletedAt: null, rejectionReason: null } }),
       prisma.user.count({ where: { role: 'OWNER', deletedAt: null } }),
@@ -275,7 +267,7 @@ export const getCachedAdminDashboard = unstable_cache(
       prisma.reproduksi.count({ where: { status: 'GAGAL' } }),
       prisma.reproduksi.count({ where: { status: 'HAMIL' } }),
       // Kategori
-      prisma.hewan.groupBy({ by: ['kategori'], _count: true }),
+      prisma.hewan.groupBy({ by: ['kategori'], _count: true, where: { kematian: { is: null } } }),
     ])
 
     // ── Second batch: heavier queries ──
@@ -352,7 +344,8 @@ export const getCachedAdminDashboard = unstable_cache(
       return Math.round(((curr - prev) / prev) * 100)
     }
 
-    const mortalityRate = totalHewan > 0 ? Math.round((totalMati / totalHewan) * 100) : 0
+    // totalHewan hanya hewan hidup; angka kematian dibagi hewan yang pernah tercatat (hidup + mati)
+    const mortalityRate = totalHewan + totalMati > 0 ? Math.round((totalMati / (totalHewan + totalMati)) * 100) : 0
     const totalReproduksiSelesai = totalLahir + totalGagal
     const birthSuccessRate = totalReproduksiSelesai > 0
       ? Math.round((totalLahir / totalReproduksiSelesai) * 100) : 0
@@ -398,7 +391,7 @@ export const getCachedAdminDashboard = unstable_cache(
       id: f.id,
       nama: f.nama.length > 18 ? f.nama.slice(0, 18) + '…' : f.nama,
       namaPanjang: f.nama,
-      hewan: f._count.hewan,
+      hewan: f.aktif,
       user: f._count.members,
       status: f.status,
       healthScore: f.healthScore,
@@ -491,6 +484,7 @@ export const getCachedAdminAnalytics = unstable_cache(
       prisma.hewan.groupBy({
         by: ['farmId', 'kategori'],
         _count: true,
+        where: { kematian: { is: null } },
       }),
       prisma.kematianHewan.findMany({ select: { hewanId: true } }),
       prisma.hewan.findMany({ select: { id: true, tanggalLahir: true, farmId: true } }),
@@ -521,8 +515,9 @@ export const getCachedAdminAnalytics = unstable_cache(
     const hewanPerFarm = farms.map(farm => {
       const farmHewan = hewanGrouped.filter(h => h.farmId === farm.id)
       const getCount = (kategori: string) => farmHewan.find(h => h.kategori === kategori)?._count ?? 0
-      const totalHewan = farmHewan.reduce((sum, h) => sum + h._count, 0)
+      const hidup = farmHewan.reduce((sum, h) => sum + h._count, 0)
       const mati = kematianMap.get(farm.id) ?? 0
+      const totalHewan = hidup + mati
       return {
         id: farm.id,
         nama: farm.nama.length > 14 ? farm.nama.slice(0, 14) + '…' : farm.nama,
@@ -533,7 +528,7 @@ export const getCachedAdminAnalytics = unstable_cache(
         anakan: getCount('ANAKAN'),
         dara: getCount('DARA'),
         jantanMuda: getCount('JANTAN_MUDA'),
-        total: totalHewan - mati,
+        total: hidup,
         mati,
         terjual: 0,
         mortalityRate: totalHewan > 0 ? Math.round((mati / totalHewan) * 100) : 0,

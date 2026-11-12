@@ -461,7 +461,7 @@ function buildTopDiagnosis(
 }
 
 // ─── UTILITIES ─────────────────────────────────────────────
-function Count({ to, suffix = '' }: { to: number; suffix?: string }) {
+function Count({ to, suffix = '', desimal = 0 }: { to: number; suffix?: string; desimal?: number }) {
   const ref = useRef<HTMLSpanElement>(null)
   const inView = useInView(ref, { once: true })
   const [v, setV] = useState(0)
@@ -476,7 +476,9 @@ function Count({ to, suffix = '' }: { to: number; suffix?: string }) {
   }, [inView, to])
   return (
     <span ref={ref}>
-      {Math.round(v).toLocaleString()}
+      {desimal > 0
+        ? v.toLocaleString('id-ID', { minimumFractionDigits: desimal, maximumFractionDigits: desimal })
+        : Math.round(v).toLocaleString()}
       {suffix}
     </span>
   )
@@ -562,7 +564,6 @@ export default function DashboardClient({
     pejantan: number
     sedangSakit: number
     mati: number
-    terjual: number
   }
   reproduksiHamil: ReproItem[]
   notifikasiMedis: NotifItem[]
@@ -696,7 +697,7 @@ export default function DashboardClient({
                 color: s.tone,
               }}
             >
-              <Count to={s.v} />
+              <Count to={s.v} desimal={(s as { desimal?: number }).desimal} />
             </div>
             <div
               className="mt-2"
@@ -709,19 +710,13 @@ export default function DashboardClient({
       </div>
 
       {/* ─── SECONDARY STAT STRIP ────────────────────────── */}
-      <KostaCard className="p-4 sm:p-5 mb-4 grid grid-cols-2 md:grid-cols-5 gap-x-4 gap-y-5 sm:gap-6">
+      <KostaCard className="p-4 sm:p-5 mb-4 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-5 sm:gap-6">
         {[
           {
             l: 'Angka kematian',
             v: stats.mati,
             hint: `${overviewData.mortalityRate}% dari total`,
             icon: <TrendingDown size={14} style={{ color: palette.ink }} />,
-          },
-          {
-            l: 'Total terjual',
-            v: stats.terjual,
-            hint: 'sepanjang waktu',
-            icon: <TrendingUp size={14} style={{ color: palette.ink }} />,
           },
           {
             l: 'Estimasi lahir 7 hari',
@@ -738,6 +733,7 @@ export default function DashboardClient({
           {
             l: 'Rata-rata Berat',
             v: overviewData.avgBerat,
+            desimal: 1,
             hint: 'kg populasi aktif',
             icon: <Scale size={14} style={{ color: palette.ink }} />,
           },
@@ -1130,7 +1126,7 @@ export default function DashboardClient({
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <KostaSectionLabel>TREN RATA-RATA BERAT BADAN</KostaSectionLabel>
-              <Badge variant="ochre">AVG {overviewData.avgBerat} kg</Badge>
+              <Badge variant="ochre">AVG {overviewData.avgBerat.toLocaleString('id-ID', { maximumFractionDigits: 1 })} kg</Badge>
             </div>
             <ChartFilter value={beratFilter} onChange={setBeratFilter} />
           </div>
