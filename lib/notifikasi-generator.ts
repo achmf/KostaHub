@@ -140,14 +140,14 @@ async function kehamilanTelat(now: Date, farmId: string): Promise<Kandidat[]> {
       induk: { farmId, kematian: { is: null } },
     },
     include: { induk: { select: { tag: true, nama: true } } },
-    orderBy: { estimasiLahir: 'asc' },
+    orderBy: { estimasiLahir: 'desc' },
     take: MAKS_PER_JENIS,
   })
 
   return kehamilan.map((k) => ({
     title: 'Kelahiran melewati perkiraan',
     message: `Induk ${k.induk.tag}${k.induk.nama ? ` (${k.induk.nama})` : ''} belum tercatat melahirkan, perkiraan ${tglID(k.estimasiLahir)} sudah lewat. Periksa kondisinya dan catat kelahiran.`,
-    tanggal: k.estimasiLahir,
+    tanggal: now,
     type: 'LAHIR',
     farmId,
     refKey: `TELAT-${k.id}`,
