@@ -5,6 +5,9 @@ import { redirect } from 'next/navigation'
 import { encrypt } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { sedangTerkunci, setelahGagal } from '@/lib/login-lock'
+
+const DUMMY_HASH = bcrypt.hashSync('x', 10)
 
 async function setSessionCookie(payload: Parameters<typeof encrypt>[0]) {
   const session = await encrypt(payload)
@@ -31,13 +34,30 @@ export async function login(_prevState: unknown, formData: FormData) {
   const { email, password } = parsed.data
 
   const user = await prisma.user.findUnique({ where: { email } })
-  if (!user || user.deletedAt) {
-    return { error: 'Kredensial tidak valid atau akun dinonaktifkan' }
+  const now = new Date()
+
+  // Kunci dicek sebelum bcrypt agar akun terkunci tidak membocorkan benar/salahnya password
+  if (user && !user.deletedAt && sedangTerkunci(user.lockedUntil, now)) {
+    return { error: 'Terlalu banyak percobaan. Coba lagi dalam 15 menit.' }
   }
 
-  const isValid = await bcrypt.compare(password, user.password)
-  if (!isValid) {
-    return { error: 'Kredensial tidak valid' }
+  // Selalu jalankan bcrypt (dummy bila user tidak ada/dihapus) agar waktu respons seragam
+  const isValid = await bcrypt.compare(password, user && !user.deletedAt ? user.password : DUMMY_HASH)
+  if (!user || user.deletedAt || !isValid) {
+    if (user && !user.deletedAt) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: setelahGagal(user.failedLogins, now),
+      })
+    }
+    return { error: 'Email atau password salah' }
+  }
+
+  if (user.failedLogins !== 0 || user.lockedUntil) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { failedLogins: 0, lockedUntil: null },
+    })
   }
 
 
