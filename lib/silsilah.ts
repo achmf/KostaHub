@@ -41,6 +41,29 @@ export async function getAncestorIds(hewanId: string): Promise<Set<string>> {
 }
 
 /**
+ * Leluhur sampai maxDepth generasi (1 = orang tua), dengan depth terkecil per id.
+ * Batas depth juga menghentikan rekursi pada data silsilah melingkar.
+ */
+export async function getAncestorDepths(hewanId: string, maxDepth: number): Promise<Map<string, number>> {
+  const rows = await prisma.$queryRaw<{ id: string; depth: number }[]>`
+    WITH RECURSIVE ancestors AS (
+      SELECT id, "bapakId", "indukId", 0 AS depth
+      FROM "Hewan"
+      WHERE id = ${hewanId}
+
+      UNION ALL
+
+      SELECT h.id, h."bapakId", h."indukId", a.depth + 1
+      FROM "Hewan" h
+      INNER JOIN ancestors a ON h.id = a."bapakId" OR h.id = a."indukId"
+      WHERE a.depth < ${maxDepth}
+    )
+    SELECT id, MIN(depth)::int AS depth FROM ancestors WHERE id != ${hewanId} GROUP BY id
+  `
+  return new Map(rows.map((r) => [r.id, r.depth]))
+}
+
+/**
  * Mengambil pohon silsilah rekursif untuk sebuah hewan dalam SATU QUERY (Recursive CTE).
  * Mencegah N+1 query problem yang membuat loading profil sangat lambat.
  */

@@ -42,8 +42,8 @@ export const tambahReproduksi = withMutationAuth(async (session, formData: FormD
   if (isNaN(tanggalKawin.getTime()) || lewatHariIniWIB(tanggalKawin)) return { error: 'Tanggal kawin tidak valid' }
   const masihHamil = await prisma.reproduksi.count({ where: { indukId, status: 'HAMIL' } })
   if (masihHamil > 0) return { error: 'Induk ini masih tercatat hamil' }
-  // Override kawin sedarah hanya untuk Super Admin — jangan percaya hidden field dari client
-  const forceSubmit = formData.get('forceSubmit') === 'true' && session.role === 'SUPER_ADMIN'
+  // Override kawin sedarah hanya untuk Super Admin dan Owner — jangan percaya hidden field dari client
+  const forceSubmit = formData.get('forceSubmit') === 'true' && (session.role === 'SUPER_ADMIN' || session.role === 'OWNER')
 
   // Estimasi lahir = +150 hari
   const estimasiLahir = new Date(tanggalKawin)
