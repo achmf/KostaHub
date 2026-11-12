@@ -12,4 +12,11 @@ export const hewanSchema = z.object({
   bapakId: z.string().optional(),
   indukId: z.string().optional(),
   farmId: z.string().optional(), // Dibutuhkan untuk Super Admin saat tambah
-})
+}).refine(
+  d => {
+    if (d.kategori === 'INDUKAN' || d.kategori === 'DARA') return d.kelamin === 'BETINA'
+    if (d.kategori === 'PEJANTAN' || d.kategori === 'JANTAN_MUDA') return d.kelamin === 'JANTAN'
+    return true
+  },
+  { message: 'Kategori tidak sesuai kelamin', path: ['kategori'] },
+)

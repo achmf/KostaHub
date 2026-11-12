@@ -36,6 +36,9 @@ export const tambahReproduksi = withMutationAuth(async (session, formData: FormD
   if (pejantan.farmId !== induk.farmId) return { error: 'Orang tua harus dari farm yang sama' }
   if (pejantan.mati || ortu.get(indukId)?.mati) return { error: 'Induk/pejantan sudah mati' }
   const tanggalKawin = new Date(formData.get('tanggalKawin') as string)
+  if (isNaN(tanggalKawin.getTime()) || tanggalKawin > new Date()) return { error: 'Tanggal kawin tidak valid' }
+  const masihHamil = await prisma.reproduksi.count({ where: { indukId, status: 'HAMIL' } })
+  if (masihHamil > 0) return { error: 'Induk ini masih tercatat hamil' }
   // Override kawin sedarah hanya untuk Super Admin — jangan percaya hidden field dari client
   const forceSubmit = formData.get('forceSubmit') === 'true' && session.role === 'SUPER_ADMIN'
 
