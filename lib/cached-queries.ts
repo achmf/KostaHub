@@ -1,5 +1,6 @@
 import { unstable_cache } from 'next/cache'
 import { prisma } from './prisma'
+import { awalHariWIB } from './tanggal'
 
 // ─── Revalidation windows ────────────────────────────────────
 const REVALIDATE_SHORT = 30   // 30 detik — dashboard data
@@ -20,8 +21,9 @@ export const CACHE_TAGS = {
   notifikasi: 'notifikasi',
 } as const
 
-const startOfToday = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }
-const daysFromToday = (n: number) => { const d = startOfToday(); d.setDate(d.getDate() + n); d.setHours(23, 59, 59, 999); return d }
+const startOfToday = () => awalHariWIB()
+// Akhir hari ke-n dari hari ini (WIB)
+const daysFromToday = (n: number) => new Date(startOfToday().getTime() + (n + 1) * 86_400_000 - 1)
 
 // ─── DASHBOARD STATS ─────────────────────────────────────────
 export const getCachedDashboardData = unstable_cache(

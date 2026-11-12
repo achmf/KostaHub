@@ -20,6 +20,7 @@ import { SilsilahTree } from '@/components/Hewan/SilsilahTree'
 import { HewanAvatarProfile } from '@/components/Hewan/HewanAvatarProfile'
 import { HybridTagManager } from '@/components/Hewan/HybridTagManager'
 import { BatalkanKematianButton } from '@/components/Hewan/BatalkanKematianButton'
+import { umurBulan } from '@/lib/tanggal'
 
 const KATEGORI_LABEL: Record<string, string> = {
   INDUKAN: 'Indukan', PEJANTAN: 'Pejantan', ANAKAN: 'Anakan',
@@ -79,9 +80,7 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
   if (session.role !== 'SUPER_ADMIN' && hewan.farmId !== session.activeFarmId) redirect('/hewan')
 
   const isMati = !!hewan.kematian
-  const umurBulan = Math.max(0, Math.floor(
-    (Date.now() - hewan.tanggalLahir.getTime()) / (1000 * 60 * 60 * 24 * 30)
-  ))
+  const umur = umurBulan(hewan.tanggalLahir, hewan.kematian?.tanggalMati ?? new Date())
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -135,7 +134,7 @@ export default async function HewanDetailPage(props: { params: Promise<{ id: str
         <div className="px-5 sm:px-8 -mt-10 pb-5 sm:pb-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { icon: <Calendar size={12} />, l: 'TANGGAL LAHIR', v: hewan.tanggalLahir.toLocaleDateString('id-ID'), sub: `${umurBulan} bulan` },
+              { icon: <Calendar size={12} />, l: 'TANGGAL LAHIR', v: hewan.tanggalLahir.toLocaleDateString('id-ID'), sub: `${umur} bulan` },
               { icon: <Scale size={12} />, l: 'BERAT TERKINI', v: hewan.berat ? `${hewan.berat} kg` : '—', sub: 'tertimbang terakhir' },
               { icon: <MapPin size={12} />, l: 'FARM', v: hewan.farm.nama.replace('Farm ', ''), sub: 'lokasi terdaftar' },
               { icon: <Stethoscope size={12} />, l: 'REKAM MEDIS', v: `${hewan.rekamMedis.length}`, sub: 'catatan tersimpan' },

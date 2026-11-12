@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { hariIniWIB } from '@/lib/tanggal'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, AlertTriangle } from 'lucide-react'
 import { KostaButton, KostaSectionLabel, palette } from '@/components/KostaUI'
@@ -128,7 +129,7 @@ export function CatatKematianModal({ hewanId, hewanNama, hewanTag, onClose }: Pr
               <DatePickerField
                 name="tanggalMati"
                 required
-                defaultValue={new Date().toISOString().split('T')[0]}
+                defaultValue={hariIniWIB()}
                 disableFuture
                 placeholder="Pilih tanggal kematian"
               />

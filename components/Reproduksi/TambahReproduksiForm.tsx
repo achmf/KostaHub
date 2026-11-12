@@ -2,6 +2,7 @@
 
 import { tambahReproduksi, type TambahReproduksiState } from '@/actions/reproduksi'
 import Link from 'next/link'
+import { hariIniWIB } from '@/lib/tanggal'
 import { ArrowLeft, AlertTriangle, ShieldAlert, CheckCircle2 } from 'lucide-react'
 import { useActionState, useState, useCallback, useRef } from 'react'
 import { KostaButton, KostaSectionLabel, palette } from '@/components/KostaUI'
@@ -134,7 +135,7 @@ export function TambahReproduksiForm({
             <DatePickerField
               name="tanggalKawin"
               required
-              defaultValue={new Date().toISOString().split('T')[0]}
+              defaultValue={hariIniWIB()}
               disableFuture
               placeholder="Pilih tanggal kawin"
             />
