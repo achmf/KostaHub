@@ -541,9 +541,9 @@ function LaporanMedis({ data }: { data: any[] }) {
               <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5 }}>{m.diagnosis}</div>
               {m.notes && <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, opacity: 0.5, marginTop: 2 }}>{m.notes}</div>}
             </div>,
-            <span key="c4" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{m.obat || <span style={{ opacity: 0.35 }}>—</span>}</span>,
-            <span key="c5" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, opacity: 0.7 }}>{m.namaDokter || '—'}</span>,
-            <span key="c6" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.6 }}>
+            <span key="c5" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12 }}>{m.obat || <span style={{ opacity: 0.35 }}>—</span>}</span>,
+            <span key="c6" style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, opacity: 0.7 }}>{m.namaDokter || '—'}</span>,
+            <span key="c7" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, opacity: 0.6 }}>
               {m.tanggalLanjut ? formatDate(m.tanggalLanjut) : '—'}
             </span>,
           ]} />
