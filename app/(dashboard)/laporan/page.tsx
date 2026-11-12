@@ -27,6 +27,7 @@ export default async function LaporanPage(props: { searchParams: Promise<{ [key:
     kehamilanAktif, jadwalMedis, inbreedingAlerts,
     hewanMasuk, hewanKeluar, mutasiData,
     medisData, breedingData, beratData,
+    hewanHidup, totalMasuk, totalHidup, totalMati, totalMutasi, totalMedis, totalReproduksi, beratDipantau,
   ] = await Promise.all([
     // Farm name lookup
     farmId
@@ -111,9 +112,34 @@ export default async function LaporanPage(props: { searchParams: Promise<{ [key:
         },
       },
       orderBy: [{ hewanId: 'asc' }, { tanggal: 'asc' }],
-      take: 500,
+      // shortcut: memuat semua baris berat, ganti ke groupBy kalau > 20k baris
     }),
+    // Ternak Hidup: populasi sebenarnya (kematian is null), sama dengan dashboard
+    prisma.hewan.findMany({
+      where: { kematian: { is: null }, ...hewanFarmFilter },
+      include: { farm: { select: { nama: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    }),
+    // Total memakai filter yang sama dengan tabelnya
+    prisma.hewan.count({ where: hewanFarmFilter }),
+    prisma.hewan.count({ where: { kematian: { is: null }, ...hewanFarmFilter } }),
+    prisma.kematianHewan.count({ where: farmId ? { hewan: { farmId } } : {} }),
+    prisma.transferHewan.count({ where: farmId ? { OR: [{ fromFarmId: farmId }, { toFarmId: farmId }] } : {} }),
+    prisma.rekamMedis.count({ where: medisFarmFilter }),
+    prisma.reproduksi.count({ where: reproduksiFarmFilter }),
+    prisma.beratBadan.groupBy({ by: ['hewanId'], where: beratFarmFilter }),
   ])
+
+  const totals = {
+    hidup: totalHidup,
+    masuk: totalMasuk,
+    mati: totalMati,
+    mutasi: totalMutasi,
+    medis: totalMedis,
+    reproduksi: totalReproduksi,
+    dipantau: beratDipantau.length,
+  }
 
   const farmName = farmResult?.nama ?? ''
 
@@ -184,6 +210,14 @@ export default async function LaporanPage(props: { searchParams: Promise<{ [key:
       updatedAt: h.updatedAt.toISOString(),
       farm: h.farm?.nama,
     })),
+    hewanHidup: hewanHidup.map(h => ({
+      id: h.id, tag: h.tag, nama: h.nama, kelamin: h.kelamin,
+      kategori: h.kategori, berat: h.berat,
+      tanggalLahir: h.tanggalLahir.toISOString(),
+      createdAt: h.createdAt.toISOString(),
+      updatedAt: h.updatedAt.toISOString(),
+      farm: h.farm?.nama,
+    })),
     // hewanKeluar = kematian records
     hewanKeluar: hewanKeluar.map(k => ({
       id: k.hewan.id, tag: k.hewan.tag, nama: k.hewan.nama, kelamin: k.hewan.kelamin,
@@ -232,6 +266,7 @@ export default async function LaporanPage(props: { searchParams: Promise<{ [key:
 
     // Laporan 4: Pertumbuhan
     pertumbuhanData,
+    totals,
   }
 
   return <LaporanClient data={data} isGlobal={isGlobal} farmName={farmName} farmId={farmId} />
