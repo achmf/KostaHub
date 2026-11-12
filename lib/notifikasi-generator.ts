@@ -6,6 +6,7 @@
 
 import { prisma } from './prisma'
 import { pushToFarm } from './push'
+import { awalHariWIB } from './tanggal'
 import type { TipeNotifikasi } from '@prisma/client'
 
 const HARI = 24 * 60 * 60 * 1000
@@ -25,14 +26,15 @@ const tglID = (d: Date) => d.toLocaleDateString('id-ID', { timeZone: 'Asia/Jakar
 /** Membuat notifikasi baru untuk satu farm lalu mengirim push. Mengembalikan jumlah notifikasi baru. */
 export async function generateNotifikasiOtomatis(farmId: string): Promise<number> {
   const now = new Date()
-  const [medis, lahir, berat] = await Promise.all([
+  const [medis, lahir, telat, berat] = await Promise.all([
     kontrolMedisDue(now, farmId),
     kelahiranMendekat(now, farmId),
+    kehamilanTelat(now, farmId),
     penimbanganTerlambat(now, farmId),
   ])
 
   const baru = await prisma.notifikasi.createManyAndReturn({
-    data: [...medis, ...lahir, ...berat],
+    data: [...medis, ...lahir, ...telat, ...berat],
     skipDuplicates: true,
     select: { title: true, message: true, refKey: true },
   })
@@ -87,7 +89,7 @@ async function kirimPush(farmId: string, baru: { title: string; message: string;
 async function kontrolMedisDue(now: Date, farmId: string): Promise<Kandidat[]> {
   const jadwal = await prisma.rekamMedis.findMany({
     where: {
-      tanggalLanjut: { gte: now, lte: new Date(now.getTime() + 3 * HARI) },
+      tanggalLanjut: { gte: awalHariWIB(now), lte: new Date(now.getTime() + 3 * HARI) },
       butuhNotifikasi: true,
       hewan: { farmId, kematian: { is: null } },
     },
@@ -126,6 +128,29 @@ async function kelahiranMendekat(now: Date, farmId: string): Promise<Kandidat[]>
     type: 'LAHIR',
     farmId,
     refKey: `LAHIR-${k.id}`,
+  }))
+}
+
+// ─── KELAHIRAN MELEWATI PERKIRAAN (masih HAMIL padahal estimasi sudah lewat) ─
+async function kehamilanTelat(now: Date, farmId: string): Promise<Kandidat[]> {
+  const kehamilan = await prisma.reproduksi.findMany({
+    where: {
+      status: 'HAMIL',
+      estimasiLahir: { lt: now },
+      induk: { farmId, kematian: { is: null } },
+    },
+    include: { induk: { select: { tag: true, nama: true } } },
+    orderBy: { estimasiLahir: 'desc' },
+    take: MAKS_PER_JENIS,
+  })
+
+  return kehamilan.map((k) => ({
+    title: 'Kelahiran melewati perkiraan',
+    message: `Induk ${k.induk.tag}${k.induk.nama ? ` (${k.induk.nama})` : ''} belum tercatat melahirkan, perkiraan ${tglID(k.estimasiLahir)} sudah lewat. Periksa kondisinya dan catat kelahiran.`,
+    tanggal: now,
+    type: 'LAHIR',
+    farmId,
+    refKey: `TELAT-${k.id}`,
   }))
 }
 

@@ -1,5 +1,8 @@
 import { prisma } from '@/lib/prisma'
-import { getAncestorIds } from '@/lib/silsilah'
+import { getAncestorDepths } from '@/lib/silsilah'
+import { BATAS_GENERASI, leluhurBersama } from '@/lib/inbreeding-rules'
+
+export { BATAS_GENERASI, leluhurBersama }
 
 export type SharedAncestor = {
   id: string
@@ -15,22 +18,19 @@ export type InbreedingCheckResult = {
 
 /**
  * Memeriksa potensi kawin sedarah antara induk dan pejantan.
- * Mengambil semua leluhur kedua hewan (tidak terbatas kedalaman),
- * lalu mencari irisan — termasuk jika salah satunya adalah leluhur langsung.
+ * Mengambil leluhur kedua hewan sampai BATAS_GENERASI (4) generasi,
+ * lalu mencari irisan, termasuk jika salah satunya adalah leluhur langsung.
  */
 export async function checkInbreeding(
   indukId: string,
   pejantanId: string
 ): Promise<InbreedingCheckResult> {
   const [indukAncestors, pejantanAncestors] = await Promise.all([
-    getAncestorIds(indukId),
-    getAncestorIds(pejantanId),
+    getAncestorDepths(indukId, BATAS_GENERASI),
+    getAncestorDepths(pejantanId, BATAS_GENERASI),
   ])
 
-  // Irisan leluhur, ditambah garis lurus: salah satu adalah leluhur yang lain (anak × bapak, cucu × kakek, …)
-  const filteredIds = [...indukAncestors].filter((id) => pejantanAncestors.has(id))
-  if (indukAncestors.has(pejantanId)) filteredIds.push(pejantanId)
-  if (pejantanAncestors.has(indukId)) filteredIds.push(indukId)
+  const filteredIds = leluhurBersama(indukAncestors, pejantanAncestors, indukId, pejantanId)
 
   if (filteredIds.length === 0) {
     return { isRisk: false, sharedAncestors: [] }

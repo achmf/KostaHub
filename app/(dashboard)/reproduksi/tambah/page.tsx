@@ -32,7 +32,7 @@ export default async function TambahReproduksiPage(props: { searchParams: Promis
     <TambahReproduksiForm
       indukan={indukan}
       pejantan={pejantan}
-      isSuperAdmin={session.role === 'SUPER_ADMIN'}
+      isSuperAdmin={session.role === 'SUPER_ADMIN' || session.role === 'OWNER'}
     />
   )
 }
