@@ -255,10 +255,14 @@ export default function StaffManager({ staff, isOwner }: { staff: StaffItem[]; i
           className="rounded-2xl"
           style={{ background: '#fff', border: `1px solid ${palette.border}` }}
         >
-          <KostaEmptyState
-            title="Belum ada staff"
-            hint="Tambahkan petugas atau dokter untuk membantu mengelola farm."
-          />
+          {staff.length === 0 ? (
+            <KostaEmptyState
+              title="Belum ada staff"
+              hint="Tambahkan petugas atau dokter untuk membantu mengelola farm."
+            />
+          ) : (
+            <KostaEmptyState title="Tidak ada staff yang cocok" hint="Coba ubah kata kunci atau filter." />
+          )}
         </div>
       ) : (
         <div className="space-y-3">

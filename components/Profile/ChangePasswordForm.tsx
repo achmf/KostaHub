@@ -105,7 +105,7 @@ export function ChangePasswordForm() {
             id="new-password"
             name="newPassword"
             label="PASSWORD BARU"
-            placeholder="Minimal 8 karakter"
+            placeholder="Minimal 6 karakter"
           />
 
           <div className="flex flex-col gap-1.5">
@@ -116,7 +116,7 @@ export function ChangePasswordForm() {
               placeholder="Ulangi password baru"
             />
             <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11.5, color: 'rgba(13,20,15,0.45)' }}>
-              Password baru minimal 8 karakter dan tidak boleh sama dengan password lama.
+              Password baru minimal 6 karakter dan tidak boleh sama dengan password lama.
             </div>
           </div>
 

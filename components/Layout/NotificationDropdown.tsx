@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Bell } from 'lucide-react'
 import { palette } from '@/components/KostaUI'
 import type { TipeNotifikasi } from '@prisma/client'
+import { NOTIF_BERUBAH } from '@/hooks/useNotifikasi'
 
 /** Tujuan klik notifikasi; generator tidak menulis [ref:], jadi ditentukan dari type. CUSTOM tanpa link. */
 export const TUJUAN_NOTIF: Partial<Record<TipeNotifikasi, string>> = {
@@ -46,7 +47,12 @@ export default function NotificationDropdown() {
     }
     fetchNotifications()
     const interval = setInterval(fetchNotifications, 90_000)
-    return () => clearInterval(interval)
+    // Badge ikut berubah saat notifikasi dibaca di halaman /notifikasi, tanpa menunggu polling
+    window.addEventListener(NOTIF_BERUBAH, fetchNotifications)
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener(NOTIF_BERUBAH, fetchNotifications)
+    }
   }, [])
 
   // Close on click outside

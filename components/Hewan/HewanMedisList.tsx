@@ -69,11 +69,10 @@ export function HewanMedisList({ hewans }: { hewans: HewanMedis[] }) {
     </>
   )
 
-  return (
-    <>
+  const toolbar = (
       <div className="mb-5 flex flex-row items-center justify-between gap-3 sm:gap-4">
         <SearchBar placeholder="Cari tag atau nama hewan..." />
-        <FilterSheet 
+        <FilterSheet
           filters={[
             {
               paramName: 'kelamin',
@@ -84,9 +83,23 @@ export function HewanMedisList({ hewans }: { hewans: HewanMedis[] }) {
                 { value: 'BETINA', label: 'Betina' }
               ]
             }
-          ]} 
+          ]}
         />
       </div>
+  )
+
+  if (filteredHewans.length === 0) {
+    return (
+      <>
+        {toolbar}
+        <KostaEmptyState title="Tidak ada hewan yang cocok" hint="Coba ubah kata kunci atau filter." />
+      </>
+    )
+  }
+
+  return (
+    <>
+      {toolbar}
 
       {/* ── MOBILE: tiap hewan = KostaCard terpisah (mirip Populasi) ── */}
       <div className="flex flex-col gap-2 md:hidden">

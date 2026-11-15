@@ -123,6 +123,9 @@ export default function ReproduksiClient({ reproduksiList, canEdit }: { reproduk
           hint="Catat perkawinan untuk mulai melacak kehamilan dan kelahiran."
         />
       )}
+      {reproduksiList.length > 0 && filteredList.length === 0 && (
+        <KostaEmptyState title="Tidak ada data yang cocok" hint="Coba ubah kata kunci atau filter." />
+      )}
       
       {currentItems.map((r) => {
         const days = Math.ceil(

@@ -17,9 +17,10 @@ export default async function BeratPage(props: { searchParams: Promise<{ [key: s
   const hewan = await prisma.hewan.findMany({
     where: { kematian: { is: null }, ...farmFilter },
     include: {
+      // Seluruh riwayat (urut naik) untuk grafik tren & statistik penimbangan
       beratHistory: {
-        orderBy: { tanggal: 'desc' },
-        take: 1
+        orderBy: { tanggal: 'asc' },
+        select: { id: true, berat: true, tanggal: true },
       },
       farm: { select: { nama: true } }
     },
@@ -35,7 +36,6 @@ export default async function BeratPage(props: { searchParams: Promise<{ [key: s
     beratHistory: h.beratHistory.map(b => ({
       ...b,
       tanggal: b.tanggal.toISOString(),
-      createdAt: b.createdAt.toISOString(),
     }))
   }))
 
