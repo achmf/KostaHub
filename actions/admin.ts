@@ -59,17 +59,32 @@ export async function rejectRegistration(farmId: string, reason?: string) {
 }
 
 // ── Delete User ───────────────────────────────────────────────────────────────
-export async function deleteUser(userId: string) {
-  await requireSuperAdmin()
+export async function deleteUser(userId: string): Promise<{ success?: true; error?: string }> {
+  const session = await requireSuperAdmin()
+  if (userId === session.id) return { error: 'Tidak bisa menghapus akun sendiri' }
 
-  const user = await prisma.user.findUnique({ where: { id: userId } })
-  if (!user) return { error: 'User tidak ditemukan' }
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { farms: { include: { farm: { select: { nama: true } } } } },
+  })
+  if (!user || user.deletedAt) return { error: 'User tidak ditemukan' }
   if (user.role === 'SUPER_ADMIN') return { error: 'Tidak bisa hapus Super Admin' }
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: { deletedAt: new Date() },
-  })
+  // Owner yang masih punya farm tidak boleh dihapus: farm-nya akan kehilangan pemilik
+  if (user.role === 'OWNER' && user.farms.length > 0) {
+    const nama = user.farms.map((uf) => uf.farm.nama).join(', ')
+    return { error: `Owner masih memiliki farm: ${nama}. Alihkan pemilik atau hapus farm terlebih dahulu.` }
+  }
+
+  const now = new Date()
+  await prisma.$transaction([
+    prisma.userFarm.deleteMany({ where: { userId } }),
+    // Soft delete; email diberi prefiks agar alamat yang sama bisa mendaftar lagi
+    prisma.user.update({
+      where: { id: userId },
+      data: { deletedAt: now, email: `deleted-${now.getTime()}-${user.email}` },
+    }),
+  ])
   invalidateAdmin()
   revalidatePath('/admin/users')
   return { success: true }

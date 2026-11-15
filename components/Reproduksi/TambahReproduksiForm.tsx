@@ -105,6 +105,11 @@ export function TambahReproduksiForm({
         </div>
 
         <form action={formAction} className="px-5 py-6 sm:px-8 sm:py-8 space-y-5">
+          {state?.error && (
+            <div role="alert" className="px-4 py-3 rounded-xl" style={{ background: 'rgba(181,68,59,0.1)', color: '#B5443B', fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
+              {state.error}
+            </div>
+          )}
           {/* Pasangan selection */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>

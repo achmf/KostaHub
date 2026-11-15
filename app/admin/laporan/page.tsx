@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
-import { FileText, Building2, Activity, Users, Heart, HeartCrack, Stethoscope } from 'lucide-react'
+import { FileText, Building2, Activity, Users, Heart, HeartCrack, Stethoscope, Printer } from 'lucide-react'
 import LaporanExportButton from '@/components/Admin/LaporanExportButton'
+import Link from 'next/link'
 
 const palette = {
   ink: '#0D140F',
@@ -95,7 +96,16 @@ export default async function AdminLaporanPage() {
             Data diperbarui otomatis dari sistem. Terakhir: {tanggalLaporan}
           </p>
         </div>
-        <LaporanExportButton />
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/admin/laporan/print"
+            className="min-h-10 md:min-h-0 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 transition-colors hover:bg-black/5"
+            style={{ border: '1px solid rgba(13,20,15,0.15)', color: '#0D140F', fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap' }}
+          >
+            <Printer size={15} /> Cetak / PDF
+          </Link>
+          <LaporanExportButton />
+        </div>
       </div>
 
       {/* Ringkasan Eksekutif */}

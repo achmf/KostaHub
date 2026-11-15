@@ -66,12 +66,12 @@ type PendingUser = {
 
 // ─── Reject Reason Modal ────────────────────────────────────────────────────────
 function RejectModal({
-  user,
+  subtitle,
   onConfirm,
   onCancel,
   isLoading,
 }: {
-  user: PendingUser;
+  subtitle: string;
   onConfirm: (reason: string) => void;
   onCancel: () => void;
   isLoading: boolean;
@@ -136,7 +136,7 @@ function RejectModal({
                   color: "rgba(13,20,15,0.5)",
                 }}
               >
-                {user.name} — {user.farm?.nama}
+                {subtitle}
               </div>
             </div>
           </div>
@@ -260,6 +260,7 @@ export default function ApprovalList({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkMode, setBulkMode] = useState(false);
   const [isBulking, startBulkTransition] = useTransition();
+  const [bulkRejectOpen, setBulkRejectOpen] = useState(false);
 
   const { confirm: showConfirm } = useConfirm();
   const { showToast } = useToast();
@@ -284,7 +285,7 @@ export default function ApprovalList({
           setRemovedIds((prev) => new Set(prev).add(userId));
           showToast({
             title: "Disetujui",
-            message: "Pendaftaran disetujui. Email notifikasi terkirim.",
+            message: "Pendaftaran disetujui. Owner kini bisa mengakses dashboard farm.",
             type: "success",
           });
         }
@@ -361,14 +362,16 @@ export default function ApprovalList({
     });
   }
 
+  // Alasan diisi lewat RejectModal yang sama dengan tolak satuan (bukan window.prompt)
   function handleBulkReject() {
+    if (selectedIds.size) setBulkRejectOpen(true);
+  }
+
+  function handleBulkRejectConfirm(reason: string) {
     const ids = Array.from(selectedIds);
-    if (!ids.length) return;
-    const r = window.prompt("Alasan penolakan (opsional):");
-    if (r === null) return;
-    const reason = r;
     startBulkTransition(async () => {
       const res = await bulkRejectFarms(ids, reason);
+      setBulkRejectOpen(false);
       if (res?.error) {
         showToast({ title: "Gagal", message: res.error, type: "error" });
       } else {
@@ -502,10 +505,18 @@ export default function ApprovalList({
       <AnimatePresence>
         {rejectingUser && (
           <RejectModal
-            user={rejectingUser}
+            subtitle={`${rejectingUser.name} — ${rejectingUser.farm?.nama ?? ''}`}
             onConfirm={handleRejectConfirm}
             onCancel={() => setRejectingUser(null)}
             isLoading={isPending && processingId === rejectingUser.id}
+          />
+        )}
+        {bulkRejectOpen && (
+          <RejectModal
+            subtitle={`${selectedIds.size} pendaftaran dipilih`}
+            onConfirm={handleBulkRejectConfirm}
+            onCancel={() => setBulkRejectOpen(false)}
+            isLoading={isBulking}
           />
         )}
       </AnimatePresence>

@@ -2,9 +2,11 @@
 
 import { Download, FileSpreadsheet } from 'lucide-react'
 import { useState } from 'react'
+import { useToast } from '@/components/ToastProvider'
 
 export default function LaporanExportButton() {
   const [loading, setLoading] = useState(false)
+  const { showToast } = useToast()
 
   async function handleExport() {
     setLoading(true)
@@ -20,7 +22,7 @@ export default function LaporanExportButton() {
       a.click()
       URL.revokeObjectURL(url)
     } catch {
-      alert('Gagal mengunduh laporan. Coba lagi.')
+      showToast({ title: 'Gagal mengunduh laporan. Coba lagi.', type: 'error' })
     } finally {
       setLoading(false)
     }

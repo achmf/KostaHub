@@ -4,6 +4,9 @@ import { Users, ShieldCheck, Stethoscope, UserCog, Clock, CheckCircle2, XCircle 
 import { EmptyState } from '@/components/ui/EmptyState'
 import { getSession } from '@/lib/auth'
 import AdminUsersHeader from '@/components/Admin/AdminUsersHeader'
+import ResetPasswordButton from '@/components/Admin/ResetPasswordButton'
+import DeleteUserButton from '@/components/Admin/DeleteUserButton'
+import { SearchBar } from '@/components/Layout/SearchBar'
 
 const palette = {
   ink: '#0D140F',
@@ -27,7 +30,8 @@ const approvalBadge: Record<string, { label: string; color: string; bg: string; 
   REJECTED: { label: 'Ditolak', color: palette.danger, bg: 'rgba(181,68,59,0.08)', icon: XCircle },
 }
 
-export default async function AdminUsersPage() {
+export default async function AdminUsersPage(props: { searchParams: Promise<{ q?: string }> }) {
+  const q = ((await props.searchParams).q ?? '').trim().toLowerCase()
   const session = await getSession()
   if (session?.role !== 'SUPER_ADMIN') redirect('/admin')
   const users = await prisma.user.findMany({
@@ -41,6 +45,9 @@ export default async function AdminUsersPage() {
     },
     orderBy: { createdAt: 'desc' },
   })
+
+  // Pencarian hanya menyaring daftar; statistik tetap untuk semua user
+  const shown = q ? users.filter((u) => `${u.name} ${u.email}`.toLowerCase().includes(q)) : users
 
   const totalOwner = users.filter((u) => u.role === 'OWNER').length
   const totalPetugas = users.filter((u) => u.role === 'PETUGAS').length
@@ -79,17 +86,21 @@ export default async function AdminUsersPage() {
         })}
       </div>
 
+      <div className="mb-5">
+        <SearchBar placeholder="Cari nama atau email user..." />
+      </div>
+
       {/* Table */}
       <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${palette.border}`, background: '#fff' }}>
         {/* Mobile: kartu per user (tabel tampil mulai md) */}
         <div className="md:hidden">
-          {users.map((user, i) => {
+          {shown.map((user, i) => {
             const rb = roleBadge[user.role] || { label: user.role, color: palette.ink, bg: 'rgba(13,20,15,0.06)' }
             return (
               <div
                 key={user.id}
                 className="flex items-start gap-3 px-4 py-4"
-                style={{ borderBottom: i < users.length - 1 ? `1px solid ${palette.border}` : 'none' }}
+                style={{ borderBottom: i < shown.length - 1 ? `1px solid ${palette.border}` : 'none' }}
               >
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
@@ -126,13 +137,14 @@ export default async function AdminUsersPage() {
                       </span>
                     ) : (
                       <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: 'rgba(13,20,15,0.35)' }}>
-                        — semua farm
+                        {user.role === 'SUPER_ADMIN' || user.role === 'DINAS' ? '— semua farm' : '— belum ada farm'}
                       </span>
                     )}
                     <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'rgba(13,20,15,0.45)' }}>
                       Bergabung {new Date(user.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </span>
                   </div>
+                  {user.id !== session?.id && <div className="mt-2 -ml-2.5 flex flex-wrap"><ResetPasswordButton user={user} />{user.role !== 'SUPER_ADMIN' && <DeleteUserButton user={user} />}</div>}
                 </div>
               </div>
             )
@@ -143,7 +155,7 @@ export default async function AdminUsersPage() {
           <table className="w-full">
             <thead>
               <tr style={{ borderBottom: `1px solid ${palette.border}`, background: 'rgba(13,20,15,0.02)' }}>
-                {['User', 'Role', 'Farm', 'Bergabung'].map((col) => (
+                {['User', 'Role', 'Farm', 'Bergabung', 'Aksi'].map((col) => (
                   <th
                     key={col}
                     className="text-left px-5 py-3.5"
@@ -155,13 +167,13 @@ export default async function AdminUsersPage() {
               </tr>
             </thead>
             <tbody>
-              {users.map((user, i) => {
+              {shown.map((user, i) => {
                 const rb = roleBadge[user.role] || { label: user.role, color: palette.ink, bg: 'rgba(13,20,15,0.06)' }
                 return (
                   <tr
                     key={user.id}
                     style={{
-                      borderBottom: i < users.length - 1 ? `1px solid ${palette.border}` : 'none',
+                      borderBottom: i < shown.length - 1 ? `1px solid ${palette.border}` : 'none',
                     }}
                     className="hover:bg-black/[0.015] transition-colors"
                   >
@@ -208,7 +220,7 @@ export default async function AdminUsersPage() {
                         </span>
                       ) : (
                         <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: 'rgba(13,20,15,0.35)' }}>
-                          — semua farm
+                          {user.role === 'SUPER_ADMIN' || user.role === 'DINAS' ? '— semua farm' : '— belum ada farm'}
                         </span>
                       )}
                     </td>
@@ -219,6 +231,11 @@ export default async function AdminUsersPage() {
                         {new Date(user.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </span>
                     </td>
+
+                    {/* Aksi */}
+                    <td className="px-5 py-4">
+                      {user.id !== session?.id && <div className="flex flex-col items-start"><ResetPasswordButton user={user} />{user.role !== 'SUPER_ADMIN' && <DeleteUserButton user={user} />}</div>}
+                    </td>
                   </tr>
                 )
               })}
@@ -226,10 +243,10 @@ export default async function AdminUsersPage() {
           </table>
         </div>
 
-        {users.length === 0 && (
+        {shown.length === 0 && (
           <EmptyState
             icon={Users}
-            title="Belum ada user"
+            title={q ? 'Tidak ada user yang cocok' : 'Belum ada user'}
             description="User yang mendaftar ke sistem akan muncul di sini."
           />
         )}

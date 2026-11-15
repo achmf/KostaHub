@@ -14,6 +14,8 @@ export type NotifikasiItem = {
 }
 
 const POLL_INTERVAL = 60_000 // 60 detik
+/** Event window agar badge lonceng di header ikut ter-update saat status baca berubah */
+export const NOTIF_BERUBAH = 'kostahub:notifikasi-berubah'
 
 export function useNotifikasi() {
   const [list, setList] = useState<NotifikasiItem[]>([])
@@ -68,6 +70,7 @@ export function useNotifikasi() {
     setList((prev) =>
       prev.map((n) => (n.id === id ? { ...n, isRead: data.isRead } : n))
     )
+    window.dispatchEvent(new Event(NOTIF_BERUBAH))
   }, [])
 
   const markAllRead = useCallback(async () => {
@@ -78,6 +81,7 @@ export function useNotifikasi() {
     })
     if (!res.ok) return
     setList((prev) => prev.map((n) => ({ ...n, isRead: true })))
+    window.dispatchEvent(new Event(NOTIF_BERUBAH))
     toast.success('Semua notifikasi ditandai sudah dibaca')
   }, [])
 

@@ -27,7 +27,7 @@ export const addBeratBadan = withMutationAuth(async (session, formData: FormData
   if (hewan.kematian) return { error: 'Hewan sudah tercatat mati' }
 
   const parsed = beratSchema.safeParse({
-    berat: formData.get('berat') || undefined,
+    berat: (formData.get('berat') as string | null)?.replace(',', '.') || undefined,
     tanggal: formData.get('tanggal') || undefined,
     catatan: (formData.get('catatan') as string) || undefined,
   })

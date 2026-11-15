@@ -120,7 +120,8 @@ function SingleCalendar({
         <div className="flex gap-1" style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, fontWeight: 500, color: palette.ink }}>
           <Select value={String(month)} onValueChange={(val) => val && setViewDate(new Date(year, parseInt(val), 1))}>
             <SelectTrigger className="h-7 border-none bg-transparent shadow-none px-1.5 py-0 w-auto hover:bg-black/5 rounded text-[13px] font-medium text-ink gap-1 [&_svg]:size-3.5 focus-visible:ring-0 focus-visible:ring-offset-0">
-              <SelectValue />
+              {/* Tanpa children, SelectValue menampilkan value mentah (indeks bulan 0–11), bukan nama bulan */}
+              <SelectValue>{monthNames[month]}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {monthNames.map((m, i) => (

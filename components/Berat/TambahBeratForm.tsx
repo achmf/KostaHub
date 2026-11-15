@@ -77,7 +77,7 @@ export function TambahBeratForm({ hewanList, defaultHewanId }: { hewanList: Hewa
             </div>
             <div>
               <label style={labelStyle}>BERAT (KG) *</label>
-              <input required name="berat" type="number" inputMode="decimal" step="0.1" min="0.1" placeholder="cth: 32.5" style={inputStyle} />
+              <input required name="berat" type="text" inputMode="decimal" pattern="[0-9]+([.,][0-9]+)?" title="Angka, contoh 32,5" placeholder="cth: 32,5" style={inputStyle} />
             </div>
           </div>
 

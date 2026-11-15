@@ -78,7 +78,7 @@ function SelectContent({
         align={align}
         alignOffset={alignOffset}
         alignItemWithTrigger={alignItemWithTrigger}
-        className="isolate z-50"
+        className="isolate z-[10001]" // di atas Popover (z-[10000]) agar dropdown di dalam pemilih tanggal/dialog tidak tertutup
       >
         <SelectPrimitive.Popup
           data-slot="select-content"
