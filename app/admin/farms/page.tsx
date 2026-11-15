@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { EmptyState } from '@/components/ui/EmptyState'
 
 import AdminFarmsHeader from '@/components/Admin/AdminFarmsHeader'
+import { SearchBar } from '@/components/Layout/SearchBar'
 
 const palette = {
   cream: '#F2EDE0',
@@ -17,7 +18,8 @@ const palette = {
 
 import { getSession } from '@/lib/auth'
 
-export default async function AdminFarmsPage() {
+export default async function AdminFarmsPage(props: { searchParams: Promise<{ q?: string }> }) {
+  const q = ((await props.searchParams).q ?? '').trim().toLowerCase()
   const session = await getSession()
   const farms = await prisma.farm.findMany({
     include: {
@@ -25,6 +27,9 @@ export default async function AdminFarmsPage() {
     },
     orderBy: { createdAt: 'desc' },
   })
+
+  // Pencarian hanya menyaring kartu; statistik tetap untuk semua farm
+  const shown = q ? farms.filter((f) => `${f.nama} ${f.alamat ?? ''}`.toLowerCase().includes(q)) : farms
 
   const farmAktif = farms.filter((f) => f.status === 'AKTIF').length
   const farmNonaktif = farms.filter((f) => f.status === 'NONAKTIF').length
@@ -76,6 +81,10 @@ export default async function AdminFarmsPage() {
         })}
       </div>
 
+      <div className="mb-5">
+        <SearchBar placeholder="Cari nama atau alamat farm..." />
+      </div>
+
       {/* Legend */}
       <div className="flex items-center gap-4 mb-5">
         <div className="flex items-center gap-1.5">
@@ -94,7 +103,7 @@ export default async function AdminFarmsPage() {
 
       {/* Farm Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {farms.map((farm) => {
+        {shown.map((farm) => {
           const isAktif = farm.status === 'AKTIF'
           const isNonaktif = farm.status === 'NONAKTIF'
           return (
@@ -158,10 +167,10 @@ export default async function AdminFarmsPage() {
         })}
       </div>
 
-      {farms.length === 0 && (
+      {shown.length === 0 && (
         <EmptyState
           icon={Building2}
-          title="Belum ada farm terdaftar"
+          title={q ? 'Tidak ada farm yang cocok' : 'Belum ada farm terdaftar'}
           description="Farm yang didaftarkan owner akan muncul di sini."
         />
       )}

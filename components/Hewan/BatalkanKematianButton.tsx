@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { Undo2 } from 'lucide-react'
 import { KostaButton, palette } from '@/components/KostaUI'
 import { batalkanKematian } from '@/actions/kematian'
+import { useToast } from '@/components/ToastProvider'
 
 interface Props {
   hewanId: string
@@ -14,6 +15,7 @@ export function BatalkanKematianButton({ hewanId, hewanNama }: Props) {
   const [showConfirm, setShowConfirm] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const { showToast } = useToast()
 
   const handleBatalkan = () => {
     startTransition(async () => {
@@ -22,7 +24,7 @@ export function BatalkanKematianButton({ hewanId, hewanNama }: Props) {
       if (result && 'error' in result) {
         setError(result.error ?? 'Terjadi kesalahan')
       } else if (result && 'message' in result && result.message) {
-        alert(result.message)
+        showToast({ title: result.message, type: 'success' })
       }
     })
   }

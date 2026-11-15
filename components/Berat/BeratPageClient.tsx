@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Scale, Plus, TrendingUp, Search, Filter, X, Calendar } from 'lucide-react'
+import { Scale, Plus, TrendingUp, TrendingDown, Search, Filter, X, Calendar } from 'lucide-react'
 import Link from 'next/link'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { KostaPageHeader, KostaCard, KostaButton, KostaSectionLabel, Badge, KostaEmptyState, palette } from '@/components/KostaUI'
@@ -11,6 +11,7 @@ import { LineChart, Line, ResponsiveContainer, Tooltip, XAxis } from 'recharts'
 import PaginationControl from '@/components/Admin/PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
 import { rataRataBerat } from '@/lib/statistik'
+import { awalBulanWIB } from '@/lib/tanggal'
 import { useSearchParams } from 'next/navigation'
 import { SearchBar } from '@/components/Layout/SearchBar'
 import { FilterSheet } from '@/components/Layout/FilterSheet'
@@ -33,7 +34,9 @@ const KATEGORI_LABEL: Record<string, string> = {
   JANTAN_MUDA: 'Jantan Muda',
 }
 
-// trendData is now dynamic inside the component
+const BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des']
+const HARI_MS = 86_400_000
+
 
 export default function BeratPageClient({ hewanList, canEdit }: { hewanList: HewanBerat[]; canEdit: boolean }) {
   const searchParams = useSearchParams()
@@ -46,82 +49,6 @@ export default function BeratPageClient({ hewanList, canEdit }: { hewanList: Hew
   const [isCustomOpen, setIsCustomOpen] = useState(false)
   const PER_PAGE = 15
 
-  const trendData = useMemo(() => {
-    if (timeRange === '1y') {
-      return Array.from({ length: 12 }).map((_, i) => ({
-        name: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'][i],
-        v: 32 + Math.sin(i / 2) * 4 + i * 0.7,
-      }))
-    }
-    if (timeRange === '6m') {
-      return Array.from({ length: 6 }).map((_, i) => ({
-        name: ['Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'][i],
-        v: 35 + Math.sin(i) * 2,
-      }))
-    }
-    if (timeRange === '3m') {
-      return Array.from({ length: 3 }).map((_, i) => ({
-        name: ['Okt', 'Nov', 'Des'][i],
-        v: 37 + Math.sin(i) * 2,
-      }))
-    }
-    if (timeRange === '1m') {
-      return Array.from({ length: 4 }).map((_, i) => ({
-        name: `Mgg ${i + 1}`,
-        v: 38 + Math.sin(i) * 2,
-      }))
-    }
-    // custom
-    if (customStart && customEnd) {
-      const start = new Date(customStart)
-      const end = new Date(customEnd)
-      
-      let diffMonths = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth())
-      if (diffMonths < 0) diffMonths = 0
-      
-      const diffTime = end.getTime() - start.getTime()
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-      
-      if (diffDays <= 0) return []
-      
-      if (diffDays <= 31) {
-        return Array.from({ length: diffDays }).map((_, i) => {
-          const d = new Date(start)
-          d.setDate(d.getDate() + i)
-          return {
-            name: `${d.getDate()}/${d.getMonth()+1}`,
-            v: 37 + Math.sin(i) * 2 + (i * 0.1)
-          }
-        })
-      } else if (diffDays <= 90) {
-        const weeks = Math.ceil(diffDays / 7)
-        return Array.from({ length: weeks }).map((_, i) => {
-          const d = new Date(start)
-          d.setDate(d.getDate() + i * 7)
-          return {
-            name: `W${i+1} ${d.getDate()}/${d.getMonth()+1}`,
-            v: 37 + Math.sin(i) * 2 + (i * 0.2)
-          }
-        })
-      } else {
-        return Array.from({ length: diffMonths + 1 }).map((_, i) => {
-          const d = new Date(start)
-          d.setMonth(d.getMonth() + i)
-          const m = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'][d.getMonth()]
-          const yr = String(d.getFullYear()).slice(-2)
-          return {
-            name: `${m} '${yr}`,
-            v: 37 + Math.sin(i) * 2 + (i * 0.5)
-          }
-        })
-      }
-    }
-
-    return Array.from({ length: 5 }).map((_, i) => ({
-      name: `Point ${i+1}`,
-      v: 37 + Math.random() * 5,
-    }))
-  }, [timeRange, customStart, customEnd])
 
   const filteredHewanList = useMemo(() => {
     return hewanList.filter((h) => {
@@ -152,6 +79,58 @@ export default function BeratPageClient({ hewanList, canEdit }: { hewanList: Hew
   const avgRaw = rataRataBerat(filteredHewanList.map((h) => ({ berat: h.berat, mati: false })))
   const avg = avgRaw == null ? '—' : avgRaw.toLocaleString('id-ID', { maximumFractionDigits: 1 })
   const top = [...filteredHewanList].sort((a, b) => (b.berat ?? 0) - (a.berat ?? 0))[0]
+
+  // Semua penimbangan hewan yang sedang ditampilkan (ikut filter kategori/pencarian)
+  const semuaTimbang = useMemo(
+    () => filteredHewanList.flatMap((h) => h.beratHistory.map((b) => ({ hewanId: h.id, t: new Date(b.tanggal).getTime(), berat: b.berat }))),
+    [filteredHewanList],
+  )
+
+  // Tren = rata-rata berat semua penimbangan per periode; periode tanpa penimbangan bernilai null
+  const trendData = useMemo(() => {
+    const now = new Date()
+    let start: Date
+    let end = now
+    let unit: 'day' | 'week' | 'month'
+    if (timeRange === 'custom') {
+      if (!customStart || !customEnd) return []
+      start = new Date(customStart + 'T00:00:00')
+      end = new Date(customEnd + 'T23:59:59')
+      const days = Math.ceil((end.getTime() - start.getTime()) / HARI_MS)
+      if (days <= 0) return []
+      unit = days <= 31 ? 'day' : days <= 90 ? 'week' : 'month'
+    } else {
+      const months = ({ '1m': 1, '3m': 3, '6m': 6, '1y': 12 } as Record<string, number>)[timeRange] ?? 12
+      unit = months === 1 ? 'week' : 'month'
+      start = months === 1 ? new Date(now.getTime() - 27 * HARI_MS) : new Date(now.getFullYear(), now.getMonth() - months + 1, 1)
+    }
+    const cur = new Date(start)
+    cur.setHours(0, 0, 0, 0)
+    const hasil: { name: string; v: number | null }[] = []
+    while (cur <= end) {
+      const next = new Date(cur)
+      if (unit === 'day') next.setDate(next.getDate() + 1)
+      else if (unit === 'week') next.setDate(next.getDate() + 7)
+      else next.setMonth(next.getMonth() + 1)
+      const isi = semuaTimbang.filter((x) => x.t >= cur.getTime() && x.t < next.getTime())
+      hasil.push({
+        name: unit === 'month' ? `${BULAN[cur.getMonth()]} '${String(cur.getFullYear()).slice(-2)}` : `${cur.getDate()}/${cur.getMonth() + 1}`,
+        v: isi.length ? Math.round((isi.reduce((s, x) => s + x.berat, 0) / isi.length) * 10) / 10 : null,
+      })
+      cur.setTime(next.getTime())
+    }
+    return hasil
+  }, [timeRange, customStart, customEnd, semuaTimbang])
+
+  // Perubahan % dari periode berisi pertama ke terakhir; null bila kurang dari 2 periode berisi
+  const terisi = trendData.filter((d) => d.v != null) as { name: string; v: number }[]
+  const perubahan = terisi.length >= 2 && terisi[0].v > 0 ? ((terisi[terisi.length - 1].v - terisi[0].v) / terisi[0].v) * 100 : null
+
+  const tujuhHariLalu = Date.now() - 7 * HARI_MS
+  const timbangMingguIni = semuaTimbang.filter((x) => x.t >= tujuhHariLalu).length
+  const awalBulan = awalBulanWIB().getTime()
+  const ditimbangBulanIni = new Set(semuaTimbang.filter((x) => x.t >= awalBulan).map((x) => x.hewanId)).size
+  const persenBulanIni = filteredHewanList.length ? Math.round((ditimbangBulanIni / filteredHewanList.length) * 100) : 0
 
   return (
     <div>
@@ -263,9 +242,11 @@ export default function BeratPageClient({ hewanList, canEdit }: { hewanList: Hew
                 </div>
               </div>
 
-              <Badge variant="moss">
-                <TrendingUp size={11} /> +8.4%
-              </Badge>
+              {perubahan != null && (
+                <Badge variant={perubahan >= 0 ? 'moss' : 'ochre'}>
+                  {perubahan >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />} {perubahan >= 0 ? '+' : ''}{perubahan.toLocaleString('id-ID', { maximumFractionDigits: 1 })}%
+                </Badge>
+              )}
             </div>
           </div>
           <div className="h-44 w-full overflow-x-auto custom-scrollbar">
@@ -299,6 +280,7 @@ export default function BeratPageClient({ hewanList, canEdit }: { hewanList: Hew
                   strokeWidth={2.5}
                   dot={{ fill: palette.ochre, r: 4 }}
                   activeDot={{ r: 6 }}
+                  connectNulls
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -310,8 +292,8 @@ export default function BeratPageClient({ hewanList, canEdit }: { hewanList: Hew
           {[
             { l: 'Total dimonitor', v: hewanList.length, sub: 'ekor aktif' },
             { l: 'Berat tertinggi', v: top ? `${top.berat}` : '0', sub: top?.nama || top?.tag || '—' },
-            { l: 'Penimbangan minggu ini', v: 28, sub: 'tercatat' },
-            { l: 'Target bulan ini', v: '85%', sub: 'tercapai' },
+            { l: 'Penimbangan 7 hari', v: timbangMingguIni, sub: 'tercatat' },
+            { l: 'Ditimbang bulan ini', v: `${persenBulanIni}%`, sub: `${ditimbangBulanIni} dari ${filteredHewanList.length} ekor` },
           ].map((s, i) => (
             <motion.div
               key={s.l}

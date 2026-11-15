@@ -49,7 +49,8 @@ export function FilterSheet({ filters }: FilterSheetProps) {
   // Count active filters based on URL (not local state)
   const activeCount = filters.reduce((acc, filter) => {
     const val = searchParams.get(filter.paramName)
-    return acc + (val && val !== 'ALL' ? 1 : 0)
+    // Bandingkan dengan default filter (mis. status default HIDUP), bukan selalu 'ALL'
+    return acc + (val && val !== (filter.defaultValue ?? 'ALL') ? 1 : 0)
   }, 0)
 
   const handleApply = () => {

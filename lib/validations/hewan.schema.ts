@@ -7,7 +7,8 @@ export const hewanSchema = z.object({
   nama: z.string().optional(),
   kelamin: z.nativeEnum(Kelamin, { error: 'Kelamin tidak valid' }),
   kategori: z.nativeEnum(KategoriHewan, { error: 'Kategori tidak valid' }),
-  berat: z.preprocess(v => (v === '' || v == null ? undefined : v), z.coerce.number().positive({ message: 'Berat harus lebih dari 0' }).optional()),
+  // Koma desimal ("32,5") diterima sama dengan titik
+  berat: z.preprocess(v => (v === '' || v == null ? undefined : String(v).replace(',', '.')), z.coerce.number().positive({ message: 'Berat harus lebih dari 0' }).optional()),
   tanggalLahir: z.coerce.date({ error: 'Tanggal lahir tidak valid' }),
   bapakId: z.string().optional(),
   indukId: z.string().optional(),

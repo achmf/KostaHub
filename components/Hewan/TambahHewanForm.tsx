@@ -177,7 +177,7 @@ export default function TambahHewanForm({ isSuperAdmin, farms, defaultFarmId, se
             </div>
             <div>
               <label style={labelStyle}>BERAT BADAN (KG)</label>
-              <input name="berat" type="number" inputMode="decimal" step="0.1" min="0" placeholder="0.0" style={inputStyle} />
+              <input name="berat" type="text" inputMode="decimal" pattern="[0-9]+([.,][0-9]+)?" title="Angka, contoh 32,5" placeholder="0,0" style={inputStyle} />
             </div>
           </div>
 

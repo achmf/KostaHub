@@ -6,6 +6,7 @@ const valid = { tag: 'K-01', kelamin: 'JANTAN', kategori: 'ANAKAN', tanggalLahir
 describe('hewanSchema.berat', () => {
   it('empty string -> undefined', () => expect(hewanSchema.parse({ ...valid, berat: '' }).berat).toBeUndefined())
   it('"12.5" -> 12.5', () => expect(hewanSchema.parse({ ...valid, berat: '12.5' }).berat).toBe(12.5))
+  it('"47,5" (koma desimal) -> 47.5, bukan 475', () => expect(hewanSchema.parse({ ...valid, berat: '47,5' }).berat).toBe(47.5))
   it('negative rejected', () => expect(hewanSchema.safeParse({ ...valid, berat: '-3' }).success).toBe(false))
 })
 

@@ -224,6 +224,8 @@ function statusFont(status: string): { argb: string; fill: string } {
 export async function GET(request: Request) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  // Sama dengan halaman /laporan: petugas tidak punya akses laporan
+  if (session.role === 'PETUGAS') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const url    = new URL(request.url)
   const farmId = url.searchParams.get('farmId') ?? session.activeFarmId

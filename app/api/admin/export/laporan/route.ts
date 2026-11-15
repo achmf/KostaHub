@@ -293,7 +293,8 @@ function buildTotalsRow(ws: ExcelJS.Worksheet, rowNum: number, cols: number) {
 
 export async function GET() {
   const session = await getSession()
-  if (!session || session.role !== 'SUPER_ADMIN') {
+  // DINAS boleh mengunduh: datanya sama dengan yang ia lihat di /admin/laporan (read-only)
+  if (!session || (session.role !== 'SUPER_ADMIN' && session.role !== 'DINAS')) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

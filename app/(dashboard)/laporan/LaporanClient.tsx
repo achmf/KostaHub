@@ -5,6 +5,7 @@ import { useState, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import PaginationControl from '@/components/Admin/PaginationControl'
 import { usePagination } from '@/hooks/usePagination'
+import { useToast } from '@/components/ToastProvider'
 import { SearchBar } from '@/components/Layout/SearchBar'
 import {
   FileSpreadsheet, Download, Stethoscope, Calendar, Shield, Search,
@@ -52,6 +53,7 @@ const KATEGORI_MEDIS_COLOR: Record<string, string> = {
 export default function LaporanClient({ data, isGlobal, farmName, farmId }: { data: any; isGlobal: boolean; farmName: string; farmId?: string | null }) {
   const [tab, setTab] = useState<TabType>('keluar-masuk')
   const [exportLoading, setExportLoading] = useState(false)
+  const { showToast } = useToast()
 
   async function handleExport() {
     setExportLoading(true)
@@ -68,7 +70,7 @@ export default function LaporanClient({ data, isGlobal, farmName, farmId }: { da
       a.click()
       URL.revokeObjectURL(url)
     } catch {
-      alert('Gagal mengunduh laporan. Coba lagi.')
+      showToast({ title: 'Gagal mengunduh laporan. Coba lagi.', type: 'error' })
     } finally {
       setExportLoading(false)
     }
